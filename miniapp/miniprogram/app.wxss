@@ -1,0 +1,22 @@
+@import './styles/tokens.wxss';
+
+.page-shell {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 48rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.page-title {
+  margin: 0;
+  font-size: 52rpx;
+  font-weight: 650;
+  letter-spacing: -1rpx;
+}
+
+.page-subtitle {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--color-text-secondary);
+  font-size: 28rpx;
+  line-height: 1.6;
+}

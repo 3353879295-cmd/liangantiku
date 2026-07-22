@@ -1,0 +1,28 @@
+{
+  "pages": [
+    "pages/home/index",
+    "pages/library/index",
+    "pages/practical/index",
+    "pages/profile/index"
+  ],
+  "window": {
+    "backgroundColor": "#f5f5f7",
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#f5f5f7",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#86868b",
+    "selectedColor": "#2f6b4f",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/library/index", "text": "题库" },
+      { "pagePath": "pages/practical/index", "text": "实操" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation": "sitemap.json"
+}
