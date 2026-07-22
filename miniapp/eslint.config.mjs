@@ -3,7 +3,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/**', 'miniprogram_npm/**', 'coverage/**'],
+    ignores: ['node_modules/**', 'miniprogram_npm/**', 'coverage/**', '**/*.d.ts', '**/*.d.mts'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

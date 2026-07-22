@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": ["miniprogram-api-typings", "vitest/globals"]
+    "types": ["miniprogram-api-typings", "node", "vitest/globals"]
   },
   "include": ["miniprogram/**/*.ts", "miniprogram/**/*.d.ts", "tests/**/*.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "miniprogram_npm"]
