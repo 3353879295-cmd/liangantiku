@@ -193,9 +193,9 @@ def _validate_distribution(
     warnings: list[ValidationIssue],
 ) -> None:
     targets = {
-        QuestionType.SINGLE: 0.60,
-        QuestionType.MULTIPLE: 0.20,
-        QuestionType.JUDGE: 0.20,
+        QuestionType.SINGLE: 60,
+        QuestionType.MULTIPLE: 20,
+        QuestionType.JUDGE: 20,
     }
     groups: dict[tuple[str, int], list[Question]] = defaultdict(list)
     for question in questions:
@@ -208,7 +208,8 @@ def _validate_distribution(
         drift = [
             question_type.value
             for question_type, target in targets.items()
-            if abs(counts[question_type] / len(group) - target) > 0.05
+            if abs(counts[question_type] * 100 - target * len(group))
+            > 5 * len(group)
         ]
         if drift:
             warnings.append(

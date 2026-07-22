@@ -164,3 +164,31 @@ def test_distribution_drift_warns_for_large_occupation_level_group():
     report = validate_dataset(questions, active_sources(), taxonomy())
 
     assert [issue.code for issue in report.warnings] == ["distribution_drift"]
+
+
+def test_distribution_drift_does_not_warn_at_exact_five_point_boundary():
+    questions = []
+    for index in range(1, 21):
+        data = valid_question_data(
+            id=f"WH-L5-{index:06d}",
+            stem=chr(96 + index),
+        )
+        if index <= 13:
+            pass
+        elif index <= 17:
+            data.update({"type": "multiple", "answer": ["A", "B"]})
+        else:
+            data.update(
+                {
+                    "type": "judge",
+                    "options": [
+                        {"key": "A", "text": "\u6b63\u786e"},
+                        {"key": "B", "text": "\u9519\u8bef"},
+                    ],
+                }
+            )
+        questions.append(Question.model_validate(data))
+
+    report = validate_dataset(questions, active_sources(), taxonomy())
+
+    assert "distribution_drift" not in [issue.code for issue in report.warnings]
