@@ -43,6 +43,15 @@ def test_source_catalog_has_active_knowledge_basis_for_each_occupation() -> None
     assert any("4-08-05-01" in source.notes for source in active_knowledge_sources)
 
 
+def test_central_reserve_grain_regulation_records_latest_consolidated_revision() -> None:
+    source = load_sources(CATALOG_PATH)["SRC-0007"]
+
+    assert source.published_at == date(2016, 2, 6)
+    assert "2003年8月15日公布" in source.notes
+    assert "2011年1月8日修订" in source.notes
+    assert "2016年2月6日修订" in source.notes
+
+
 def test_historic_or_bibliography_only_material_is_not_knowledge_basis() -> None:
     sources = load_sources(CATALOG_PATH)
 
