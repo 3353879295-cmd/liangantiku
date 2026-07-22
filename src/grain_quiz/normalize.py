@@ -1,0 +1,39 @@
+"""Text normalization and exact question fingerprinting."""
+
+import hashlib
+import json
+import unicodedata
+
+from grain_quiz.models import Question
+
+
+_MEASUREMENT_SYMBOLS = frozenset({"\u2103", "\u2109", "\u00b0", "%", "\u2030", "\u03bc", "\u00b5", "\u00d7"})
+
+
+def normalize_text(value: str) -> str:
+    """Normalize text while retaining letters, digits, and measurement symbols."""
+    placeholders = {
+        symbol: chr(0xE000 + index)
+        for index, symbol in enumerate(sorted(_MEASUREMENT_SYMBOLS))
+    }
+    protected = value
+    for symbol, placeholder in placeholders.items():
+        protected = protected.replace(symbol, placeholder)
+
+    restored = {placeholder: symbol for symbol, placeholder in placeholders.items()}
+    normalized = unicodedata.normalize("NFKC", protected).lower()
+    return "".join(
+        restored.get(character, character)
+        for character in normalized
+        if character in restored or character.isalnum() or character in _MEASUREMENT_SYMBOLS
+    )
+
+
+def exact_fingerprint(question: Question) -> str:
+    """Return an option-order-independent SHA-256 fingerprint for a question."""
+    values = [
+        normalize_text(question.stem),
+        *sorted(normalize_text(option.text) for option in question.options),
+    ]
+    payload = json.dumps(values, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
