@@ -1,0 +1,166 @@
+from datetime import date
+from pathlib import Path
+
+from grain_quiz.models import Question, Source
+from grain_quiz.taxonomy import load_taxonomy
+from grain_quiz.validate import validate_dataset
+from tests.factories import BASE, SOURCE
+
+
+def valid_question_data(**overrides: object) -> dict[str, object]:
+    return {
+        **BASE,
+        "module": "\u7cae\u60c5\u68c0\u67e5",
+        "topic": "\u7cae\u6e29\u68c0\u67e5",
+        "review_status": "verified",
+        **overrides,
+    }
+
+
+def active_sources() -> dict[str, Source]:
+    source = Source.model_validate(SOURCE)
+    return {source.id: source}
+
+
+def taxonomy():
+    return load_taxonomy(Path("data/taxonomy.json"))
+
+
+def test_verified_question_requires_active_source():
+    question = Question.model_validate(valid_question_data())
+
+    report = validate_dataset([question], {}, taxonomy())
+
+    assert [(issue.code, issue.question_id) for issue in report.errors] == [
+        ("missing_source", question.id)
+    ]
+
+
+def test_pending_question_is_not_a_release_error():
+    pending = Question.model_validate(valid_question_data(review_status="pending"))
+
+    report = validate_dataset([pending], {}, taxonomy())
+
+    assert not report.errors
+    assert report.warnings[0].code == "unreleased_question"
+
+
+def test_unknown_taxonomy_is_an_error():
+    question = Question.model_validate(
+        valid_question_data(topic="\u4e0d\u5b58\u5728\u7684\u77e5\u8bc6\u70b9")
+    )
+
+    report = validate_dataset([question], active_sources(), taxonomy())
+
+    assert report.errors[0].code == "unknown_taxonomy"
+
+
+def test_duplicate_id_is_an_error():
+    first = Question.model_validate(valid_question_data())
+    second = Question.model_validate(valid_question_data(stem="alternate test stem"))
+
+    report = validate_dataset([first, second], active_sources(), taxonomy())
+
+    assert [(issue.code, issue.question_id) for issue in report.errors] == [
+        ("duplicate_id", first.id)
+    ]
+
+
+def test_inactive_source_is_an_error():
+    question = Question.model_validate(valid_question_data())
+    inactive = Source.model_validate({**SOURCE, "is_active": False})
+
+    report = validate_dataset([question], {inactive.id: inactive}, taxonomy())
+
+    assert [(issue.code, issue.question_id) for issue in report.errors] == [
+        ("inactive_source", question.id)
+    ]
+
+
+def test_exact_duplicate_is_an_error():
+    first = Question.model_validate(valid_question_data())
+    second = Question.model_validate(valid_question_data(id="WH-L5-000002"))
+
+    report = validate_dataset([first, second], active_sources(), taxonomy())
+
+    assert [issue.code for issue in report.errors] == ["exact_duplicate"]
+
+
+def test_invalid_validity_window_is_an_error():
+    question = Question.model_validate(valid_question_data())
+    question.valid_until = date(2025, 12, 31)
+
+    report = validate_dataset([question], active_sources(), taxonomy())
+
+    assert [(issue.code, issue.question_id) for issue in report.errors] == [
+        ("invalid_validity_window", question.id)
+    ]
+
+
+def test_verified_record_requires_standard_reference_and_explanation():
+    question = Question.model_validate(valid_question_data(standard_reference=""))
+
+    report = validate_dataset([question], active_sources(), taxonomy())
+
+    assert [(issue.code, issue.question_id) for issue in report.errors] == [
+        ("invalid_verified_record", question.id)
+    ]
+
+
+def test_near_duplicate_is_a_warning_without_duplicate_group():
+    first = Question.model_validate(valid_question_data(stem="test validation sentence"))
+    second = Question.model_validate(
+        valid_question_data(
+            id="WH-L5-000002",
+            stem="test validation sentences",
+        )
+    )
+
+    report = validate_dataset([first, second], active_sources(), taxonomy())
+
+    assert [issue.code for issue in report.warnings] == ["near_duplicate"]
+
+
+def test_shared_duplicate_group_suppresses_near_duplicate_warning():
+    first = Question.model_validate(
+        valid_question_data(
+            stem="test validation sentence",
+            duplicate_group="test-group",
+        )
+    )
+    second = Question.model_validate(
+        valid_question_data(
+            id="WH-L5-000002",
+            stem="test validation sentences",
+            duplicate_group="test-group",
+        )
+    )
+
+    report = validate_dataset([first, second], active_sources(), taxonomy())
+
+    assert report.warnings == []
+
+
+def test_retired_question_is_an_unreleased_warning():
+    retired = Question.model_validate(valid_question_data(review_status="retired"))
+
+    report = validate_dataset([retired], {}, taxonomy())
+
+    assert not report.errors
+    assert [issue.code for issue in report.warnings] == ["unreleased_question"]
+
+
+def test_distribution_drift_warns_for_large_occupation_level_group():
+    questions = [
+        Question.model_validate(
+                valid_question_data(
+                    id=f"WH-L5-{index:06d}",
+                    stem=chr(96 + index),
+                )
+        )
+        for index in range(1, 21)
+    ]
+
+    report = validate_dataset(questions, active_sources(), taxonomy())
+
+    assert [issue.code for issue in report.warnings] == ["distribution_drift"]
