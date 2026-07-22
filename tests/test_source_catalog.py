@@ -52,6 +52,15 @@ def test_central_reserve_grain_regulation_records_latest_consolidated_revision()
     assert "2016年2月6日修订" in source.notes
 
 
+def test_expired_government_reserve_storage_measures_are_not_active_basis() -> None:
+    source = load_sources(CATALOG_PATH)["SRC-0004"]
+
+    assert not source.is_active
+    assert source.usage is SourceUsage.BIBLIOGRAPHY_ONLY
+    assert "有效期5年" in source.notes
+    assert "2026年1月" in source.notes
+
+
 def test_historic_or_bibliography_only_material_is_not_knowledge_basis() -> None:
     sources = load_sources(CATALOG_PATH)
 
