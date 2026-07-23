@@ -24,7 +24,7 @@ Page({
     hasResume: false,
     shortcuts: [
       { label: '顺序练习', note: '按题库顺序巩固', mode: 'sequential', icon: 'view-list' },
-      { label: '随机练习', note: '打乱顺序抽题', mode: 'random', icon: 'shuffle' },
+      { label: '随机练习', note: '打乱顺序抽题', mode: 'random', icon: 'swap' },
       { label: '错题重练', note: '集中解决薄弱点', mode: 'wrong', icon: 'error-circle' },
       { label: '我的收藏', note: '复习重点题目', mode: 'favorite', icon: 'star' },
     ],

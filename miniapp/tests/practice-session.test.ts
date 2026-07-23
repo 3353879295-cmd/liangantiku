@@ -5,6 +5,8 @@ import {
   createPracticeSession,
   getAnswerSheet,
   navigateToQuestion,
+  rehydratePracticeSession,
+  serializePracticeSession,
   submitSession,
 } from '../miniprogram/services/practice-session';
 import { makeQuestion } from './factories';
@@ -72,5 +74,25 @@ describe('practice session', () => {
 
   it('rejects an empty paper', () => {
     expect(() => createPracticeSession([], { mode: 'random', now: 1000 })).toThrow(/empty/);
+  });
+
+  it('serializes and restores a submitted report without losing its recorded flag', () => {
+    const question = makeQuestion();
+    const session = submitSession(
+      answerQuestion(
+        createPracticeSession([question], { mode: 'mock', now: 1000 }),
+        question.id,
+        ['A'],
+        1200,
+      ),
+      2000,
+    );
+    const recorded = { ...session, progressRecorded: true };
+
+    const restored = rehydratePracticeSession(serializePracticeSession(recorded), [question]);
+
+    expect(restored.status).toBe('submitted');
+    expect(restored.report).toMatchObject({ total: 1, correct: 1 });
+    expect(restored.progressRecorded).toBe(true);
   });
 });

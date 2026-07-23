@@ -7,6 +7,7 @@ import {
   presentLibraryModules,
 } from '../miniprogram/presenters/library-presenter';
 import { presentQuestionOption } from '../miniprogram/presenters/question-option-presenter';
+import { presentReport } from '../miniprogram/presenters/report-presenter';
 import { makeQuestion } from './factories';
 
 describe('presentDashboard', () => {
@@ -74,6 +75,29 @@ describe('library presenters', () => {
       { name: '粮情检查', count: 2, countText: '2 题' },
       { name: '安全生产', count: 1, countText: '1 题' },
     ]);
+  });
+});
+
+describe('presentReport', () => {
+  it('formats the score, time and weakest module', () => {
+    const report = presentReport({
+      total: 10,
+      correct: 7,
+      wrong: 3,
+      durationMs: 125_000,
+      wrongQuestionIds: ['Q1', 'Q2', 'Q3'],
+      modules: {
+        粮情检查: { total: 4, correct: 1 },
+        安全生产: { total: 6, correct: 6 },
+      },
+    });
+
+    expect(report).toMatchObject({
+      scoreText: '70',
+      accuracyText: '70%',
+      durationText: '02:05',
+    });
+    expect(report.weakModules[0]).toMatchObject({ name: '粮情检查', accuracyText: '25%' });
   });
 });
 

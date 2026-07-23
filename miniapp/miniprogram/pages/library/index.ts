@@ -19,7 +19,7 @@ Page({
     modes: [
       { mode: 'chapter', title: '章节练习', note: '按知识模块逐项练习', icon: 'layers' },
       { mode: 'sequential', title: '顺序练习', note: '从第一题开始', icon: 'view-list' },
-      { mode: 'random', title: '随机练习', note: '每次随机抽取', icon: 'shuffle' },
+      { mode: 'random', title: '随机练习', note: '每次随机抽取', icon: 'swap' },
       { mode: 'mock', title: '模拟考试', note: '交卷后统一解析', icon: 'assignment' },
     ],
   },

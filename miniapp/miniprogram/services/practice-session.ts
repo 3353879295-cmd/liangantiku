@@ -1,4 +1,5 @@
 import { gradeQuestion } from './grading';
+import type { PersistedPracticeSession } from '../storage/migrations';
 import type { GradeResult, PracticeMode, Question } from '../types/domain';
 
 export type SessionStatus = 'active' | 'submitted';
@@ -156,4 +157,69 @@ export const submitSession = (session: PracticeSession, now: number): PracticeSe
     submittedAt: now,
     report,
   };
+};
+
+export const serializePracticeSession = (session: PracticeSession): PersistedPracticeSession => {
+  const persisted: PersistedPracticeSession = {
+    id: session.id,
+    mode: session.mode,
+    questionIds: [...session.questionIds],
+    currentIndex: session.currentIndex,
+    answers: Object.fromEntries(
+      Object.entries(session.answers).map(([questionId, selected]) => [questionId, [...selected]]),
+    ),
+    status: session.status,
+    startedAt: session.startedAt,
+    updatedAt: session.updatedAt,
+    progressRecorded: session.progressRecorded,
+  };
+  if (session.submittedAt !== undefined) persisted.submittedAt = session.submittedAt;
+  return persisted;
+};
+
+export const rehydratePracticeSession = (
+  persisted: PersistedPracticeSession,
+  questions: readonly Question[],
+): PracticeSession => {
+  const byId = new Map(questions.map((question) => [question.id, question]));
+  const orderedQuestions = persisted.questionIds.map((questionId) => {
+    const question = byId.get(questionId);
+    if (!question) throw new Error(`cannot restore missing question: ${questionId}`);
+    return question;
+  });
+  const base: PracticeSession = {
+    id: persisted.id,
+    mode: persisted.mode,
+    questions: orderedQuestions,
+    questionIds: [...persisted.questionIds],
+    currentIndex: persisted.currentIndex,
+    answers: Object.fromEntries(
+      Object.entries(persisted.answers).map(([questionId, selected]) => [
+        questionId,
+        [...selected],
+      ]),
+    ),
+    feedback: {},
+    status: 'active',
+    startedAt: persisted.startedAt,
+    updatedAt: persisted.updatedAt,
+    progressRecorded: persisted.progressRecorded ?? false,
+  };
+
+  if (persisted.status === 'submitted') {
+    return {
+      ...submitSession(base, persisted.submittedAt ?? persisted.updatedAt),
+      progressRecorded: persisted.progressRecorded ?? false,
+    };
+  }
+
+  if (persisted.mode === 'mock') return base;
+  const feedback = Object.fromEntries(
+    Object.entries(base.answers).map(([questionId, selected]) => {
+      const question = byId.get(questionId);
+      if (!question) throw new Error(`cannot grade missing question: ${questionId}`);
+      return [questionId, gradeQuestion(question, selected)];
+    }),
+  );
+  return { ...base, feedback };
 };

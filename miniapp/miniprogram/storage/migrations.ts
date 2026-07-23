@@ -34,6 +34,7 @@ export interface PersistedPracticeSession {
   startedAt: number;
   updatedAt: number;
   submittedAt?: number;
+  progressRecorded?: boolean;
 }
 
 export interface ProgressPreferences {
@@ -48,6 +49,7 @@ export interface ProgressDataV1 {
   favorites: Record<string, number>;
   session: PersistedPracticeSession | null;
   dailyTotals: Record<string, DailyTotal>;
+  recordedSessionIds: string[];
   preferences: ProgressPreferences;
 }
 
@@ -64,6 +66,7 @@ export const createEmptyProgress = (): ProgressDataV1 => ({
   favorites: {},
   session: null,
   dailyTotals: {},
+  recordedSessionIds: [],
   preferences: {
     selectedCertificateKey: '4-02-06-01:5',
     dailyGoal: 20,
@@ -81,6 +84,7 @@ const isProgressDataV1 = (value: unknown): value is ProgressDataV1 => {
     isRecord(value.favorites) &&
     (value.session === null || isRecord(value.session)) &&
     isRecord(value.dailyTotals) &&
+    (value.recordedSessionIds === undefined || Array.isArray(value.recordedSessionIds)) &&
     isRecord(value.preferences)
   );
 };
@@ -104,5 +108,11 @@ export const migrateProgress = (value: unknown): MigrationResult => {
     };
   }
 
-  return { data: value, recovered: false };
+  return {
+    data: {
+      ...value,
+      recordedSessionIds: value.recordedSessionIds ?? [],
+    },
+    recovered: false,
+  };
 };

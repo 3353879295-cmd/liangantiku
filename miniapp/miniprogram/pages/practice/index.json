@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "答题",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "question-option": "/components/question-option/index",
+    "analysis-panel": "/components/analysis-panel/index",
+    "empty-state": "/components/empty-state/index"
+  }
+}

@@ -55,6 +55,57 @@ const validateRecordInput = (input: RecordAnswerInput): void => {
   }
 };
 
+const appendAnswer = (data: ProgressDataV1, input: RecordAnswerInput): ProgressDataV1 => {
+  const answer = { ...input };
+  const previousDay = data.dailyTotals[input.at] ?? {
+    answered: 0,
+    correct: 0,
+    durationMs: 0,
+  };
+  const dailyTotals = {
+    ...data.dailyTotals,
+    [input.at]: {
+      answered: previousDay.answered + 1,
+      correct: previousDay.correct + (input.correct ? 1 : 0),
+      durationMs: previousDay.durationMs + input.durationMs,
+    },
+  };
+
+  let wrongQuestions = data.wrongQuestions;
+  const previousWrong = wrongQuestions[input.questionId];
+  if (!input.correct) {
+    const nextWrong: WrongQuestionRecord = previousWrong
+      ? {
+          ...previousWrong,
+          errorCount: previousWrong.errorCount + 1,
+          lastWrongAt: input.at,
+          mastered: false,
+          lastRetryCorrect: false,
+        }
+      : {
+          questionId: input.questionId,
+          errorCount: 1,
+          firstWrongAt: input.at,
+          lastWrongAt: input.at,
+          mastered: false,
+          lastRetryCorrect: false,
+        };
+    wrongQuestions = { ...wrongQuestions, [input.questionId]: nextWrong };
+  } else if (previousWrong) {
+    wrongQuestions = {
+      ...wrongQuestions,
+      [input.questionId]: { ...previousWrong, lastRetryCorrect: true },
+    };
+  }
+
+  return {
+    ...data,
+    answers: [...data.answers, answer],
+    dailyTotals,
+    wrongQuestions,
+  };
+};
+
 export class ProgressService {
   private data: ProgressDataV1;
 
@@ -68,55 +119,22 @@ export class ProgressService {
 
   recordAnswer(input: RecordAnswerInput): void {
     validateRecordInput(input);
-    const answer = { ...input };
-    const previousDay = this.data.dailyTotals[input.at] ?? {
-      answered: 0,
-      correct: 0,
-      durationMs: 0,
-    };
-    const dailyTotals = {
-      ...this.data.dailyTotals,
-      [input.at]: {
-        answered: previousDay.answered + 1,
-        correct: previousDay.correct + (input.correct ? 1 : 0),
-        durationMs: previousDay.durationMs + input.durationMs,
-      },
-    };
+    this.data = appendAnswer(this.data, input);
+    this.persist();
+  }
 
-    let wrongQuestions = this.data.wrongQuestions;
-    const previousWrong = wrongQuestions[input.questionId];
-    if (!input.correct) {
-      const nextWrong: WrongQuestionRecord = previousWrong
-        ? {
-            ...previousWrong,
-            errorCount: previousWrong.errorCount + 1,
-            lastWrongAt: input.at,
-            mastered: false,
-            lastRetryCorrect: false,
-          }
-        : {
-            questionId: input.questionId,
-            errorCount: 1,
-            firstWrongAt: input.at,
-            lastWrongAt: input.at,
-            mastered: false,
-            lastRetryCorrect: false,
-          };
-      wrongQuestions = { ...wrongQuestions, [input.questionId]: nextWrong };
-    } else if (previousWrong) {
-      wrongQuestions = {
-        ...wrongQuestions,
-        [input.questionId]: { ...previousWrong, lastRetryCorrect: true },
-      };
-    }
+  recordPracticeResults(sessionId: string, inputs: readonly RecordAnswerInput[]): boolean {
+    if (!sessionId.trim()) throw new Error('sessionId is required');
+    for (const input of inputs) validateRecordInput(input);
+    if (this.data.recordedSessionIds.includes(sessionId)) return false;
 
+    this.data = inputs.reduce(appendAnswer, this.data);
     this.data = {
       ...this.data,
-      answers: [...this.data.answers, answer],
-      dailyTotals,
-      wrongQuestions,
+      recordedSessionIds: [...this.data.recordedSessionIds, sessionId],
     };
     this.persist();
+    return true;
   }
 
   getWrongQuestion(questionId: string): WrongQuestionRecord | null {

@@ -1,0 +1,65 @@
+<view class="practice-page">
+  <view wx:if="{{!loading && question}}">
+    <view class="practice-topbar">
+      <view>
+        <view class="practice-topbar__mode">{{modeLabel}}</view>
+        <text class="practice-topbar__index">{{indexText}}</text>
+      </view>
+      <view class="practice-topbar__actions">
+        <view class="icon-action" bind:tap="onToggleFavorite">
+          <t-icon name="{{favorite ? 'star-filled' : 'star'}}" size="38rpx" />
+        </view>
+        <view class="answer-sheet-link" bind:tap="onOpenAnswerSheet">答题卡</view>
+      </view>
+    </view>
+    <view class="progress-track"><view class="progress-fill" style="width: {{progressPercent}}%;"></view></view>
+
+    <view class="question-card">
+      <view class="question-meta">
+        <text class="question-type">{{questionTypeLabel}}</text>
+        <text class="question-module">{{question.module}}</text>
+      </view>
+      <view class="question-stem">{{question.stem}}</view>
+      <text wx:if="{{isMultiple}}" class="multiple-tip">本题有多个正确答案，选好后点击确认答案</text>
+    </view>
+
+    <view class="option-list">
+      <question-option
+        wx:for="{{options}}"
+        wx:key="key"
+        option-key="{{item.key}}"
+        text="{{item.text}}"
+        selected="{{item.selected}}"
+        state="{{item.state}}"
+        disabled="{{item.disabled}}"
+        bind:select="onSelectOption"
+      />
+    </view>
+
+    <analysis-panel
+      visible="{{analysisVisible}}"
+      correct="{{analysisCorrect}}"
+      expected-text="{{expectedText}}"
+      explanation="{{question.explanation}}"
+      knowledge-point="{{question.knowledgePoint}}"
+      common-mistake="{{question.commonMistake}}"
+      standard-reference="{{question.standardReference}}"
+    />
+
+    <view class="footer-spacer"></view>
+    <view class="practice-footer">
+      <button
+        wx:if="{{isMultiple && (!hasAnswer || draftDirty)}}"
+        class="primary-button"
+        bindtap="onConfirmMultiple"
+      >确认答案</button>
+      <button wx:else class="primary-button" bindtap="onNext">{{isLast ? '查看结果' : '下一题'}}</button>
+    </view>
+  </view>
+
+  <empty-state
+    wx:elif="{{!loading}}"
+    title="{{errorTitle}}"
+    description="{{errorDescription}}"
+  />
+</view>

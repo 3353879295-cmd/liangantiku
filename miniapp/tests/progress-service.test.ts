@@ -83,6 +83,21 @@ describe('ProgressService', () => {
     expect(service.getDashboard('2026-02-02').streakDays).toBe(3);
   });
 
+  it('records a submitted practice session exactly once', () => {
+    const { repository, service } = createService();
+    const records = [
+      { questionId: 'Q1', correct: true, durationMs: 500, at: '2026-07-22' },
+      { questionId: 'Q2', correct: false, durationMs: 500, at: '2026-07-22' },
+    ];
+
+    expect(service.recordPracticeResults('session-1', records)).toBe(true);
+    expect(service.recordPracticeResults('session-1', records)).toBe(false);
+    expect(new ProgressService(repository).getDashboard('2026-07-22')).toMatchObject({
+      answered: 2,
+      correct: 1,
+    });
+  });
+
   it('saves and restores an unfinished session', () => {
     const { repository, service } = createService();
     const session: PersistedPracticeSession = {

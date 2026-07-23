@@ -1,0 +1,141 @@
+.practice-page {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 24rpx 32rpx 0;
+}
+
+.practice-topbar,
+.practice-topbar__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.practice-topbar__actions {
+  gap: 16rpx;
+}
+
+.practice-topbar__mode {
+  margin-bottom: 4rpx;
+  font-size: 27rpx;
+  font-weight: 600;
+}
+
+.practice-topbar__index {
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+}
+
+.icon-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.answer-sheet-link {
+  padding: 16rpx 22rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.progress-track {
+  overflow: hidden;
+  height: 6rpx;
+  margin-top: 22rpx;
+  border-radius: 999rpx;
+  background: var(--color-border);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+  transition: width 180ms ease;
+}
+
+.question-card {
+  margin-top: 34rpx;
+  padding: 32rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 22rpx;
+}
+
+.question-type {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.question-module {
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+}
+
+.question-stem {
+  font-size: 34rpx;
+  font-weight: 550;
+  line-height: 1.65;
+}
+
+.multiple-tip {
+  display: block;
+  margin-top: 18rpx;
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+  line-height: 1.5;
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18rpx;
+  margin-top: 26rpx;
+}
+
+.footer-spacer {
+  height: 160rpx;
+}
+
+.practice-footer {
+  position: fixed;
+  z-index: 10;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 18rpx 32rpx calc(18rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid var(--color-border);
+  background: rgb(245 245 247 / 94%);
+}
+
+.primary-button {
+  min-height: 92rpx;
+  border-radius: 24rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 92rpx;
+}
+
+.primary-button::after {
+  display: none;
+}
