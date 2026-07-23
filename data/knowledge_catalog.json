@@ -1,0 +1,580 @@
+{
+  "occupations": {
+    "4-02-06-01": {
+      "title": "粮油仓储管理员",
+      "parts": [
+        {
+          "id": "warehouse-basic",
+          "number": 1,
+          "title": "基础知识",
+          "levels": [
+            5,
+            4,
+            3
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-basic-c01",
+              "number": 1,
+              "title": "职业道德",
+              "page": 2,
+              "sections": [
+                {
+                  "id": "warehouse-basic-c01-s01",
+                  "number": 1,
+                  "title": "职业道德基础知识",
+                  "page": 2
+                },
+                {
+                  "id": "warehouse-basic-c01-s02",
+                  "number": 2,
+                  "title": "粮油仓储业从业人员职业守则",
+                  "page": 6
+                }
+              ]
+            },
+            {
+              "id": "warehouse-basic-c02",
+              "number": 2,
+              "title": "基础知识",
+              "page": 9,
+              "sections": [
+                {
+                  "id": "warehouse-basic-c02-s01",
+                  "number": 1,
+                  "title": "粮油仓储管理基础知识",
+                  "page": 9
+                },
+                {
+                  "id": "warehouse-basic-c02-s02",
+                  "number": 2,
+                  "title": "安全生产与环境保护基础知识",
+                  "page": 62
+                },
+                {
+                  "id": "warehouse-basic-c02-s03",
+                  "number": 3,
+                  "title": "相关法律法规基础知识",
+                  "page": 75
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warehouse-l5",
+          "number": 2,
+          "title": "初级粮油仓储管理员",
+          "levels": [
+            5
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-l5-c03",
+              "number": 3,
+              "title": "粮油出入库作业",
+              "page": 90,
+              "sections": [
+                {
+                  "id": "warehouse-l5-c03-s01",
+                  "number": 1,
+                  "title": "粮油出入库准备",
+                  "page": 90
+                },
+                {
+                  "id": "warehouse-l5-c03-s02",
+                  "number": 2,
+                  "title": "粮油出入库作业",
+                  "page": 100
+                },
+                {
+                  "id": "warehouse-l5-c03-s03",
+                  "number": 3,
+                  "title": "粮油出入库收尾工作",
+                  "page": 131
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l5-c04",
+              "number": 4,
+              "title": "粮情检查",
+              "page": 140,
+              "sections": [
+                {
+                  "id": "warehouse-l5-c04-s01",
+                  "number": 1,
+                  "title": "检查储粮温度",
+                  "page": 140
+                },
+                {
+                  "id": "warehouse-l5-c04-s02",
+                  "number": 2,
+                  "title": "检查储粮湿度",
+                  "page": 147
+                },
+                {
+                  "id": "warehouse-l5-c04-s03",
+                  "number": 3,
+                  "title": "使用电子气体检测仪检查粮堆气体成分",
+                  "page": 157
+                },
+                {
+                  "id": "warehouse-l5-c04-s04",
+                  "number": 4,
+                  "title": "检查储粮害虫",
+                  "page": 159
+                },
+                {
+                  "id": "warehouse-l5-c04-s05",
+                  "number": 5,
+                  "title": "检查鼠雀",
+                  "page": 165
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l5-c05",
+              "number": 5,
+              "title": "粮情控制",
+              "page": 173,
+              "sections": [
+                {
+                  "id": "warehouse-l5-c05-s01",
+                  "number": 1,
+                  "title": "控制储存粮油温度",
+                  "page": 173
+                },
+                {
+                  "id": "warehouse-l5-c05-s02",
+                  "number": 2,
+                  "title": "控制储存粮油水分",
+                  "page": 175
+                },
+                {
+                  "id": "warehouse-l5-c05-s03",
+                  "number": 3,
+                  "title": "控制粮堆气体成分",
+                  "page": 179
+                },
+                {
+                  "id": "warehouse-l5-c05-s04",
+                  "number": 4,
+                  "title": "防治储粮害虫",
+                  "page": 186
+                },
+                {
+                  "id": "warehouse-l5-c05-s05",
+                  "number": 5,
+                  "title": "储粮鼠类防治",
+                  "page": 188
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warehouse-l4",
+          "number": 3,
+          "title": "中级粮油仓储管理员",
+          "levels": [
+            4
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-l4-c06",
+              "number": 6,
+              "title": "粮油出入库作业",
+              "page": 196,
+              "sections": [
+                {
+                  "id": "warehouse-l4-c06-s01",
+                  "number": 1,
+                  "title": "粮油出入库准备",
+                  "page": 196
+                },
+                {
+                  "id": "warehouse-l4-c06-s02",
+                  "number": 2,
+                  "title": "粮油出入库作业",
+                  "page": 209
+                },
+                {
+                  "id": "warehouse-l4-c06-s03",
+                  "number": 3,
+                  "title": "粮油出入库收尾",
+                  "page": 226
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l4-c07",
+              "number": 7,
+              "title": "粮情检查",
+              "page": 230,
+              "sections": [
+                {
+                  "id": "warehouse-l4-c07-s01",
+                  "number": 1,
+                  "title": "检查储粮温度",
+                  "page": 230
+                },
+                {
+                  "id": "warehouse-l4-c07-s02",
+                  "number": 2,
+                  "title": "检查储粮湿度和水分",
+                  "page": 235
+                },
+                {
+                  "id": "warehouse-l4-c07-s03",
+                  "number": 3,
+                  "title": "检测粮堆气体",
+                  "page": 241
+                },
+                {
+                  "id": "warehouse-l4-c07-s04",
+                  "number": 4,
+                  "title": "检查储粮害虫",
+                  "page": 244
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l4-c08",
+              "number": 8,
+              "title": "粮情控制",
+              "page": 250,
+              "sections": [
+                {
+                  "id": "warehouse-l4-c08-s01",
+                  "number": 1,
+                  "title": "控制储存粮油温度",
+                  "page": 250
+                },
+                {
+                  "id": "warehouse-l4-c08-s02",
+                  "number": 2,
+                  "title": "控制储存粮油水分",
+                  "page": 273
+                },
+                {
+                  "id": "warehouse-l4-c08-s03",
+                  "number": 3,
+                  "title": "控制粮堆气体成分",
+                  "page": 277
+                },
+                {
+                  "id": "warehouse-l4-c08-s04",
+                  "number": 4,
+                  "title": "防治储粮害虫",
+                  "page": 279
+                },
+                {
+                  "id": "warehouse-l4-c08-s05",
+                  "number": 5,
+                  "title": "储粮鼠类防治",
+                  "page": 297
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warehouse-l3",
+          "number": 4,
+          "title": "高级粮油仓储管理员",
+          "levels": [
+            3
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-l3-c09",
+              "number": 9,
+              "title": "粮油出入库管理",
+              "page": 302,
+              "sections": [
+                {
+                  "id": "warehouse-l3-c09-s01",
+                  "number": 1,
+                  "title": "粮油出入库准备",
+                  "page": 302
+                },
+                {
+                  "id": "warehouse-l3-c09-s02",
+                  "number": 2,
+                  "title": "粮油出入库作业",
+                  "page": 315
+                },
+                {
+                  "id": "warehouse-l3-c09-s03",
+                  "number": 3,
+                  "title": "粮油出入库收尾",
+                  "page": 328
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l3-c10",
+              "number": 10,
+              "title": "粮情检查",
+              "page": 340,
+              "sections": [
+                {
+                  "id": "warehouse-l3-c10-s01",
+                  "number": 1,
+                  "title": "分析储粮温度变化原因",
+                  "page": 340
+                },
+                {
+                  "id": "warehouse-l3-c10-s02",
+                  "number": 2,
+                  "title": "分析储粮水分变化原因",
+                  "page": 343
+                },
+                {
+                  "id": "warehouse-l3-c10-s03",
+                  "number": 3,
+                  "title": "检测粮堆气体",
+                  "page": 345
+                },
+                {
+                  "id": "warehouse-l3-c10-s04",
+                  "number": 4,
+                  "title": "检查储粮害虫",
+                  "page": 349
+                },
+                {
+                  "id": "warehouse-l3-c10-s05",
+                  "number": 5,
+                  "title": "检查储油质量",
+                  "page": 355
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l3-c11",
+              "number": 11,
+              "title": "粮情控制",
+              "page": 372,
+              "sections": [
+                {
+                  "id": "warehouse-l3-c11-s01",
+                  "number": 1,
+                  "title": "控制储存粮油温度",
+                  "page": 372
+                },
+                {
+                  "id": "warehouse-l3-c11-s02",
+                  "number": 2,
+                  "title": "控制储存粮油水分",
+                  "page": 380
+                },
+                {
+                  "id": "warehouse-l3-c11-s03",
+                  "number": 3,
+                  "title": "控制粮堆气体成分",
+                  "page": 383
+                },
+                {
+                  "id": "warehouse-l3-c11-s04",
+                  "number": 4,
+                  "title": "防治储粮害虫",
+                  "page": 388
+                },
+                {
+                  "id": "warehouse-l3-c11-s05",
+                  "number": 5,
+                  "title": "防治鼠雀",
+                  "page": 399
+                },
+                {
+                  "id": "warehouse-l3-c11-s06",
+                  "number": 6,
+                  "title": "防治储粮发热霉变",
+                  "page": 402
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "4-08-05-01": {
+      "title": "粮油质量检验员",
+      "parts": [
+        {
+          "id": "inspector",
+          "number": 1,
+          "title": "粮油质检员知识目录",
+          "levels": [
+            5,
+            4,
+            3
+          ],
+          "chapters": [
+            {
+              "id": "inspector-c01",
+              "number": 1,
+              "title": "职业道德与实验室安全",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c01-s01",
+                  "number": 1,
+                  "title": "实验室安全规范",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c01-s02",
+                  "number": 2,
+                  "title": "检验职业道德",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c02",
+              "number": 2,
+              "title": "扦样分样与样品制备",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c02-s01",
+                  "number": 1,
+                  "title": "扦样方法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c02-s02",
+                  "number": 2,
+                  "title": "样品制备",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c03",
+              "number": 3,
+              "title": "试剂器皿与仪器",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c03-s01",
+                  "number": 1,
+                  "title": "试剂管理",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c03-s02",
+                  "number": 2,
+                  "title": "仪器校准",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c04",
+              "number": 4,
+              "title": "粮油质量指标",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c04-s01",
+                  "number": 1,
+                  "title": "水分指标",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c04-s02",
+                  "number": 2,
+                  "title": "杂质指标",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c05",
+              "number": 5,
+              "title": "理化检验方法",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c05-s01",
+                  "number": 1,
+                  "title": "水分测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c05-s02",
+                  "number": 2,
+                  "title": "杂质测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c06",
+              "number": 6,
+              "title": "储存品质与安全指标",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c06-s01",
+                  "number": 1,
+                  "title": "储存品质判定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c06-s02",
+                  "number": 2,
+                  "title": "食品安全指标",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c07",
+              "number": 7,
+              "title": "数据处理与质量控制",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c07-s01",
+                  "number": 1,
+                  "title": "检验数据处理",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c07-s02",
+                  "number": 2,
+                  "title": "质量控制样",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-c08",
+              "number": 8,
+              "title": "检验记录与报告",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-c08-s01",
+                  "number": 1,
+                  "title": "原始记录",
+                  "page": null
+                },
+                {
+                  "id": "inspector-c08-s02",
+                  "number": 2,
+                  "title": "检验报告",
+                  "page": null
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
