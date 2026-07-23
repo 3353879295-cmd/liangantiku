@@ -7,4 +7,6 @@ node_modules/
 *.egg-info/
 /dist/
 /miniapp/miniprogram_npm/
+/miniapp/miniprogram/miniprogram_npm/
+/miniapp/project.private.config.json
 /tools/node_modules/

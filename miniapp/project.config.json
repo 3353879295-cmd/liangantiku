@@ -1,5 +1,5 @@
 {
-  "appid": "touristappid",
+  "appid": "wx6fe812c008f565fb",
   "compileType": "miniprogram",
   "libVersion": "trial",
   "miniprogramRoot": "miniprogram/",
@@ -10,6 +10,33 @@
     "minified": true,
     "packNpmManually": true,
     "postcss": true,
-    "useCompilerPlugins": ["typescript"]
-  }
+    "useCompilerPlugins": ["typescript"],
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmRelationList": [
+      {
+        "packageJsonPath": "./package.json",
+        "miniprogramNpmDistDir": "./miniprogram/"
+      }
+    ],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
 }

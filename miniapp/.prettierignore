@@ -1,4 +1,6 @@
 node_modules/
 miniprogram_npm/
+miniprogram/miniprogram_npm/
+project.private.config.json
 package-lock.json
 miniprogram/data/questions/

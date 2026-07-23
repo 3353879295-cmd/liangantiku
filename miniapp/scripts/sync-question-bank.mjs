@@ -46,6 +46,12 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } =
     writeFileSync(join(targetDir, filename), `${JSON.stringify(records, null, 2)}\n`, 'utf8');
     counts[filename] = records.length;
   }
+  const runtimeRecords = SHARDS.flatMap((filename) => loaded[filename]);
+  const runtimeModule = `import type { RuntimeQuestionRecord } from '../../types/runtime-question';
+
+export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = ${JSON.stringify(runtimeRecords, null, 2)};
+`;
+  writeFileSync(join(targetDir, 'runtime-question-records.ts'), runtimeModule, 'utf8');
   return counts;
 }
 

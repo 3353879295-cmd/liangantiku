@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const miniappRoot = resolve(import.meta.dirname, '..', 'miniprogram');
+const projectRoot = resolve(miniappRoot, '..');
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
 
@@ -16,6 +17,16 @@ interface AppConfig extends ComponentConfig {
   tabBar?: {
     custom?: boolean;
     list?: Array<{ pagePath: string }>;
+  };
+}
+
+interface ProjectConfig {
+  setting?: {
+    packNpmManually?: boolean;
+    packNpmRelationList?: Array<{
+      packageJsonPath: string;
+      miniprogramNpmDistDir: string;
+    }>;
   };
 }
 
@@ -48,6 +59,18 @@ const assertComponentsResolve = (configPath: string) => {
 };
 
 describe('WeChat mini program structure', () => {
+  it('maps npm dependencies into the configured miniprogram root', () => {
+    const project = readJson<ProjectConfig>(join(projectRoot, 'project.config.json'));
+
+    expect(project.setting?.packNpmManually).toBe(true);
+    expect(project.setting?.packNpmRelationList).toEqual([
+      {
+        packageJsonPath: './package.json',
+        miniprogramNpmDistDir: './miniprogram/',
+      },
+    ]);
+  });
+
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 

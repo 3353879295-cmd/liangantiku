@@ -33,6 +33,10 @@ describe('question bank sync', () => {
     expect(Object.keys(counts)).toEqual(SHARDS);
     expect(counts[firstShard]).toBe(1);
     expect(JSON.parse(readFileSync(join(target, firstShard), 'utf8'))).toHaveLength(1);
+    const runtimeModule = readFileSync(join(target, 'runtime-question-records.ts'), 'utf8');
+    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_RECORDS');
+    expect(runtimeModule).toContain(`${firstShard}-1`);
+    expect(runtimeModule).not.toContain("from './");
   });
 
   it('rejects unpublished records', () => {

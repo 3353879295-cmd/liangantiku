@@ -1,5 +1,6 @@
 export default {
   extends: ['stylelint-config-standard'],
+  ignoreFiles: ['miniprogram/miniprogram_npm/**/*.wxss'],
   rules: {
     'declaration-property-value-no-unknown': null,
     'import-notation': 'string',
