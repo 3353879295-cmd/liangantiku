@@ -1,6 +1,7 @@
 import { buildPaper } from './paper-builder';
 import {
   createPracticeSession,
+  prunePersistedPracticeSession,
   rehydratePracticeSession,
   serializePracticeSession,
   submitSession,
@@ -76,8 +77,15 @@ export const restorePractice = async (): Promise<PracticeSession | null> => {
   const persisted = appServices.progress.restoreSession();
   if (!persisted) return null;
   const questions = await appServices.questions.getByIds(persisted.questionIds);
-  if (questions.length !== persisted.questionIds.length) return null;
-  activeSession = rehydratePracticeSession(persisted, questions);
+  const repaired = prunePersistedPracticeSession(persisted, questions);
+  if (!repaired) {
+    appServices.progress.saveSession(null);
+    return null;
+  }
+  activeSession = rehydratePracticeSession(repaired, questions);
+  if (repaired.questionIds.length !== persisted.questionIds.length) {
+    appServices.progress.saveSession(serializePracticeSession(activeSession));
+  }
   return activeSession;
 };
 

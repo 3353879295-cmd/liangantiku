@@ -19,6 +19,7 @@ export interface QuestionListInput {
 }
 
 export interface QuestionListItemViewModel {
+  id: string;
   question: Question;
   answerText: string;
   errorCount: number;
@@ -84,6 +85,7 @@ export const presentQuestionList = (input: QuestionListInput): QuestionListViewM
     if (wrong?.mastered && filter.includeMastered === false) return [];
     return [
       {
+        id: question.id,
         question,
         answerText: question.answer.join('、'),
         errorCount: wrong?.errorCount ?? 0,

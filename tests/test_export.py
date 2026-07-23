@@ -1,6 +1,10 @@
 import json
+import os
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from grain_quiz.export import export_json_shards, export_workbook
 from grain_quiz.models import Question, Source
@@ -10,10 +14,9 @@ from tests.factories import BASE, SOURCE
 
 
 ROOT = Path(__file__).resolve().parents[1]
-NODE = Path(
-    r"C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-)
+NODE = os.environ.get("GRAIN_QUIZ_NODE") or shutil.which("node")
 WORKBOOK_TOOL = ROOT / "tools" / "review_workbook.mjs"
+ARTIFACT_TOOL = ROOT / "tools" / "node_modules" / "@oai" / "artifact-tool" / "package.json"
 SHEET_NAMES = [
     "\u6b63\u5f0f\u9898\u5e93",
     "\u6765\u6e90\u7d22\u5f15",
@@ -28,8 +31,10 @@ def question_data(**overrides: object) -> dict[str, object]:
 
 
 def inspect_workbook(path: Path) -> dict[str, object]:
+    if not NODE:
+        raise RuntimeError("Node.js is required to inspect the workbook")
     result = subprocess.run(
-        [str(NODE), str(WORKBOOK_TOOL), "inspect", str(path)],
+        [NODE, str(WORKBOOK_TOOL), "inspect", str(path)],
         check=True,
         capture_output=True,
         text=True,
@@ -131,6 +136,22 @@ def test_export_json_shards_are_sorted_and_verified_only(tmp_path: Path):
     }
 
 
+def test_export_json_shards_preserves_case_questions(tmp_path: Path):
+    question = Question.model_validate(
+        question_data(id="WH-L3-000009", level=3, type="case", answer=["C"])
+    )
+
+    export_json_shards([question], tmp_path)
+
+    records = json.loads((tmp_path / "warehouse_l3.json").read_text(encoding="utf-8"))
+    assert records[0]["type"] == "case"
+    assert records[0]["answer"] == ["C"]
+
+
+@pytest.mark.skipif(
+    not NODE or not ARTIFACT_TOOL.is_file(),
+    reason="optional artifact-tool workbook runtime is unavailable",
+)
 def test_export_workbook_uses_required_sheets_and_separates_statuses(tmp_path: Path):
     verified = Question.model_validate(
         question_data(type="multiple", answer=["C", "A"])

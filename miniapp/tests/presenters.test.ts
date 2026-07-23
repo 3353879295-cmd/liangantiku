@@ -118,6 +118,7 @@ describe('presentQuestionList', () => {
     });
 
     expect(view.items.map((item) => item.question.id)).toEqual(['Q1']);
+    expect(view.items[0]?.id).toBe('Q1');
     expect(view.unresolvedIds).toEqual(['retired']);
   });
 

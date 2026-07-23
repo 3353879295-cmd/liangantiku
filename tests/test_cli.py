@@ -95,7 +95,7 @@ def test_build_rejects_missing_source_without_publishing(tmp_path: Path, capsys)
     assert not output.exists()
 
 
-def test_build_exports_workbook_shards_and_version_report(tmp_path: Path):
+def test_build_exports_portable_runtime_artifacts_by_default(tmp_path: Path):
     questions, sources, taxonomy = write_inputs(
         tmp_path,
         [valid_question_data()],
@@ -124,8 +124,40 @@ def test_build_exports_workbook_shards_and_version_report(tmp_path: Path):
         (output / "json" / "warehouse_l5.json").read_text(encoding="utf-8")
     )
     assert exit_code == 0
-    assert (output / "question-bank.xlsx").is_file()
+    assert not (output / "question-bank.xlsx").exists()
     assert [record["id"] for record in shard] == ["WH-L5-000001"]
     assert version_report["validation_errors"] == 0
     assert version_report["source_count"] == 1
     assert version_report["shard_counts"]["warehouse_l5.json"] == 1
+
+
+def test_build_can_request_an_optional_review_workbook(tmp_path: Path, monkeypatch):
+    questions, sources, taxonomy = write_inputs(
+        tmp_path,
+        [valid_question_data()],
+        [SOURCE],
+    )
+    output = tmp_path / "release"
+
+    def fake_export_workbook(questions, sources, report, target):
+        target.write_bytes(b"review workbook")
+
+    monkeypatch.setattr("grain_quiz.cli.export_workbook", fake_export_workbook)
+
+    exit_code = main(
+        [
+            "build",
+            "--questions",
+            str(questions),
+            "--sources",
+            str(sources),
+            "--taxonomy",
+            str(taxonomy),
+            "--output",
+            str(output),
+            "--review-workbook",
+        ]
+    )
+
+    assert exit_code == 0
+    assert (output / "question-bank.xlsx").read_bytes() == b"review workbook"

@@ -68,7 +68,7 @@
   </view>
 
   <view wx:if="{{view.items.length}}" class="question-list">
-    <view wx:for="{{view.items}}" wx:key="question.id" class="question-item">
+    <view wx:for="{{view.items}}" wx:key="id" class="question-item">
       <view class="question-item__head">
         <view class="question-item__tags">
           <text class="tag">{{item.question.module}}</text>

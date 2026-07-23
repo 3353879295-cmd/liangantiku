@@ -43,7 +43,8 @@ const calculateStreak = (dailyTotals: ProgressDataV1['dailyTotals'], today: stri
   const activeDates = Object.keys(dailyTotals)
     .filter((date) => date <= today && dailyTotals[date]?.answered)
     .sort();
-  let cursor = activeDates.at(-1);
+  let cursor = activeDates[activeDates.length - 1];
+  if (cursor !== today && cursor !== previousDate(today)) return 0;
   let streak = 0;
   const activeSet = new Set(activeDates);
 
@@ -115,9 +116,14 @@ const appendAnswer = (data: ProgressDataV1, input: RecordAnswerInput): ProgressD
 
 export class ProgressService {
   private data: ProgressDataV1;
+  private recoveryNotice: string | null;
 
   constructor(private readonly repository: ProgressRepository) {
-    this.data = repository.load().data;
+    const result = repository.load();
+    this.data = result.data;
+    this.recoveryNotice = result.recovered
+      ? '检测到异常学习记录，原始数据已备份，并已恢复为可用状态。'
+      : null;
   }
 
   private persist(): void {
@@ -251,5 +257,11 @@ export class ProgressService {
     const preferences = { ...this.data.preferences };
     this.data = { ...createEmptyProgress(), preferences };
     this.persist();
+  }
+
+  consumeRecoveryNotice(): string | null {
+    const notice = this.recoveryNotice;
+    this.recoveryNotice = null;
+    return notice;
   }
 }

@@ -3,12 +3,32 @@ import type { MigrationResult, ProgressDataV1 } from './migrations';
 import type { StorageAdapter } from '../types/domain';
 
 export const STORAGE_KEY = 'grain-practice:progress';
+export const RECOVERY_BACKUP_KEY = 'grain-practice:progress:recovery-backup';
+
+export interface RecoveryBackup {
+  capturedAt: number;
+  reason: string;
+  value: unknown;
+}
 
 export class ProgressRepository {
-  constructor(private readonly storage: StorageAdapter) {}
+  constructor(
+    private readonly storage: StorageAdapter,
+    private readonly now: () => number = Date.now,
+  ) {}
 
   load(): MigrationResult {
-    return migrateProgress(this.storage.get<unknown>(STORAGE_KEY));
+    const value = this.storage.get<unknown>(STORAGE_KEY);
+    const result = migrateProgress(value);
+    if (result.recovered) {
+      this.storage.set<RecoveryBackup>(RECOVERY_BACKUP_KEY, {
+        capturedAt: this.now(),
+        reason: result.reason ?? 'unknown recovery reason',
+        value,
+      });
+      this.storage.set(STORAGE_KEY, result.data);
+    }
+    return result;
   }
 
   save(data: ProgressDataV1): void {

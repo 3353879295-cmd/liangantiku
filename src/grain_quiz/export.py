@@ -1,6 +1,8 @@
 """Review workbook and runtime JSON shard exports."""
 
 import json
+import os
+import shutil
 import subprocess
 import tempfile
 from dataclasses import asdict
@@ -12,9 +14,6 @@ from grain_quiz.validate import ValidationReport
 
 
 _ROOT = Path(__file__).resolve().parents[2]
-_NODE = Path(
-    r"C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-)
 _WORKBOOK_BUILDER = _ROOT / "tools" / "review_workbook.mjs"
 _SHARDS = (
     ("warehouse_l5.json", "4-02-06-01", 5),
@@ -32,9 +31,8 @@ def export_workbook(
     report: ValidationReport,
     output: Path,
 ) -> None:
-    """Create the review workbook through the bundled artifact-tool builder."""
-    if not _NODE.is_file():
-        raise RuntimeError(f"bundled Node runtime is unavailable: {_NODE}")
+    """Create the optional review workbook through an artifact-tool runtime."""
+    node = _resolve_node()
     if not _WORKBOOK_BUILDER.is_file():
         raise RuntimeError(f"workbook builder is unavailable: {_WORKBOOK_BUILDER}")
 
@@ -61,7 +59,7 @@ def export_workbook(
             encoding="utf-8",
         )
         result = subprocess.run(
-            [str(_NODE), str(_WORKBOOK_BUILDER), "build", str(input_path), str(output)],
+            [node, str(_WORKBOOK_BUILDER), "build", str(input_path), str(output)],
             cwd=_ROOT,
             capture_output=True,
             text=True,
@@ -70,6 +68,21 @@ def export_workbook(
     if result.returncode:
         detail = result.stderr.strip() or result.stdout.strip()
         raise RuntimeError(f"artifact-tool workbook build failed: {detail}")
+
+
+def _resolve_node() -> str:
+    configured = os.environ.get("GRAIN_QUIZ_NODE")
+    if configured:
+        path = Path(configured)
+        if path.is_file():
+            return str(path)
+        raise RuntimeError(f"GRAIN_QUIZ_NODE does not point to a file: {path}")
+    discovered = shutil.which("node")
+    if discovered:
+        return discovered
+    raise RuntimeError(
+        "Node.js is required for --review-workbook; install Node or set GRAIN_QUIZ_NODE"
+    )
 
 
 def export_json_shards(questions: list[Question], output_dir: Path) -> dict[str, int]:

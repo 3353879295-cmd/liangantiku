@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { ProgressService } from '../miniprogram/services/progress-service';
-import { ProgressRepository, STORAGE_KEY } from '../miniprogram/storage/progress-repository';
+import {
+  RECOVERY_BACKUP_KEY,
+  ProgressRepository,
+  STORAGE_KEY,
+} from '../miniprogram/storage/progress-repository';
+import { createEmptyProgress } from '../miniprogram/storage/migrations';
 import type { StorageAdapter } from '../miniprogram/types/domain';
 import type { PersistedPracticeSession } from '../miniprogram/storage/migrations';
 
@@ -81,6 +86,8 @@ describe('ProgressService', () => {
     service.recordAnswer({ questionId: 'Q3', correct: true, durationMs: 10, at: '2026-02-02' });
 
     expect(service.getDashboard('2026-02-02').streakDays).toBe(3);
+    expect(service.getDashboard('2026-02-03').streakDays).toBe(3);
+    expect(service.getDashboard('2026-02-04').streakDays).toBe(0);
     expect(service.getActivity('2026-02-02', 3).map((day) => day.date)).toEqual([
       '2026-01-31',
       '2026-02-01',
@@ -137,5 +144,23 @@ describe('ProgressService', () => {
     expect(storage.get('unrelated:key')).toEqual({ keep: true });
     expect(storage.get(STORAGE_KEY)).not.toBeNull();
     expect(new ProgressService(repository).getDashboard('2026-07-22').answered).toBe(0);
+  });
+
+  it('backs up damaged storage and exposes a one-time recovery notice', () => {
+    const storage = new MemoryStorageAdapter();
+    storage.set(STORAGE_KEY, {
+      ...createEmptyProgress(),
+      preferences: { selectedCertificateKey: 'invalid', dailyGoal: 0 },
+    });
+    const service = new ProgressService(new ProgressRepository(storage, () => 1234));
+
+    expect(service.consumeRecoveryNotice()).toMatch(/备份/);
+    expect(service.consumeRecoveryNotice()).toBeNull();
+    expect(storage.get(RECOVERY_BACKUP_KEY)).toMatchObject({
+      capturedAt: 1234,
+      reason: 'invalid version-one learning data',
+    });
+    expect(storage.get(STORAGE_KEY)).toEqual(createEmptyProgress());
+    expect(service.getPreferences()).toEqual(createEmptyProgress().preferences);
   });
 });

@@ -177,6 +177,29 @@ export const serializePracticeSession = (session: PracticeSession): PersistedPra
   return persisted;
 };
 
+export const prunePersistedPracticeSession = (
+  persisted: PersistedPracticeSession,
+  availableQuestions: readonly Question[],
+): PersistedPracticeSession | null => {
+  const availableIds = new Set(availableQuestions.map((question) => question.id));
+  const questionIds = persisted.questionIds.filter((questionId) => availableIds.has(questionId));
+  if (!questionIds.length) return null;
+
+  const previousCurrentId = persisted.questionIds[persisted.currentIndex];
+  const retainedCurrentIndex = previousCurrentId ? questionIds.indexOf(previousCurrentId) : -1;
+  const currentIndex =
+    retainedCurrentIndex >= 0
+      ? retainedCurrentIndex
+      : Math.min(persisted.currentIndex, questionIds.length - 1);
+  const answers = Object.fromEntries(
+    Object.entries(persisted.answers)
+      .filter(([questionId]) => availableIds.has(questionId))
+      .map(([questionId, selected]) => [questionId, [...selected]]),
+  );
+
+  return { ...persisted, questionIds, currentIndex, answers };
+};
+
 export const rehydratePracticeSession = (
   persisted: PersistedPracticeSession,
   questions: readonly Question[],

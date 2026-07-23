@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { PRACTICAL_SKILLS, getPracticalSkill } from '../miniprogram/data/practical-skills';
+import { QUESTION_RECORDS } from '../miniprogram/data/question-bank';
 
 describe('practical skill catalog', () => {
   it('contains twelve complete and uniquely addressable guides', () => {
@@ -33,5 +34,20 @@ describe('practical skill catalog', () => {
 
   it('returns undefined for an unknown guide', () => {
     expect(getPracticalSkill('missing')).toBeUndefined();
+  });
+
+  it('links every skill only to published questions for the same occupation', () => {
+    const questions = new Map(QUESTION_RECORDS.map((question) => [question.id, question]));
+
+    for (const skill of PRACTICAL_SKILLS) {
+      expect(skill.relatedQuestionIds.length, `${skill.id} needs related practice`).toBeGreaterThan(
+        0,
+      );
+      for (const questionId of skill.relatedQuestionIds) {
+        const question = questions.get(questionId);
+        expect(question, `${skill.id} links missing question ${questionId}`).toBeDefined();
+        expect(question?.occupation, `${skill.id} links another occupation`).toBe(skill.occupation);
+      }
+    }
   });
 });

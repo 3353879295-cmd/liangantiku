@@ -3,6 +3,7 @@ import {
   getActivePractice,
   recordActivePractice,
   restorePractice,
+  startPracticeFromQuestions,
   submitActivePractice,
 } from '../../services/practice-runtime';
 
@@ -34,11 +35,8 @@ Page({
 
   onRetry() {
     const session = getActivePractice();
-    const question = session?.questions[0];
-    if (!session || !question) return;
-    void wx.redirectTo({
-      url: `/pages/practice/index?occupation=${question.occupation}&level=${question.level}&mode=${session.mode}`,
-    });
+    if (!session || !startPracticeFromQuestions(session.questions, session.mode)) return;
+    void wx.redirectTo({ url: '/pages/practice/index?resume=1' });
   },
 
   onBackHome() {

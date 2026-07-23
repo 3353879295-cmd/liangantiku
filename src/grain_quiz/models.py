@@ -55,6 +55,7 @@ class QuestionType(str, Enum):
     SINGLE = "single"
     MULTIPLE = "multiple"
     JUDGE = "judge"
+    CASE = "case"
 
 
 class Difficulty(str, Enum):
@@ -126,8 +127,8 @@ class Question(BaseModel):
     @model_validator(mode="after")
     def validate_record_invariants(self) -> "Question":
         """Enforce consistency between a question's type and its answers."""
-        if self.type == QuestionType.SINGLE and len(self.answer) != 1:
-            raise ValueError("single questions require exactly one answer")
+        if self.type in {QuestionType.SINGLE, QuestionType.CASE} and len(self.answer) != 1:
+            raise ValueError("single and case questions require exactly one answer")
         if self.type == QuestionType.MULTIPLE and len(self.answer) < 2:
             raise ValueError("multiple questions require at least two answers")
         if self.type == QuestionType.JUDGE:
@@ -137,7 +138,7 @@ class Question(BaseModel):
                     "judge questions require A=\u6b63\u786e and B=\u9519\u8bef"
                 )
         elif len(self.options) != 4:
-            raise ValueError("single and multiple questions require four options")
+            raise ValueError("single, multiple and case questions require four options")
         option_keys = {item.key for item in self.options}
         if len(option_keys) != len(self.options) or not set(self.answer) <= option_keys:
             raise ValueError("answer keys must match unique option keys")

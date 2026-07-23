@@ -39,4 +39,17 @@ describe('progress migrations', () => {
     expect(result.data).toEqual(createEmptyProgress());
     expect(result.reason).toMatch(/invalid/);
   });
+
+  it('rejects malformed nested records instead of trusting container shapes', () => {
+    const damaged = {
+      ...createEmptyProgress(),
+      answers: [{ questionId: '', correct: 'yes', durationMs: -1, at: 'today' }],
+      preferences: { selectedCertificateKey: 'unknown', dailyGoal: 0 },
+    };
+
+    expect(migrateProgress(damaged)).toMatchObject({
+      recovered: true,
+      data: createEmptyProgress(),
+    });
+  });
 });

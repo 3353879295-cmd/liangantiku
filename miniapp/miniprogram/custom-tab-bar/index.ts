@@ -19,7 +19,7 @@ Component({
   lifetimes: {
     attached() {
       const pages = getCurrentPages();
-      const currentPage = pages.at(-1);
+      const currentPage = pages[pages.length - 1];
       if (currentPage?.route) {
         this.setData({ value: `/${currentPage.route}` });
       }

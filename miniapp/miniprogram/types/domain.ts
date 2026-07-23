@@ -59,6 +59,7 @@ export interface StorageAdapter {
 
 export interface AppGlobalData {
   selectedCertificateKey: CertificateKey;
+  recoveryNotice: string;
 }
 
 declare global {

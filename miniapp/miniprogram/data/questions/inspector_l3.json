@@ -1,1 +1,343 @@
-[]
+[
+  {
+    "id": "QI-L3-000001",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "数据处理与质量控制",
+    "topic": "质量控制样",
+    "type": "single",
+    "stem": "某检验检测机构计划评价一项粮油检测能力的长期稳定性。下列哪种设计更有助于识别系统性变化？",
+    "options": [
+      {
+        "key": "A",
+        "text": "只挑选一次结果最好的数据"
+      },
+      {
+        "key": "B",
+        "text": "结合适用的能力验证、人员或设备比对及留样再测等受控质量控制证据"
+      },
+      {
+        "key": "C",
+        "text": "只比较不同样品的最终合格结论"
+      },
+      {
+        "key": "D",
+        "text": "删除所有偏离历史均值的记录"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "答案是B。多类受控质量控制证据可以从人员、设备和时间等维度识别能力变化；择优和删数会掩盖问题。",
+    "difficulty": "hard",
+    "keywords": [
+      "能力评价",
+      "比对",
+      "留样再测"
+    ],
+    "source_ids": [
+      "SRC-0020"
+    ],
+    "standard_reference": "《检验检测机构能力验证管理办法》：能力验证及相关质量控制方式",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000002",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "理化检验方法",
+    "topic": "杂质测定",
+    "type": "single",
+    "stem": "评审人员发现某检验批次使用了偏离受控方法的操作，但记录中没有批准、技术判断或影响评价。应如何看待该批结果？",
+    "options": [
+      {
+        "key": "A",
+        "text": "只要结果与经验接近即可直接接受"
+      },
+      {
+        "key": "B",
+        "text": "应按机构程序评估偏离及其对结果的影响，不能把未受控偏离视为正常"
+      },
+      {
+        "key": "C",
+        "text": "删除方法信息后重新出报告"
+      },
+      {
+        "key": "D",
+        "text": "由操作人员口头说明即可结案"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "答案是B。方法及其偏离需要受控、记录并评价影响；结果看似合理不能替代技术和管理证据。",
+    "difficulty": "hard",
+    "keywords": [
+      "方法偏离",
+      "影响评价",
+      "受控"
+    ],
+    "source_ids": [
+      "SRC-0019"
+    ],
+    "standard_reference": "《检验检测机构资质认定评审准则》：方法控制、记录与结果质量要求",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000003",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "数据处理与质量控制",
+    "topic": "检验数据处理",
+    "type": "multiple",
+    "stem": "粮油质量安全风险监测结果复核时，若发现结果与样品背景明显不协调，应重点核对哪些环节？（选择全部适用项）",
+    "options": [
+      {
+        "key": "A",
+        "text": "样品接收、标识和流转记录"
+      },
+      {
+        "key": "B",
+        "text": "方法、设备状态及原始数据"
+      },
+      {
+        "key": "C",
+        "text": "计算、复核和报送对应关系"
+      },
+      {
+        "key": "D",
+        "text": "与任务无关的市场传言"
+      }
+    ],
+    "answer": [
+      "A",
+      "B",
+      "C"
+    ],
+    "explanation": "答案是A、B、C。样品链、技术链和数据链都可能影响监测结果，复核应基于可追溯证据；市场传言不能替代检验记录。",
+    "difficulty": "hard",
+    "keywords": [
+      "风险监测",
+      "结果复核",
+      "全流程追溯"
+    ],
+    "source_ids": [
+      "SRC-0018",
+      "SRC-0019"
+    ],
+    "standard_reference": "《粮油质量安全风险监测管理办法》检验复核要求；《检验检测机构资质认定评审准则》记录与质量控制要求",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000004",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "数据处理与质量控制",
+    "topic": "质量控制样",
+    "type": "judge",
+    "stem": "检验检测机构能力验证出现不满意结果时，把该结果直接改成满意并删除原始记录，比调查原因和采取受控措施更合适。",
+    "options": [
+      {
+        "key": "A",
+        "text": "正确"
+      },
+      {
+        "key": "B",
+        "text": "错误"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "该说法错误。能力验证的价值在于真实识别能力问题；修改结果和删除记录破坏真实性，应依据受控程序分析和改进。",
+    "difficulty": "medium",
+    "keywords": [
+      "不满意结果",
+      "能力验证",
+      "改进"
+    ],
+    "source_ids": [
+      "SRC-0020"
+    ],
+    "standard_reference": "《检验检测机构能力验证管理办法》：真实客观报送与原始记录要求",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000005",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "试剂器皿与仪器",
+    "topic": "仪器校准",
+    "type": "single",
+    "stem": "一台关键设备被发现曾在校准状态失效期间用于多个样品。技术负责人评估影响时，哪项资料最关键？",
+    "options": [
+      {
+        "key": "A",
+        "text": "设备颜色和购买价格"
+      },
+      {
+        "key": "B",
+        "text": "失效时间范围、涉及样品、原始数据、质量控制及后续确认记录"
+      },
+      {
+        "key": "C",
+        "text": "操作人员对结果的主观信心"
+      },
+      {
+        "key": "D",
+        "text": "删除设备日志后的最终报告"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "答案是B。评价失控设备对既有结果的影响，需要时间、样品、数据和质量控制证据形成可追溯范围；主观信心不能替代证据。",
+    "difficulty": "hard",
+    "keywords": [
+      "设备失控",
+      "影响范围",
+      "结果追溯"
+    ],
+    "source_ids": [
+      "SRC-0019"
+    ],
+    "standard_reference": "《检验检测机构资质认定评审准则》：设备状态、记录与结果有效性控制",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000006",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "检验记录与报告",
+    "topic": "检验报告",
+    "type": "multiple",
+    "stem": "高级检验人员审核风险监测数据报送包时，应确认哪些内容相互一致？（选择全部适用项）",
+    "options": [
+      {
+        "key": "A",
+        "text": "监测任务与样品标识"
+      },
+      {
+        "key": "B",
+        "text": "原始数据、复核结果与拟报送数据"
+      },
+      {
+        "key": "C",
+        "text": "报送权限、渠道和版本状态"
+      },
+      {
+        "key": "D",
+        "text": "未经核实的外部评价"
+      }
+    ],
+    "answer": [
+      "A",
+      "B",
+      "C"
+    ],
+    "explanation": "答案是A、B、C。任务、样品、数据、复核和受控报送必须形成一致链条；未经核实的外部评价不属于报送依据。",
+    "difficulty": "hard",
+    "keywords": [
+      "报送审核",
+      "版本状态",
+      "数据链"
+    ],
+    "source_ids": [
+      "SRC-0018"
+    ],
+    "standard_reference": "《粮油质量安全风险监测管理办法》：样品登记、检验复核、数据报送与保密",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000007",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "职业道德与实验室安全",
+    "topic": "检验职业道德",
+    "type": "single",
+    "stem": "风险监测项目尚未按规定发布，一名无关人员要求检验员发送完整样品清单和未复核结果。最合适的处理是？",
+    "options": [
+      {
+        "key": "A",
+        "text": "直接发送，以便对方先行分析"
+      },
+      {
+        "key": "B",
+        "text": "按保密和权限要求拒绝擅自提供，并通过规定渠道处理请求"
+      },
+      {
+        "key": "C",
+        "text": "只删除样品编号后随意传播全部数据"
+      },
+      {
+        "key": "D",
+        "text": "在社交平台发布后再报告"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "答案是B。风险监测数据涉及规定的报送和保密管理，检验员应在授权范围内处理信息请求。",
+    "difficulty": "medium",
+    "keywords": [
+      "风险监测",
+      "保密",
+      "权限"
+    ],
+    "source_ids": [
+      "SRC-0018"
+    ],
+    "standard_reference": "《粮油质量安全风险监测管理办法》：数据报送与保密要求",
+    "review_status": "verified",
+    "content_version": 1
+  },
+  {
+    "id": "QI-L3-000008",
+    "occupation": "4-08-05-01",
+    "direction": "粮油质量检验员",
+    "level": 3,
+    "module": "粮油质量指标",
+    "topic": "水分指标",
+    "type": "judge",
+    "stem": "某机构在能力验证中表现满意，可以直接证明该机构今后检测的每一个粮油样品都必然得到正确质量结论。",
+    "options": [
+      {
+        "key": "A",
+        "text": "正确"
+      },
+      {
+        "key": "B",
+        "text": "错误"
+      }
+    ],
+    "answer": [
+      "B"
+    ],
+    "explanation": "该说法错误。能力验证用于评价特定检验检测能力，不能替代对每个样品的规范扦样、检验、复核和报告。",
+    "difficulty": "medium",
+    "keywords": [
+      "能力验证",
+      "单个样品",
+      "结论边界"
+    ],
+    "source_ids": [
+      "SRC-0020"
+    ],
+    "standard_reference": "《检验检测机构能力验证管理办法》：能力验证适用边界",
+    "review_status": "verified",
+    "content_version": 1
+  }
+]

@@ -58,9 +58,14 @@ Page({
   },
 
   async onChangeGoal() {
-    const result = await wx.showActionSheet({
-      itemList: goalOptions.map((goal) => `每天 ${goal} 题`),
-    });
+    let result: WechatMiniprogram.ShowActionSheetSuccessCallbackResult;
+    try {
+      result = await wx.showActionSheet({
+        itemList: goalOptions.map((goal) => `每天 ${goal} 题`),
+      });
+    } catch {
+      return;
+    }
     const goal = goalOptions[result.tapIndex];
     if (!goal) return;
     appServices.progress.updatePreferences({ dailyGoal: goal });

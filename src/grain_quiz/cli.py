@@ -25,7 +25,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if report.errors else 0
     if report.errors:
         return 1
-    return _publish(questions, sources, report, Path(args.output))
+    return _publish(
+        questions,
+        sources,
+        report,
+        Path(args.output),
+        review_workbook=args.review_workbook,
+    )
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -43,6 +49,11 @@ def _build_parser() -> argparse.ArgumentParser:
         release = subcommands.add_parser(command)
         _add_validation_inputs(release)
         release.add_argument("--output", required=True)
+        release.add_argument(
+            "--review-workbook",
+            action="store_true",
+            help="also create question-bank.xlsx (requires the optional artifact-tool runtime)",
+        )
     return parser
 
 
@@ -87,16 +98,19 @@ def _publish(
     sources: dict,
     report: ValidationReport,
     output: Path,
+    *,
+    review_workbook: bool,
 ) -> int:
     output.mkdir(parents=True, exist_ok=True)
-    export_workbook(questions, sources, report, output / "question-bank.xlsx")
+    if review_workbook:
+        export_workbook(questions, sources, report, output / "question-bank.xlsx")
     shard_counts = export_json_shards(questions, output / "json")
     version_report = _version_report(questions, sources, report, shard_counts)
     (output / "version-report.json").write_text(
         json.dumps(version_report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    print(f"Published review artifacts to {output}")
+    print(f"Published release artifacts to {output}")
     return 0
 
 

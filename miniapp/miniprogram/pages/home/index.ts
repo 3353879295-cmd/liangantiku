@@ -31,6 +31,16 @@ Page({
   },
 
   onShow() {
+    const app = getApp<IAppOption>();
+    if (app.globalData.recoveryNotice) {
+      const content = app.globalData.recoveryNotice;
+      app.globalData.recoveryNotice = '';
+      void wx.showModal({
+        title: '学习数据已恢复',
+        content,
+        showCancel: false,
+      });
+    }
     const preferences = appServices.progress.getPreferences();
     const certificate = selectedCertificate(preferences.selectedCertificateKey);
     const session = appServices.progress.restoreSession();
@@ -38,7 +48,7 @@ Page({
       session?.status === 'active'
         ? { currentIndex: session.currentIndex, total: session.questionIds.length }
         : undefined;
-    getApp<IAppOption>().globalData.selectedCertificateKey = preferences.selectedCertificateKey;
+    app.globalData.selectedCertificateKey = preferences.selectedCertificateKey;
     this.setData({
       certificateTitle: certificate?.title ?? '储粮保管员 · 初级',
       certificateKey: preferences.selectedCertificateKey,

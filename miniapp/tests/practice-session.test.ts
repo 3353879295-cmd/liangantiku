@@ -5,6 +5,7 @@ import {
   createPracticeSession,
   getAnswerSheet,
   navigateToQuestion,
+  prunePersistedPracticeSession,
   rehydratePracticeSession,
   serializePracticeSession,
   submitSession,
@@ -94,5 +95,31 @@ describe('practice session', () => {
     expect(restored.status).toBe('submitted');
     expect(restored.report).toMatchObject({ total: 1, correct: 1 });
     expect(restored.progressRecorded).toBe(true);
+  });
+
+  it('prunes retired questions from a persisted session and clamps its position', () => {
+    const available = makeQuestion({ id: 'Q1' });
+    const persisted = serializePracticeSession(
+      answerQuestion(
+        navigateToQuestion(
+          createPracticeSession([available, makeQuestion({ id: 'Q2' })], {
+            mode: 'random',
+            now: 1000,
+          }),
+          1,
+          1100,
+        ),
+        'Q2',
+        ['A'],
+        1200,
+      ),
+    );
+
+    expect(prunePersistedPracticeSession(persisted, [available])).toMatchObject({
+      questionIds: ['Q1'],
+      currentIndex: 0,
+      answers: {},
+    });
+    expect(prunePersistedPracticeSession(persisted, [])).toBeNull();
   });
 });

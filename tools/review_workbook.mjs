@@ -177,7 +177,7 @@ async function build(inputPath, outputPath) {
     questions.filter((question) => question.review_status === "verified").map(questionRow),
     "OfficialQuestions",
     wideQuestionColumns,
-    64,
+    96,
   );
   addDataSheet(
     workbook,
@@ -186,7 +186,7 @@ async function build(inputPath, outputPath) {
     payload.sources.map(sourceRow),
     "SourceIndex",
     [16, 30, 42, 22, 14, 14, 18, 18, 12, 34],
-    34,
+    72,
   );
   addDataSheet(
     workbook,
@@ -195,7 +195,7 @@ async function build(inputPath, outputPath) {
     questions.filter((question) => question.review_status === "pending").map(questionRow),
     "PendingQuestions",
     wideQuestionColumns,
-    64,
+    96,
   );
   addDataSheet(
     workbook,
@@ -204,7 +204,7 @@ async function build(inputPath, outputPath) {
     questions.filter((question) => question.review_status === "retired").map(questionRow),
     "RetiredQuestions",
     wideQuestionColumns,
-    64,
+    96,
   );
   addDataSheet(
     workbook,
