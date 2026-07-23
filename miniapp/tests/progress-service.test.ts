@@ -81,6 +81,11 @@ describe('ProgressService', () => {
     service.recordAnswer({ questionId: 'Q3', correct: true, durationMs: 10, at: '2026-02-02' });
 
     expect(service.getDashboard('2026-02-02').streakDays).toBe(3);
+    expect(service.getActivity('2026-02-02', 3).map((day) => day.date)).toEqual([
+      '2026-01-31',
+      '2026-02-01',
+      '2026-02-02',
+    ]);
   });
 
   it('records a submitted practice session exactly once', () => {

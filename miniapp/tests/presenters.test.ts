@@ -7,6 +7,7 @@ import {
   presentLibraryModules,
 } from '../miniprogram/presenters/library-presenter';
 import { presentQuestionOption } from '../miniprogram/presenters/question-option-presenter';
+import { presentQuestionList } from '../miniprogram/presenters/question-list-presenter';
 import { presentReport } from '../miniprogram/presenters/report-presenter';
 import { makeQuestion } from './factories';
 
@@ -98,6 +99,73 @@ describe('presentReport', () => {
       durationText: '02:05',
     });
     expect(report.weakModules[0]).toMatchObject({ name: '粮情检查', accuracyText: '25%' });
+  });
+});
+
+describe('presentQuestionList', () => {
+  const questions = [
+    makeQuestion({ id: 'Q1', occupation: '4-02-06-01', level: 5, module: '粮情检查' }),
+    makeQuestion({ id: 'Q2', occupation: '4-08-05-01', level: 3, module: '样品检验' }),
+    makeQuestion({ id: 'Q3', occupation: '4-02-06-01', level: 3, module: '安全生产' }),
+  ];
+
+  it('retains favorite ID order, reports retired IDs and applies certificate filters', () => {
+    const view = presentQuestionList({
+      kind: 'favorite',
+      questions,
+      ids: ['Q2', 'retired', 'Q1'],
+      filter: { occupation: '4-02-06-01', level: 5 },
+    });
+
+    expect(view.items.map((item) => item.question.id)).toEqual(['Q1']);
+    expect(view.unresolvedIds).toEqual(['retired']);
+  });
+
+  it('sorts wrong questions, hides mastered records and filters modules', () => {
+    const view = presentQuestionList({
+      kind: 'wrong',
+      questions,
+      ids: ['Q1', 'Q2', 'Q3'],
+      wrongRecords: [
+        {
+          questionId: 'Q1',
+          errorCount: 2,
+          firstWrongAt: '2026-07-20',
+          lastWrongAt: '2026-07-22',
+          mastered: false,
+          lastRetryCorrect: false,
+        },
+        {
+          questionId: 'Q2',
+          errorCount: 5,
+          firstWrongAt: '2026-07-20',
+          lastWrongAt: '2026-07-23',
+          mastered: true,
+          lastRetryCorrect: true,
+        },
+        {
+          questionId: 'Q3',
+          errorCount: 3,
+          firstWrongAt: '2026-07-20',
+          lastWrongAt: '2026-07-21',
+          mastered: false,
+          lastRetryCorrect: false,
+        },
+      ],
+      filter: { module: '粮情检查', includeMastered: false },
+    });
+
+    expect(view.items.map((item) => item.question.id)).toEqual(['Q1']);
+    expect(view.items[0]).toMatchObject({ errorCountText: '错 2 次', latestText: '最近 07-22' });
+  });
+
+  it('provides useful empty copy for each list kind', () => {
+    expect(presentQuestionList({ kind: 'wrong', questions: [], ids: [] }).emptyTitle).toBe(
+      '还没有错题',
+    );
+    expect(presentQuestionList({ kind: 'favorite', questions: [], ids: [] }).emptyTitle).toBe(
+      '还没有收藏',
+    );
   });
 });
 

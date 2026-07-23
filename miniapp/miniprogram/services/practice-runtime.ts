@@ -61,6 +61,16 @@ export const startPractice = async (input: StartPracticeInput): Promise<Practice
   return activeSession;
 };
 
+export const startPracticeFromQuestions = (
+  questions: readonly Question[],
+  mode: 'wrong' | 'favorite',
+): PracticeSession | null => {
+  if (!questions.length) return null;
+  activeSession = createPracticeSession(questions.slice(0, 20), { mode, now: Date.now() });
+  appServices.progress.saveSession(serializePracticeSession(activeSession));
+  return activeSession;
+};
+
 export const restorePractice = async (): Promise<PracticeSession | null> => {
   if (activeSession) return activeSession;
   const persisted = appServices.progress.restoreSession();

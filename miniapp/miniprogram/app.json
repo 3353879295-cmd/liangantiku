@@ -5,6 +5,7 @@
     "pages/practice/index",
     "pages/answer-sheet/index",
     "pages/report/index",
+    "pages/question-list/index",
     "pages/practical/index",
     "pages/profile/index"
   ],

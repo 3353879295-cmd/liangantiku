@@ -24,6 +24,13 @@ export interface DashboardStats {
   dailyGoal: number;
 }
 
+export interface ActivityDay {
+  date: string;
+  answered: number;
+  correct: number;
+  durationMs: number;
+}
+
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const previousDate = (date: string): string => {
@@ -199,6 +206,23 @@ export class ProgressService {
       todayAnswered: this.data.dailyTotals[today]?.answered ?? 0,
       dailyGoal: this.data.preferences.dailyGoal,
     };
+  }
+
+  getActivity(endDate: string, days = 7): ActivityDay[] {
+    if (!DATE_PATTERN.test(endDate)) throw new Error('activity date must use YYYY-MM-DD');
+    if (!Number.isInteger(days) || days <= 0) throw new Error('activity days must be positive');
+    const dates: string[] = [];
+    let cursor = endDate;
+    for (let index = 0; index < days; index += 1) {
+      dates.unshift(cursor);
+      cursor = previousDate(cursor);
+    }
+    return dates.map((date) => ({
+      date,
+      answered: this.data.dailyTotals[date]?.answered ?? 0,
+      correct: this.data.dailyTotals[date]?.correct ?? 0,
+      durationMs: this.data.dailyTotals[date]?.durationMs ?? 0,
+    }));
   }
 
   saveSession(session: PersistedPracticeSession | null): void {

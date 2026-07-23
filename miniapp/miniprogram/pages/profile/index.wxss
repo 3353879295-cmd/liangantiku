@@ -1,1 +1,144 @@
 /* 我的页面视觉将在个人中心任务中补充。 */
+.profile-page {
+  padding-top: 30rpx;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.profile-avatar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 32rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 44rpx;
+  font-weight: 650;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+  margin-top: 34rpx;
+}
+
+.section-title {
+  margin: 46rpx 4rpx 18rpx;
+  font-size: 32rpx;
+  font-weight: 650;
+}
+
+.activity-card {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10rpx;
+  padding: 28rpx 18rpx 24rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.activity-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.activity-day__count,
+.activity-day__label {
+  color: var(--color-text-secondary);
+  font-size: 19rpx;
+}
+
+.activity-day__track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 28rpx;
+  height: 112rpx;
+  margin: 10rpx 0;
+  border-radius: 999rpx;
+  background: #eeeef0;
+}
+
+.activity-day__bar {
+  width: 100%;
+  max-height: 100rpx;
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+
+.settings-card {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.setting-row,
+.setting-row__left,
+.setting-row__right {
+  display: flex;
+  align-items: center;
+}
+
+.setting-row {
+  justify-content: space-between;
+  min-height: 104rpx;
+  margin-left: 28rpx;
+  padding: 16rpx 28rpx 16rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+  font-size: 27rpx;
+}
+
+.setting-row:last-child {
+  border-bottom: 0;
+}
+
+.setting-row__left {
+  gap: 18rpx;
+  font-weight: 550;
+}
+
+.setting-row__right {
+  gap: 6rpx;
+  max-width: 65%;
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+  text-align: right;
+}
+
+.setting-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62rpx;
+  height: 62rpx;
+  border-radius: 20rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.setting-icon--wrong {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.setting-row--danger {
+  color: var(--color-danger);
+}
+
+.version {
+  padding: 42rpx 0 14rpx;
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+  text-align: center;
+}
