@@ -1,0 +1,121 @@
+import { describe, expect, it } from 'vitest';
+
+import { ProgressService } from '../miniprogram/services/progress-service';
+import { ProgressRepository, STORAGE_KEY } from '../miniprogram/storage/progress-repository';
+import type { StorageAdapter } from '../miniprogram/types/domain';
+import type { PersistedPracticeSession } from '../miniprogram/storage/migrations';
+
+class MemoryStorageAdapter implements StorageAdapter {
+  private readonly values = new Map<string, unknown>();
+
+  get<T>(key: string): T | null {
+    return (this.values.get(key) as T | undefined) ?? null;
+  }
+
+  set<T>(key: string, value: T): void {
+    this.values.set(key, value);
+  }
+
+  remove(key: string): void {
+    this.values.delete(key);
+  }
+}
+
+const createService = () => {
+  const storage = new MemoryStorageAdapter();
+  const repository = new ProgressRepository(storage);
+  return { storage, repository, service: new ProgressService(repository) };
+};
+
+describe('ProgressService', () => {
+  it('counts wrong answers and retains history after mastery', () => {
+    const { service } = createService();
+    service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 800, at: '2026-07-22' });
+    service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 600, at: '2026-07-22' });
+
+    expect(service.getWrongQuestion('Q1')).toMatchObject({ errorCount: 2, mastered: false });
+    service.markMastered('Q1');
+    expect(service.getWrongQuestion('Q1')).toMatchObject({ errorCount: 2, mastered: true });
+
+    service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 500, at: '2026-07-23' });
+    expect(service.getWrongQuestion('Q1')).toMatchObject({ errorCount: 3, mastered: false });
+  });
+
+  it('toggles favorites idempotently and persists them', () => {
+    const { repository, service } = createService();
+
+    expect(service.toggleFavorite('Q1', 1000)).toBe(true);
+    expect(service.isFavorite('Q1')).toBe(true);
+    expect(new ProgressService(repository).isFavorite('Q1')).toBe(true);
+    expect(service.toggleFavorite('Q1', 2000)).toBe(false);
+    expect(service.isFavorite('Q1')).toBe(false);
+  });
+
+  it('returns stable zero statistics and aggregates answers', () => {
+    const { service } = createService();
+    expect(service.getDashboard('2026-07-22')).toMatchObject({
+      answered: 0,
+      correct: 0,
+      accuracy: 0,
+      durationMs: 0,
+      streakDays: 0,
+      todayAnswered: 0,
+    });
+
+    service.recordAnswer({ questionId: 'Q1', correct: true, durationMs: 800, at: '2026-07-22' });
+    service.recordAnswer({ questionId: 'Q2', correct: false, durationMs: 200, at: '2026-07-22' });
+
+    expect(service.getDashboard('2026-07-22')).toMatchObject({
+      answered: 2,
+      correct: 1,
+      accuracy: 50,
+      durationMs: 1000,
+      todayAnswered: 2,
+    });
+  });
+
+  it('calculates a consecutive streak across a month boundary', () => {
+    const { service } = createService();
+    service.recordAnswer({ questionId: 'Q1', correct: true, durationMs: 10, at: '2026-01-31' });
+    service.recordAnswer({ questionId: 'Q2', correct: true, durationMs: 10, at: '2026-02-01' });
+    service.recordAnswer({ questionId: 'Q3', correct: true, durationMs: 10, at: '2026-02-02' });
+
+    expect(service.getDashboard('2026-02-02').streakDays).toBe(3);
+  });
+
+  it('saves and restores an unfinished session', () => {
+    const { repository, service } = createService();
+    const session: PersistedPracticeSession = {
+      id: 'session-1',
+      mode: 'random',
+      questionIds: ['Q1'],
+      currentIndex: 0,
+      answers: { Q1: ['A'] },
+      status: 'active',
+      startedAt: 1000,
+      updatedAt: 1200,
+    };
+
+    service.saveSession(session);
+
+    expect(new ProgressService(repository).restoreSession()).toEqual(session);
+  });
+
+  it('clears learning data but preserves preferences and other storage', () => {
+    const { storage, repository, service } = createService();
+    storage.set('unrelated:key', { keep: true });
+    service.updatePreferences({ selectedCertificateKey: '4-08-05-01:3', dailyGoal: 30 });
+    service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 10, at: '2026-07-22' });
+
+    service.clearLearningData();
+
+    expect(service.getDashboard('2026-07-22').answered).toBe(0);
+    expect(service.getPreferences()).toEqual({
+      selectedCertificateKey: '4-08-05-01:3',
+      dailyGoal: 30,
+    });
+    expect(storage.get('unrelated:key')).toEqual({ keep: true });
+    expect(storage.get(STORAGE_KEY)).not.toBeNull();
+    expect(new ProgressService(repository).getDashboard('2026-07-22').answered).toBe(0);
+  });
+});
