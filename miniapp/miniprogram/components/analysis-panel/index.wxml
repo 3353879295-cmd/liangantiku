@@ -1,0 +1,14 @@
+<view wx:if="{{visible}}" class="analysis analysis--{{correct ? 'correct' : 'wrong'}}">
+  <view class="analysis__result">
+    <t-icon name="{{correct ? 'check-circle-filled' : 'close-circle-filled'}}" size="40rpx" />
+    <text>{{correct ? '回答正确' : '回答错误'}}</text>
+  </view>
+  <view class="analysis__answer">正确答案：{{expectedText}}</view>
+  <view class="analysis__section">
+    <view class="analysis__label">题目解析</view>
+    <text class="analysis__body">{{explanation}}</text>
+  </view>
+  <view wx:if="{{knowledgePoint}}" class="analysis__meta">知识点 · {{knowledgePoint}}</view>
+  <view wx:if="{{commonMistake}}" class="analysis__tip">易错提示：{{commonMistake}}</view>
+  <view wx:if="{{standardReference}}" class="analysis__source">依据：{{standardReference}}</view>
+</view>

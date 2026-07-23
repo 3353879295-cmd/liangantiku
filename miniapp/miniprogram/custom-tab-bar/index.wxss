@@ -1,0 +1,11 @@
+:host {
+  --td-brand-color: #2f6b4f;
+  --td-tab-bar-active-color: #2f6b4f;
+  --td-tab-bar-color: #86868b;
+  --td-tab-bar-bg-color: rgb(255 255 255 / 96%);
+  --td-tab-bar-border-color: #eeeef0;
+}
+
+.app-tab-bar {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}

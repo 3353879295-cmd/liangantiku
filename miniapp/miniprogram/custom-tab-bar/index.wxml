@@ -1,0 +1,18 @@
+<t-tab-bar
+  value="{{value}}"
+  fixed
+  placeholder
+  safe-area-inset-bottom
+  bordered="{{false}}"
+  bind:change="onChange"
+  t-class="app-tab-bar"
+>
+  <t-tab-bar-item
+    wx:for="{{tabs}}"
+    wx:key="value"
+    value="{{item.value}}"
+    icon="{{item.icon}}"
+    url="{{item.value}}"
+    link-type="switchTab"
+  >{{item.text}}</t-tab-bar-item>
+</t-tab-bar>

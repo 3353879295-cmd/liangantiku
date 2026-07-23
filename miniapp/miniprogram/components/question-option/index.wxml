@@ -1,0 +1,12 @@
+<button
+  class="option option--{{state}}"
+  disabled="{{disabled}}"
+  aria-label="选项 {{optionKey}}，{{text}}"
+  aria-pressed="{{selected}}"
+  bindtap="handleTap"
+>
+  <text class="option__key">{{optionKey}}</text>
+  <text class="option__text">{{text}}</text>
+  <t-icon wx:if="{{state === 'correct'}}" name="check" size="36rpx" color="#2f6b4f" />
+  <t-icon wx:elif="{{state === 'wrong'}}" name="close" size="36rpx" color="#c44747" />
+</button>

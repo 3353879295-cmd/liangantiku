@@ -1,0 +1,27 @@
+.stat {
+  min-width: 0;
+}
+
+.stat__value,
+.stat__label,
+.stat__note {
+  display: block;
+}
+
+.stat__value {
+  font-size: 42rpx;
+  font-weight: 650;
+  letter-spacing: -1rpx;
+}
+
+.stat__label {
+  margin-top: 6rpx;
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+}
+
+.stat__note {
+  margin-top: 4rpx;
+  color: var(--color-primary);
+  font-size: 22rpx;
+}
