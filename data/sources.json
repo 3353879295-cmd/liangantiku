@@ -166,5 +166,113 @@
     "usage": "bibliography_only",
     "is_active": false,
     "notes": "历史官方通知强调职业技能鉴定国家题库安全保密。仅作合规限制依据；严禁收集、录入、复制、改写、推断或宣称使用任何保密国家题库内容。"
+  },
+  {
+    "id": "SRC-0015",
+    "title": "国家粮食和物资储备局办公室关于印发《政策性粮食承储企业仓储管理规范化指南》的通知",
+    "url": "https://www.lswz.gov.cn/html/zfxxgk/2024-06/07/content_281927.shtml",
+    "publisher": "国家粮食和物资储备局",
+    "published_at": "2024-06-07",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "国粮办仓〔2024〕163号；官方公开页及附件载明2024年6月3日印发、公开发布。适用于政策性粮食承储企业的仓储管理规范化指导；可支持已公开的制度、人员、设施设备、粮情检查、害虫防治与控温技术等要求，题目必须写明政策性粮食承储企业这一适用条件，不得外推至所有商品粮或检验机构。"
+  },
+  {
+    "id": "SRC-0016",
+    "title": "国家粮食和物资储备局关于印发粮食经营台账管理办法的通知",
+    "url": "https://www.lswz.gov.cn/html/zcfb/2026-01/01/content_291703.shtml",
+    "publisher": "国家粮食和物资储备局",
+    "published_at": "2026-01-01",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "国粮粮规〔2025〕437号；官方公开页载明2025年12月31日印发、2026年4月1日起施行、有效期5年。仅支持粮食收购、储存、加工、销售经营主体以原始凭证和相关政策文件为依据、按业务发生时间顺序建立经营台账等明确规则；不得推断企业内部表样或中央储备专用台账要求。"
+  },
+  {
+    "id": "SRC-0017",
+    "title": "政府粮油储备质量安全管理办法",
+    "url": "https://lswz.gov.cn/html/ywpd/bzzl/2024-08/24/content_283031.shtml",
+    "publisher": "国家粮食和物资储备局",
+    "published_at": "2024-08-24",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "国粮标规〔2024〕183号；官方公开页载明2024年8月21日印发并要求遵照执行，未载明有效期或废止信息。仅适用于政府粮油储备质量安全管理；可支持其明确的扦样、检验、质量安全记录、异常处置和人员培训要求，不得外推至商品粮或非政府储备。"
+  },
+  {
+    "id": "SRC-0018",
+    "title": "国家粮食和物资储备局关于印发粮油质量安全风险监测管理办法的通知",
+    "url": "https://lswz.gov.cn/html/zcfb/2025-06/24/content_288901.shtml",
+    "publisher": "国家粮食和物资储备局",
+    "published_at": "2025-06-24",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "国粮标规〔2025〕160号；官方公开页载明2025年6月16日印发、自印发之日起施行且有效期5年。仅支持粮油质量安全风险监测计划、样品接收与登记、检验复核、数据报送、能力比对和保密等风险监测工作规则；不得外推为一般商业检验或企业日常检测的强制流程。"
+  },
+  {
+    "id": "SRC-0019",
+    "title": "市场监管总局关于发布《检验检测机构资质认定评审准则》的公告",
+    "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/rkjcs/art/2023/art_b97b0b1addbf4e8aaca43cb26f13883b.html",
+    "publisher": "国家市场监督管理总局",
+    "published_at": "2023-06-01",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "市场监管总局公告2023年第21号，官方页载明2023年12月1日起施行并废止2016版。仅适用于依法开展资质认定技术评审和向社会出具证明作用数据、结果的检验检测机构；可支持设备检定/校准/核查、标准物质计量溯源、工作环境、方法验证及记录质量控制等明确要求，不能替代粮油具体检验方法标准。"
+  },
+  {
+    "id": "SRC-0020",
+    "title": "市场监管总局关于发布《检验检测机构能力验证管理办法》的公告",
+    "url": "https://www.samr.gov.cn/zw/zfxxgk/fdzdgknr/rkjcs/art/2023/art_53d8b1c1652047cf82eeb5d5908a6ae2.html",
+    "publisher": "国家市场监督管理总局",
+    "published_at": "2023-04-07",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "市场监管总局公告2023年第13号；官方公开页载明2023年3月27日成文、2023年4月7日发布并自发布之日起施行，同时废止2006年旧办法。仅支持检验检测机构能力验证、人员比对、设备比对、留样再测、实验室间比对及真实客观报送结果和原始记录等质量控制边界；不支持把能力验证结果直接当作单个粮油样品的质量结论。"
+  },
+  {
+    "id": "SRC-0021",
+    "title": "粮油检验 粮食、油料中水分的测定",
+    "url": "https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=8A11368C0CF8B3D40FE7A04D578EEE19",
+    "publisher": "国家市场监督管理总局、国家标准化管理委员会",
+    "published_at": "2025-12-31",
+    "accessed_at": "2026-07-23",
+    "kind": "industry_standard",
+    "usage": "bibliography_only",
+    "is_active": true,
+    "notes": "GB/T 5497-2025；官方标准信息页载明标准现行、2026年7月1日实施、主管部门为国家粮食和储备局。该公开页仅可靠支持标准名称、版本和实施日期；在重新核对可公开全文的具体条款前，不得据此生成水分测定步骤、参数或计算题。"
+  },
+  {
+    "id": "SRC-0022",
+    "title": "国家粮食和物资储备局关于印发国家粮食质量安全检验监测机构管理办法的通知",
+    "url": "https://lswz.gov.cn/html/tzgg/2025-05/23/content_288286.shtml",
+    "publisher": "国家粮食和物资储备局",
+    "published_at": "2025-05-23",
+    "accessed_at": "2026-07-23",
+    "kind": "official_notice",
+    "usage": "knowledge_basis",
+    "is_active": true,
+    "notes": "国粮标规〔2025〕134号；官方公开页载明2025年5月19日印发并公开发布，未载明有效期或废止信息。仅支持国家粮食质量安全检验监测机构的管理与能力建设边界；不得将其外推为一般企业实验室的具体检验方法或单一样品结论。"
+  },
+  {
+    "id": "SRC-0023",
+    "title": "粮油检验 粮食、油料的杂质、不完善粒检验",
+    "url": "https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=EB37F2E3E8B0C26EBB3A329D6C0E390E",
+    "publisher": "国家市场监督管理总局、国家标准化管理委员会",
+    "published_at": "2019-05-10",
+    "accessed_at": "2026-07-23",
+    "kind": "industry_standard",
+    "usage": "bibliography_only",
+    "is_active": true,
+    "notes": "GB/T 5494-2019；官方标准信息页载明标准现行、2019年12月1日实施、主管部门为国家粮食和储备局。该信息页只可支持标准名称、版本、状态和实施日期；在逐条重新核对可公开全文前，不得据此生成杂质或不完善粒的操作步骤、参数、限值或计算题。"
   }
 ]
