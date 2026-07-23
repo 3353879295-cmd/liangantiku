@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "技能要点",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "empty-state": "/components/empty-state/index"
+  }
+}

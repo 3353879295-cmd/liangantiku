@@ -63,7 +63,7 @@ export const startPractice = async (input: StartPracticeInput): Promise<Practice
 
 export const startPracticeFromQuestions = (
   questions: readonly Question[],
-  mode: 'wrong' | 'favorite',
+  mode: PracticeMode,
 ): PracticeSession | null => {
   if (!questions.length) return null;
   activeSession = createPracticeSession(questions.slice(0, 20), { mode, now: Date.now() });

@@ -7,6 +7,7 @@
     "pages/report/index",
     "pages/question-list/index",
     "pages/practical/index",
+    "pages/practical-detail/index",
     "pages/profile/index"
   ],
   "window": {

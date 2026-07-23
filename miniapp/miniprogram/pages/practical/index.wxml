@@ -1,1 +1,33 @@
-<view class="page-shell"><view class="page-title">实操</view></view>
+<view class="page-shell practical-page">
+  <view class="page-title">实操技能</view>
+  <text class="page-subtitle">把考点放回操作场景，按准备、步骤、风险和易错点复习。</text>
+
+  <view class="guide-note">
+    <t-icon name="info-circle" size="32rpx" />
+    <text>技能卡用于复习作业要点，现场操作仍须遵守单位规程、培训和监护要求。</text>
+  </view>
+
+  <view wx:for="{{groups}}" wx:key="title" class="skill-group">
+    <view class="skill-group__heading">
+      <view class="skill-group__title">{{item.title}}</view>
+      <text class="skill-group__note">{{item.note}}</text>
+    </view>
+    <view class="skill-list">
+      <view
+        wx:for="{{item.skills}}"
+        wx:for-item="skill"
+        wx:key="id"
+        class="skill-card"
+        data-id="{{skill.id}}"
+        bind:tap="onOpenSkill"
+      >
+        <view class="skill-card__icon"><t-icon name="{{skill.icon}}" size="38rpx" /></view>
+        <view class="skill-card__content">
+          <view class="skill-card__title">{{skill.title}}</view>
+          <text class="skill-card__summary">{{skill.summary}}</text>
+        </view>
+        <t-icon name="chevron-right" size="32rpx" color="#86868b" />
+      </view>
+    </view>
+  </view>
+</view>

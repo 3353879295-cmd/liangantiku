@@ -1,0 +1,71 @@
+<view class="page-shell detail-page">
+  <view wx:if="{{skill}}">
+    <view class="detail-hero">
+      <view class="detail-hero__icon"><t-icon name="{{skill.icon}}" size="48rpx" /></view>
+      <view class="detail-hero__role">{{skill.occupation === '4-02-06-01' ? '储粮保管' : '粮油质检'}}</view>
+      <view class="detail-hero__title">{{skill.title}}</view>
+      <text class="detail-hero__summary">{{skill.summary}}</text>
+    </view>
+
+    <view class="detail-section">
+      <view class="detail-section__title">作业准备</view>
+      <view class="plain-card">
+        <view wx:for="{{skill.preparations}}" wx:key="*this" class="check-row">
+          <t-icon name="check-circle" size="30rpx" color="#2f6b4f" />
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-section">
+      <view class="detail-section__title">操作步骤</view>
+      <view class="step-list">
+        <view wx:for="{{skill.steps}}" wx:key="title" class="step-card">
+          <view class="step-card__number">{{index + 1}}</view>
+          <view class="step-card__content">
+            <view class="step-card__title">{{item.title}}</view>
+            <text class="step-card__detail">{{item.detail}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-section">
+      <view class="detail-section__title">安全提示</view>
+      <view class="warning-card">
+        <view wx:for="{{skill.safetyNotes}}" wx:key="*this" class="warning-row">
+          <t-icon name="error-circle" size="30rpx" />
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="detail-section">
+      <view class="detail-section__title">常见错误</view>
+      <view class="plain-card">
+        <view wx:for="{{skill.commonMistakes}}" wx:key="*this" class="mistake-row">
+          <text class="mistake-row__dot"></text>
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="source-card">
+      <view class="source-card__label">参考依据</view>
+      <text class="source-card__body">{{skill.standardReference}}</text>
+      <text class="source-card__ids">来源编号：{{sourceText}}</text>
+    </view>
+
+    <button
+      class="related-button {{relatedReady && !relatedQuestions.length ? 'related-button--disabled' : ''}}"
+      disabled="{{relatedReady && !relatedQuestions.length}}"
+      bindtap="onStartRelatedPractice"
+    >{{relatedReady && !relatedQuestions.length ? '相关题目尚未同步' : '练习相关题目'}}</button>
+
+    <view class="detail-disclaimer">
+      本指南用于考证复习与作业要点回顾，不能替代单位规程、持证要求、现场培训和监护。
+    </view>
+  </view>
+
+  <empty-state wx:else title="未找到技能卡" description="这张技能卡可能已经调整，请返回实操页。" />
+</view>

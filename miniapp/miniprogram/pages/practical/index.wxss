@@ -1,1 +1,86 @@
 /* 实操视觉将在实操任务中补充。 */
+.practical-page {
+  padding-top: 30rpx;
+}
+
+.guide-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin-top: 30rpx;
+  padding: 20rpx 22rpx;
+  border-radius: 22rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 23rpx;
+  line-height: 1.55;
+}
+
+.skill-group {
+  margin-top: 44rpx;
+}
+
+.skill-group__heading {
+  margin: 0 4rpx 18rpx;
+}
+
+.skill-group__title {
+  margin-bottom: 6rpx;
+  font-size: 34rpx;
+  font-weight: 650;
+}
+
+.skill-group__note {
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+}
+
+.skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.skill-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  min-height: 128rpx;
+  padding: 22rpx 24rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.skill-card__icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 22rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.skill-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.skill-card__title {
+  margin-bottom: 8rpx;
+  font-size: 29rpx;
+  font-weight: 600;
+}
+
+.skill-card__summary {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}

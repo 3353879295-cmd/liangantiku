@@ -1,1 +1,6 @@
-{ "navigationBarTitleText": "实操" }
+{
+  "navigationBarTitleText": "实操技能",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  }
+}
