@@ -1,1 +1,7 @@
-{ "navigationBarTitleText": "题库" }
+{
+  "navigationBarTitleText": "题库",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "empty-state": "/components/empty-state/index"
+  }
+}

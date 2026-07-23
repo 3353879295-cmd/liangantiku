@@ -1,4 +1,56 @@
-<view class="page-shell">
-  <view class="page-title">粮安题库</view>
-  <text class="page-subtitle">储粮保管员与粮油质检员考证练习</text>
+<view class="page-shell home-page">
+  <view class="home-header">
+    <view>
+      <view class="eyebrow">粮安题库</view>
+      <view class="page-title">今天练什么？</view>
+    </view>
+    <view class="certificate-pill" bind:tap="onChooseCertificate">
+      <text>{{certificateTitle}}</text>
+      <t-icon name="chevron-right" size="28rpx" />
+    </view>
+  </view>
+
+  <view wx:if="{{hasResume}}" class="resume-card" bind:tap="onResume">
+    <view>
+      <view class="resume-card__label">上次练习</view>
+      <view class="resume-card__title">{{dashboard.resumeText}}</view>
+    </view>
+    <view class="resume-card__action">继续</view>
+  </view>
+
+  <view class="section-heading">
+    <view class="section-title">学习概览</view>
+    <text class="section-note">累计数据</text>
+  </view>
+  <view class="stat-grid">
+    <stat-card label="已练" value="{{dashboard.answeredText}}" note="题" />
+    <stat-card label="正确率" value="{{dashboard.accuracyText}}" note="累计" />
+    <stat-card label="学习时长" value="{{dashboard.durationText}}" note="累计" />
+  </view>
+
+  <view class="goal-card">
+    <view class="goal-card__top">
+      <view>
+        <view class="goal-card__title">今日目标</view>
+        <text class="goal-card__streak">{{dashboard.streakText}}</text>
+      </view>
+      <text class="goal-card__count">{{dashboard.goalText}}</text>
+    </view>
+    <t-progress percentage="{{dashboard.goalPercent}}" track-color="#e5e5e7" color="#2f6b4f" />
+  </view>
+
+  <view class="section-heading shortcuts-heading"><view class="section-title">快速开始</view></view>
+  <view class="shortcut-grid">
+    <view
+      wx:for="{{shortcuts}}"
+      wx:key="mode"
+      class="shortcut-card"
+      data-mode="{{item.mode}}"
+      bind:tap="onShortcut"
+    >
+      <view class="shortcut-card__icon"><t-icon name="{{item.icon}}" size="40rpx" /></view>
+      <view class="shortcut-card__label">{{item.label}}</view>
+      <text class="shortcut-card__note">{{item.note}}</text>
+    </view>
+  </view>
 </view>

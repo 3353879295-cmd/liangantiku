@@ -1,1 +1,159 @@
 /* 首页视觉将在首页任务中补充。 */
+.home-page {
+  padding-top: 28rpx;
+}
+
+.home-header {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.eyebrow {
+  margin-bottom: 8rpx;
+  color: var(--color-primary);
+  font-size: 25rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+}
+
+.certificate-pill {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4rpx;
+  min-height: 60rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 25rpx;
+}
+
+.resume-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 32rpx;
+  padding: 28rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.resume-card__label {
+  margin-bottom: 6rpx;
+  font-size: 23rpx;
+  opacity: 0.72;
+}
+
+.resume-card__title {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.resume-card__action {
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgb(255 255 255 / 16%);
+  font-size: 25rpx;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 48rpx 4rpx 20rpx;
+}
+
+.section-title {
+  font-size: 34rpx;
+  font-weight: 650;
+}
+
+.section-note {
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+
+.goal-card {
+  margin-top: 20rpx;
+  padding: 28rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.goal-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.goal-card__title {
+  margin-bottom: 6rpx;
+  font-size: 29rpx;
+  font-weight: 600;
+}
+
+.goal-card__streak,
+.goal-card__count {
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+}
+
+.goal-card__count {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.shortcuts-heading {
+  margin-top: 44rpx;
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+}
+
+.shortcut-card {
+  min-height: 190rpx;
+  padding: 26rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.shortcut-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68rpx;
+  height: 68rpx;
+  margin-bottom: 22rpx;
+  border-radius: 22rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.shortcut-card__label {
+  margin-bottom: 8rpx;
+  font-size: 29rpx;
+  font-weight: 600;
+}
+
+.shortcut-card__note {
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+  line-height: 1.45;
+}

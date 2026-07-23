@@ -1,1 +1,67 @@
-<view class="page-shell"><view class="page-title">题库</view></view>
+<view class="page-shell library-page">
+  <view class="page-title">题库</view>
+  <text class="page-subtitle">选择职业和等级，开始一组有针对性的练习。</text>
+
+  <view wx:for="{{groups}}" wx:key="occupation" class="certificate-group">
+    <view class="certificate-group__title">{{item.title}}</view>
+    <view class="certificate-row">
+      <view
+        wx:for="{{item.items}}"
+        wx:for-item="certificate"
+        wx:key="key"
+        class="certificate-chip {{selectedKey === certificate.key ? 'certificate-chip--active' : ''}}"
+        data-key="{{certificate.key}}"
+        bind:tap="onSelectCertificate"
+      >{{certificate.shortTitle}}</view>
+    </view>
+  </view>
+
+  <view class="library-summary">
+    <view>
+      <view class="library-summary__title">{{selectedTitle}}</view>
+      <text class="library-summary__note">已收录 {{questionCount}} 题</text>
+    </view>
+    <view class="library-summary__badge">{{questionCount ? '可练习' : '待补充'}}</view>
+  </view>
+
+  <view wx:if="{{questionCount}}">
+    <view class="mode-grid">
+      <view
+        wx:for="{{modes}}"
+        wx:key="mode"
+        class="mode-card"
+        data-mode="{{item.mode}}"
+        bind:tap="onModeTap"
+      >
+        <view class="mode-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
+        <view class="mode-card__title">{{item.title}}</view>
+        <text class="mode-card__note">{{item.note}}</text>
+      </view>
+    </view>
+
+    <view id="module-list" class="module-section">
+      <view class="section-title">知识模块</view>
+      <view class="module-list">
+        <view
+          wx:for="{{modules}}"
+          wx:key="name"
+          class="module-row"
+          data-module="{{item.name}}"
+          bind:tap="onModuleTap"
+        >
+          <view>
+            <view class="module-row__name">{{item.name}}</view>
+            <text class="module-row__count">{{item.countText}}</text>
+          </view>
+          <t-icon name="chevron-right" size="32rpx" color="#86868b" />
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <empty-state
+    wx:elif="{{!loading}}"
+    title="这个等级的题目还在整理"
+    description="题目经复核后才会进入练习，先切换其他等级看看。"
+  />
+</view>

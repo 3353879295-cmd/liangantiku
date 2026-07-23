@@ -1,1 +1,153 @@
 /* 题库视觉将在题库任务中补充。 */
+.library-page {
+  padding-top: 28rpx;
+}
+
+.certificate-group {
+  margin-top: 34rpx;
+}
+
+.certificate-group + .certificate-group {
+  margin-top: 22rpx;
+}
+
+.certificate-group__title {
+  margin: 0 4rpx 14rpx;
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+}
+
+.certificate-row {
+  display: flex;
+  gap: 12rpx;
+}
+
+.certificate-chip {
+  min-width: 156rpx;
+  padding: 17rpx 20rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 25rpx;
+  text-align: center;
+}
+
+.certificate-chip--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.library-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 34rpx;
+  padding: 28rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.library-summary__title {
+  margin-bottom: 6rpx;
+  font-size: 31rpx;
+  font-weight: 650;
+}
+
+.library-summary__note {
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+}
+
+.library-summary__badge {
+  padding: 10rpx 18rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+
+.mode-card {
+  min-height: 178rpx;
+  padding: 26rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.mode-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62rpx;
+  height: 62rpx;
+  margin-bottom: 18rpx;
+  border-radius: 20rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.mode-card__title {
+  margin-bottom: 8rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.mode-card__note {
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  line-height: 1.45;
+}
+
+.module-section {
+  padding-top: 44rpx;
+}
+
+.section-title {
+  margin: 0 4rpx 18rpx;
+  font-size: 34rpx;
+  font-weight: 650;
+}
+
+.module-list {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.module-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 104rpx;
+  margin-left: 28rpx;
+  padding: 18rpx 28rpx 18rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.module-row:last-child {
+  border-bottom: 0;
+}
+
+.module-row__name {
+  margin-bottom: 5rpx;
+  font-size: 28rpx;
+  font-weight: 550;
+}
+
+.module-row__count {
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+}
