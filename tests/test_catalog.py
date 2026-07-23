@@ -9,6 +9,173 @@ from grain_quiz.catalog import load_knowledge_catalog
 CATALOG_PATH = Path("data/knowledge_catalog.json")
 
 
+def _lines(value: str) -> tuple[str, ...]:
+    return tuple(line.strip() for line in value.splitlines() if line.strip())
+
+
+EXPECTED_OUTLINES = {
+    "4-02-06-01": _lines(
+        """
+        part|warehouse-basic|1|基础知识|visible_levels=5,4,3
+        chapter|warehouse-basic-c01|1|职业道德|page=2|visible_levels=5,4,3
+        section|warehouse-basic-c01-s01|1|职业道德基础知识|page=2|visible_levels=5,4,3
+        section|warehouse-basic-c01-s02|2|粮油仓储业从业人员职业守则|page=6|visible_levels=5,4,3
+        chapter|warehouse-basic-c02|2|基础知识|page=9|visible_levels=5,4,3
+        section|warehouse-basic-c02-s01|1|粮油仓储管理基础知识|page=9|visible_levels=5,4,3
+        section|warehouse-basic-c02-s02|2|安全生产与环境保护基础知识|page=62|visible_levels=5,4,3
+        section|warehouse-basic-c02-s03|3|相关法律法规基础知识|page=75|visible_levels=5,4,3
+        part|warehouse-l5|2|初级粮油仓储管理员|visible_levels=5
+        chapter|warehouse-l5-c03|3|粮油出入库作业|page=90|visible_levels=5
+        section|warehouse-l5-c03-s01|1|粮油出入库准备|page=90|visible_levels=5
+        section|warehouse-l5-c03-s02|2|粮油出入库作业|page=100|visible_levels=5
+        section|warehouse-l5-c03-s03|3|粮油出入库收尾工作|page=131|visible_levels=5
+        chapter|warehouse-l5-c04|4|粮情检查|page=140|visible_levels=5
+        section|warehouse-l5-c04-s01|1|检查储粮温度|page=140|visible_levels=5
+        section|warehouse-l5-c04-s02|2|检查储粮湿度|page=147|visible_levels=5
+        section|warehouse-l5-c04-s03|3|使用电子气体检测仪检查粮堆气体成分|page=157|visible_levels=5
+        section|warehouse-l5-c04-s04|4|检查储粮害虫|page=159|visible_levels=5
+        section|warehouse-l5-c04-s05|5|检查鼠雀|page=165|visible_levels=5
+        chapter|warehouse-l5-c05|5|粮情控制|page=173|visible_levels=5
+        section|warehouse-l5-c05-s01|1|控制储存粮油温度|page=173|visible_levels=5
+        section|warehouse-l5-c05-s02|2|控制储存粮油水分|page=175|visible_levels=5
+        section|warehouse-l5-c05-s03|3|控制粮堆气体成分|page=179|visible_levels=5
+        section|warehouse-l5-c05-s04|4|防治储粮害虫|page=186|visible_levels=5
+        section|warehouse-l5-c05-s05|5|储粮鼠类防治|page=188|visible_levels=5
+        part|warehouse-l4|3|中级粮油仓储管理员|visible_levels=4
+        chapter|warehouse-l4-c06|6|粮油出入库作业|page=196|visible_levels=4
+        section|warehouse-l4-c06-s01|1|粮油出入库准备|page=196|visible_levels=4
+        section|warehouse-l4-c06-s02|2|粮油出入库作业|page=209|visible_levels=4
+        section|warehouse-l4-c06-s03|3|粮油出入库收尾|page=226|visible_levels=4
+        chapter|warehouse-l4-c07|7|粮情检查|page=230|visible_levels=4
+        section|warehouse-l4-c07-s01|1|检查储粮温度|page=230|visible_levels=4
+        section|warehouse-l4-c07-s02|2|检查储粮湿度和水分|page=235|visible_levels=4
+        section|warehouse-l4-c07-s03|3|检测粮堆气体|page=241|visible_levels=4
+        section|warehouse-l4-c07-s04|4|检查储粮害虫|page=244|visible_levels=4
+        chapter|warehouse-l4-c08|8|粮情控制|page=250|visible_levels=4
+        section|warehouse-l4-c08-s01|1|控制储存粮油温度|page=250|visible_levels=4
+        section|warehouse-l4-c08-s02|2|控制储存粮油水分|page=273|visible_levels=4
+        section|warehouse-l4-c08-s03|3|控制粮堆气体成分|page=277|visible_levels=4
+        section|warehouse-l4-c08-s04|4|防治储粮害虫|page=279|visible_levels=4
+        section|warehouse-l4-c08-s05|5|储粮鼠类防治|page=297|visible_levels=4
+        part|warehouse-l3|4|高级粮油仓储管理员|visible_levels=3
+        chapter|warehouse-l3-c09|9|粮油出入库管理|page=302|visible_levels=3
+        section|warehouse-l3-c09-s01|1|粮油出入库准备|page=302|visible_levels=3
+        section|warehouse-l3-c09-s02|2|粮油出入库作业|page=315|visible_levels=3
+        section|warehouse-l3-c09-s03|3|粮油出入库收尾|page=328|visible_levels=3
+        chapter|warehouse-l3-c10|10|粮情检查|page=340|visible_levels=3
+        section|warehouse-l3-c10-s01|1|分析储粮温度变化原因|page=340|visible_levels=3
+        section|warehouse-l3-c10-s02|2|分析储粮水分变化原因|page=343|visible_levels=3
+        section|warehouse-l3-c10-s03|3|检测粮堆气体|page=345|visible_levels=3
+        section|warehouse-l3-c10-s04|4|检查储粮害虫|page=349|visible_levels=3
+        section|warehouse-l3-c10-s05|5|检查储油质量|page=355|visible_levels=3
+        chapter|warehouse-l3-c11|11|粮情控制|page=372|visible_levels=3
+        section|warehouse-l3-c11-s01|1|控制储存粮油温度|page=372|visible_levels=3
+        section|warehouse-l3-c11-s02|2|控制储存粮油水分|page=380|visible_levels=3
+        section|warehouse-l3-c11-s03|3|控制粮堆气体成分|page=383|visible_levels=3
+        section|warehouse-l3-c11-s04|4|防治储粮害虫|page=388|visible_levels=3
+        section|warehouse-l3-c11-s05|5|防治鼠雀|page=399|visible_levels=3
+        section|warehouse-l3-c11-s06|6|防治储粮发热霉变|page=402|visible_levels=3
+        """
+    ),
+    "4-08-05-01": _lines(
+        """
+        part|inspector|1|粮油质检员知识目录|visible_levels=5,4,3
+        chapter|inspector-c01|1|职业道德与实验室安全|page=null|visible_levels=5,4,3
+        section|inspector-c01-s01|1|实验室安全规范|page=null|visible_levels=5,4,3
+        section|inspector-c01-s02|2|检验职业道德|page=null|visible_levels=5,4,3
+        chapter|inspector-c02|2|扦样分样与样品制备|page=null|visible_levels=5,4,3
+        section|inspector-c02-s01|1|扦样方法|page=null|visible_levels=5,4,3
+        section|inspector-c02-s02|2|样品制备|page=null|visible_levels=5,4,3
+        chapter|inspector-c03|3|试剂器皿与仪器|page=null|visible_levels=5,4,3
+        section|inspector-c03-s01|1|试剂管理|page=null|visible_levels=5,4,3
+        section|inspector-c03-s02|2|仪器校准|page=null|visible_levels=5,4,3
+        chapter|inspector-c04|4|粮油质量指标|page=null|visible_levels=5,4,3
+        section|inspector-c04-s01|1|水分指标|page=null|visible_levels=5,4,3
+        section|inspector-c04-s02|2|杂质指标|page=null|visible_levels=5,4,3
+        chapter|inspector-c05|5|理化检验方法|page=null|visible_levels=5,4,3
+        section|inspector-c05-s01|1|水分测定|page=null|visible_levels=5,4,3
+        section|inspector-c05-s02|2|杂质测定|page=null|visible_levels=5,4,3
+        chapter|inspector-c06|6|储存品质与安全指标|page=null|visible_levels=5,4,3
+        section|inspector-c06-s01|1|储存品质判定|page=null|visible_levels=5,4,3
+        section|inspector-c06-s02|2|食品安全指标|page=null|visible_levels=5,4,3
+        chapter|inspector-c07|7|数据处理与质量控制|page=null|visible_levels=5,4,3
+        section|inspector-c07-s01|1|检验数据处理|page=null|visible_levels=5,4,3
+        section|inspector-c07-s02|2|质量控制样|page=null|visible_levels=5,4,3
+        chapter|inspector-c08|8|检验记录与报告|page=null|visible_levels=5,4,3
+        section|inspector-c08-s01|1|原始记录|page=null|visible_levels=5,4,3
+        section|inspector-c08-s02|2|检验报告|page=null|visible_levels=5,4,3
+        """
+    ),
+}
+
+
+def _catalog_outline(catalog, occupation_code: str) -> tuple[str, ...]:
+    lines: list[str] = []
+    for part in catalog.occupations[occupation_code].parts:
+        visible_levels = ",".join(str(level) for level in part.levels)
+        lines.append(
+            f"part|{part.id}|{part.number}|{part.title}"
+            f"|visible_levels={visible_levels}"
+        )
+        for chapter in part.chapters:
+            chapter_page = "null" if chapter.page is None else str(chapter.page)
+            lines.append(
+                f"chapter|{chapter.id}|{chapter.number}|{chapter.title}"
+                f"|page={chapter_page}|visible_levels={visible_levels}"
+            )
+            for section in chapter.sections:
+                section_page = "null" if section.page is None else str(section.page)
+                lines.append(
+                    f"section|{section.id}|{section.number}|{section.title}"
+                    f"|page={section_page}|visible_levels={visible_levels}"
+                )
+    return tuple(lines)
+
+
+def _write_document(tmp_path: Path, document: object) -> Path:
+    path = tmp_path / "catalog.json"
+    path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def test_catalog_locks_every_title_page_id_order_and_visible_level():
+    catalog = load_knowledge_catalog(CATALOG_PATH)
+
+    assert {
+        code: occupation.title
+        for code, occupation in catalog.occupations.items()
+    } == {
+        "4-02-06-01": "粮油仓储管理员",
+        "4-08-05-01": "粮油质量检验员",
+    }
+    assert {
+        code: _catalog_outline(catalog, code)
+        for code in catalog.occupations
+    } == EXPECTED_OUTLINES
+
+
+def test_runtime_document_round_trips_the_canonical_json():
+    document = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    catalog = load_knowledge_catalog(CATALOG_PATH)
+
+    runtime_document = catalog.runtime_document()
+
+    assert runtime_document == document
+    assert json.loads(json.dumps(runtime_document, ensure_ascii=False)) == document
+
+
+def test_catalog_occupations_are_immutable():
+    catalog = load_knowledge_catalog(CATALOG_PATH)
+    original_document = catalog.runtime_document()
+
+    with pytest.raises(AttributeError):
+        getattr(catalog.occupations, "clear")()
+    with pytest.raises(TypeError):
+        catalog.occupations["new"] = catalog.occupations["4-02-06-01"]
+
+    assert catalog.runtime_document() == original_document
+
+
 def test_warehouse_catalog_matches_confirmed_textbook_structure():
     catalog = load_knowledge_catalog(CATALOG_PATH)
 
@@ -67,4 +234,36 @@ def test_catalog_rejects_duplicate_ids(tmp_path: Path):
     path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
 
     with pytest.raises(ValueError, match="duplicate catalog ID"):
+        load_knowledge_catalog(path)
+
+
+@pytest.mark.parametrize("invalid_level", [5.0, True])
+def test_catalog_levels_require_strict_integers(
+    tmp_path: Path,
+    invalid_level: object,
+):
+    document = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    document["occupations"]["4-02-06-01"]["parts"][0]["levels"] = [invalid_level]
+    path = _write_document(tmp_path, document)
+
+    with pytest.raises(ValueError, match="invalid levels"):
+        load_knowledge_catalog(path)
+
+
+@pytest.mark.parametrize("node_kind", ["part", "chapter", "section"])
+def test_catalog_rejects_non_object_nested_nodes(
+    tmp_path: Path,
+    node_kind: str,
+):
+    document = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    first_part = document["occupations"]["4-02-06-01"]["parts"][0]
+    if node_kind == "part":
+        document["occupations"]["4-02-06-01"]["parts"][0] = []
+    elif node_kind == "chapter":
+        first_part["chapters"][0] = []
+    else:
+        first_part["chapters"][0]["sections"][0] = []
+    path = _write_document(tmp_path, document)
+
+    with pytest.raises(ValueError, match=rf"{node_kind} must be an object"):
         load_knowledge_catalog(path)

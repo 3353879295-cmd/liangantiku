@@ -1,9 +1,10 @@
 """Canonical knowledge catalog loading and lookup."""
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from types import MappingProxyType
 
 
 @dataclass(frozen=True)
@@ -40,7 +41,7 @@ class CatalogOccupation:
 
 @dataclass(frozen=True)
 class KnowledgeCatalog:
-    occupations: dict[str, CatalogOccupation]
+    occupations: Mapping[str, CatalogOccupation]
 
     def allows(
         self,
@@ -150,6 +151,8 @@ def load_knowledge_catalog(path: Path) -> KnowledgeCatalog:
             raise ValueError(f"occupation {code} must contain parts")
         parts: list[CatalogPart] = []
         for raw_part in raw_parts:
+            if not isinstance(raw_part, dict):
+                raise ValueError("part must be an object")
             part_id = _require_text(raw_part.get("id"), "part id")
             if part_id in seen:
                 raise ValueError(f"duplicate catalog ID: {part_id}")
@@ -158,17 +161,32 @@ def load_knowledge_catalog(path: Path) -> KnowledgeCatalog:
             if (
                 not isinstance(raw_levels, list)
                 or not raw_levels
-                or any(level not in {5, 4, 3} for level in raw_levels)
+                or any(
+                    not isinstance(level, int)
+                    or isinstance(level, bool)
+                    or level not in {5, 4, 3}
+                    for level in raw_levels
+                )
             ):
                 raise ValueError(f"part {part_id} has invalid levels")
+            raw_chapters = raw_part.get("chapters")
+            if not isinstance(raw_chapters, list) or not raw_chapters:
+                raise ValueError(f"part {part_id} must contain chapters")
             chapters: list[CatalogChapter] = []
-            for raw_chapter in raw_part.get("chapters", []):
+            for raw_chapter in raw_chapters:
+                if not isinstance(raw_chapter, dict):
+                    raise ValueError("chapter must be an object")
                 chapter_id = _require_text(raw_chapter.get("id"), "chapter id")
                 if chapter_id in seen:
                     raise ValueError(f"duplicate catalog ID: {chapter_id}")
                 seen.add(chapter_id)
+                raw_sections = raw_chapter.get("sections")
+                if not isinstance(raw_sections, list) or not raw_sections:
+                    raise ValueError(f"chapter {chapter_id} must contain sections")
                 sections: list[CatalogSection] = []
-                for raw_section in raw_chapter.get("sections", []):
+                for raw_section in raw_sections:
+                    if not isinstance(raw_section, dict):
+                        raise ValueError("section must be an object")
                     section_id = _require_text(raw_section.get("id"), "section id")
                     if section_id in seen:
                         raise ValueError(f"duplicate catalog ID: {section_id}")
@@ -181,8 +199,6 @@ def load_knowledge_catalog(path: Path) -> KnowledgeCatalog:
                             page=_require_page(raw_section.get("page"), "section page"),
                         )
                     )
-                if not sections:
-                    raise ValueError(f"chapter {chapter_id} must contain sections")
                 chapters.append(
                     CatalogChapter(
                         id=chapter_id,
@@ -192,8 +208,6 @@ def load_knowledge_catalog(path: Path) -> KnowledgeCatalog:
                         sections=tuple(sections),
                     )
                 )
-            if not chapters:
-                raise ValueError(f"part {part_id} must contain chapters")
             parts.append(
                 CatalogPart(
                     id=part_id,
@@ -207,4 +221,4 @@ def load_knowledge_catalog(path: Path) -> KnowledgeCatalog:
             title=_require_text(raw_occupation.get("title"), "occupation title"),
             parts=tuple(parts),
         )
-    return KnowledgeCatalog(occupations=occupations)
+    return KnowledgeCatalog(occupations=MappingProxyType(occupations))
