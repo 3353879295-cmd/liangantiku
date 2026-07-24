@@ -6,6 +6,8 @@
     "level": 3,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "single",
     "stem": "某检验检测机构计划评价一项粮油检测能力的长期稳定性。下列哪种设计更有助于识别系统性变化？",
     "options": [
@@ -50,6 +52,8 @@
     "level": 3,
     "module": "理化检验方法",
     "topic": "杂质测定",
+    "chapter_id": "inspector-c05",
+    "section_id": "inspector-c05-s02",
     "type": "single",
     "stem": "评审人员发现某检验批次使用了偏离受控方法的操作，但记录中没有批准、技术判断或影响评价。应如何看待该批结果？",
     "options": [
@@ -94,6 +98,8 @@
     "level": 3,
     "module": "数据处理与质量控制",
     "topic": "检验数据处理",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s01",
     "type": "multiple",
     "stem": "粮油质量安全风险监测结果复核时，若发现结果与样品背景明显不协调，应重点核对哪些环节？（选择全部适用项）",
     "options": [
@@ -141,6 +147,8 @@
     "level": 3,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "judge",
     "stem": "检验检测机构能力验证出现不满意结果时，把该结果直接改成满意并删除原始记录，比调查原因和采取受控措施更合适。",
     "options": [
@@ -177,6 +185,8 @@
     "level": 3,
     "module": "试剂器皿与仪器",
     "topic": "仪器校准",
+    "chapter_id": "inspector-c03",
+    "section_id": "inspector-c03-s02",
     "type": "single",
     "stem": "一台关键设备被发现曾在校准状态失效期间用于多个样品。技术负责人评估影响时，哪项资料最关键？",
     "options": [
@@ -221,6 +231,8 @@
     "level": 3,
     "module": "检验记录与报告",
     "topic": "检验报告",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s02",
     "type": "multiple",
     "stem": "高级检验人员审核风险监测数据报送包时，应确认哪些内容相互一致？（选择全部适用项）",
     "options": [
@@ -267,6 +279,8 @@
     "level": 3,
     "module": "职业道德与实验室安全",
     "topic": "检验职业道德",
+    "chapter_id": "inspector-c01",
+    "section_id": "inspector-c01-s02",
     "type": "single",
     "stem": "风险监测项目尚未按规定发布，一名无关人员要求检验员发送完整样品清单和未复核结果。最合适的处理是？",
     "options": [
@@ -311,6 +325,8 @@
     "level": 3,
     "module": "粮油质量指标",
     "topic": "水分指标",
+    "chapter_id": "inspector-c04",
+    "section_id": "inspector-c04-s01",
     "type": "judge",
     "stem": "某机构在能力验证中表现满意，可以直接证明该机构今后检测的每一个粮油样品都必然得到正确质量结论。",
     "options": [

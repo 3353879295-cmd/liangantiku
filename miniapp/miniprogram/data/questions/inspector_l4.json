@@ -6,6 +6,8 @@
     "level": 4,
     "module": "理化检验方法",
     "topic": "水分测定",
+    "chapter_id": "inspector-c05",
+    "section_id": "inspector-c05-s01",
     "type": "single",
     "stem": "依法向社会出具具有证明作用数据的检验检测机构准备启用一项新引入的方法。正式用于出具结果前，首先应关注什么？",
     "options": [
@@ -50,6 +52,8 @@
     "level": 4,
     "module": "职业道德与实验室安全",
     "topic": "实验室安全规范",
+    "chapter_id": "inspector-c01",
+    "section_id": "inspector-c01-s01",
     "type": "single",
     "stem": "检验开始前发现实验室环境条件已超出该受控方法规定范围。中级检验员应如何处理？",
     "options": [
@@ -94,6 +98,8 @@
     "level": 4,
     "module": "试剂器皿与仪器",
     "topic": "仪器校准",
+    "chapter_id": "inspector-c03",
+    "section_id": "inspector-c03-s02",
     "type": "multiple",
     "stem": "审核一台用于出具检验数据的设备是否处于受控状态时，应同时关注哪些证据？（选择全部适用项）",
     "options": [
@@ -140,6 +146,8 @@
     "level": 4,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "judge",
     "stem": "检验检测机构参加能力验证时，应真实客观报送结果并保留原始记录，不能为了获得满意评价而选择性修改数据。",
     "options": [
@@ -176,6 +184,8 @@
     "level": 4,
     "module": "数据处理与质量控制",
     "topic": "检验数据处理",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s01",
     "type": "single",
     "stem": "风险监测检验中，一组平行结果出现明显不一致且原因未查明。以下哪项最符合质量控制要求？",
     "options": [
@@ -221,6 +231,8 @@
     "level": 4,
     "module": "扦样分样与样品制备",
     "topic": "样品制备",
+    "chapter_id": "inspector-c02",
+    "section_id": "inspector-c02-s02",
     "type": "single",
     "stem": "风险监测样品在制备过程中需要分出检验用样和留存部分。为维持可追溯性，哪项做法正确？",
     "options": [
@@ -265,6 +277,8 @@
     "level": 4,
     "module": "检验记录与报告",
     "topic": "检验报告",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s02",
     "type": "multiple",
     "stem": "风险监测数据在规定流程内报送前，哪些做法有助于保证信息质量？（选择全部适用项）",
     "options": [
@@ -311,6 +325,8 @@
     "level": 4,
     "module": "检验记录与报告",
     "topic": "原始记录",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s01",
     "type": "judge",
     "stem": "能力验证样品的检测结果已经上报后，原始记录仍应按机构要求保留；上报完成不等于可以销毁原始证据。",
     "options": [

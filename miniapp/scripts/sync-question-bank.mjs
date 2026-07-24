@@ -35,6 +35,11 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } =
     throw new Error('minimumPerShard must be a positive integer');
   }
 
+  const catalog = JSON.parse(readFileSync(join(sourceDir, 'knowledge_catalog.json'), 'utf8'));
+  if (!catalog || typeof catalog !== 'object' || !catalog.occupations) {
+    throw new Error('knowledge_catalog.json must contain occupations');
+  }
+
   const loaded = Object.fromEntries(
     SHARDS.map((filename) => [filename, loadShard(sourceDir, filename, minimumPerShard)]),
   );
@@ -52,6 +57,11 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } =
 export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = ${JSON.stringify(runtimeRecords, null, 2)};
 `;
   writeFileSync(join(targetDir, 'runtime-question-records.ts'), runtimeModule, 'utf8');
+  const catalogModule = `import type { RuntimeKnowledgeCatalog } from '../../types/knowledge-catalog';
+
+export const RUNTIME_KNOWLEDGE_CATALOG: RuntimeKnowledgeCatalog = ${JSON.stringify(catalog, null, 2)};
+`;
+  writeFileSync(join(targetDir, 'runtime-knowledge-catalog.ts'), catalogModule, 'utf8');
   return counts;
 }
 

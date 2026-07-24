@@ -13,6 +13,8 @@ export interface RuntimeQuestionRecord {
   level: CertificateLevel;
   module: string;
   topic: string;
+  chapter_id: string;
+  section_id: string;
   type: QuestionType;
   stem: string;
   options: QuestionOption[];

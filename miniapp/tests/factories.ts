@@ -7,6 +7,8 @@ export const makeQuestion = (overrides: Partial<Question> = {}): Question => ({
   level: 5,
   module: '粮情检查',
   topic: '粮温检查',
+  chapterId: 'warehouse-l5-c03',
+  sectionId: 'warehouse-l5-c03-s03',
   type: 'single',
   stem: '检查粮温时首先应确认什么？',
   options: [

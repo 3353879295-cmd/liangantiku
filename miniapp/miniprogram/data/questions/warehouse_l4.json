@@ -6,6 +6,8 @@
     "level": 4,
     "module": "粮情检查",
     "topic": "粮温检查",
+    "chapter_id": "warehouse-l4-c07",
+    "section_id": "warehouse-l4-c07-s01",
     "type": "single",
     "stem": "在政策性粮食承储企业安排粮情检查时，哪种做法最有利于后续复核温度变化？",
     "options": [
@@ -50,6 +52,8 @@
     "level": 4,
     "module": "职业道德与安全生产",
     "topic": "安全生产责任",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s02",
     "type": "single",
     "stem": "机械通风设备运行中出现异常振动，现场人员尚未查明原因。保管员首先应怎么做？",
     "options": [
@@ -94,6 +98,8 @@
     "level": 4,
     "module": "仓房与设备管理",
     "topic": "仓房检查",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s01",
     "type": "multiple",
     "stem": "政策性粮食承储企业开展仓房日常检查时，为使问题可追踪，下列哪些信息应在发现异常时保留？（选择全部适用项）",
     "options": [
@@ -140,6 +146,8 @@
     "level": 4,
     "module": "粮油储藏基础",
     "topic": "储粮生态条件",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s01",
     "type": "judge",
     "stem": "政策性粮食承储企业发现仓内局部水汽痕迹但原因未确认时，应先记录位置和现象并按制度报告，而不是直接把它写成粮食霉变结论。",
     "options": [
@@ -176,6 +184,8 @@
     "level": 4,
     "module": "仓房与设备管理",
     "topic": "储粮设备维护",
+    "chapter_id": "warehouse-l4-c07",
+    "section_id": "warehouse-l4-c07-s01",
     "type": "single",
     "stem": "检查发现测温设备外壳受损，但当天仍有测温任务。以下哪种处理最妥当？",
     "options": [
@@ -220,6 +230,8 @@
     "level": 4,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l4-c06",
+    "section_id": "warehouse-l4-c06-s03",
     "type": "single",
     "stem": "粮食经营者当天先发生一笔销售、后发生一笔入库，两笔原始凭证齐全。形成经营台账时应如何排列？",
     "options": [
@@ -264,6 +276,8 @@
     "level": 4,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l4-c06",
+    "section_id": "warehouse-l4-c06-s03",
     "type": "multiple",
     "stem": "整理粮食经营台账依据时，下列哪些已形成材料属于办法明确列举的原始凭证类型？（选择全部适用项）",
     "options": [
@@ -310,6 +324,8 @@
     "level": 4,
     "module": "粮情控制与处理",
     "topic": "异常粮情处理",
+    "chapter_id": "warehouse-l4-c08",
+    "section_id": "warehouse-l4-c08-s01",
     "type": "judge",
     "stem": "政策性粮食承储企业出现异常粮情线索时，只要保管员经验丰富，就可以不保留原始记录，直接实施未经批准的处置方案。",
     "options": [

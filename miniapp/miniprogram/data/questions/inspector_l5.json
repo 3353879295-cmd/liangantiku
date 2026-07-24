@@ -6,6 +6,8 @@
     "level": 5,
     "module": "扦样分样与样品制备",
     "topic": "扦样方法",
+    "chapter_id": "inspector-c02",
+    "section_id": "inspector-c02-s01",
     "type": "single",
     "stem": "开展政府粮油储备质量检查扦样时，哪项做法最能保证后续结果可对应到被检查批次？",
     "options": [
@@ -50,6 +52,8 @@
     "level": 5,
     "module": "扦样分样与样品制备",
     "topic": "样品制备",
+    "chapter_id": "inspector-c02",
+    "section_id": "inspector-c02-s02",
     "type": "multiple",
     "stem": "粮油质量安全风险监测样品到达承检环节时，下列哪些信息适合在接收登记中核对？（选择全部适用项）",
     "options": [
@@ -96,6 +100,8 @@
     "level": 5,
     "module": "试剂器皿与仪器",
     "topic": "仪器校准",
+    "chapter_id": "inspector-c03",
+    "section_id": "inspector-c03-s02",
     "type": "single",
     "stem": "依法向社会出具具有证明作用数据的检验检测机构中，某仪器已超过规定的校准或核查状态确认周期。检验员应如何处理？",
     "options": [
@@ -140,6 +146,8 @@
     "level": 5,
     "module": "职业道德与实验室安全",
     "topic": "检验职业道德",
+    "chapter_id": "inspector-c01",
+    "section_id": "inspector-c01-s02",
     "type": "judge",
     "stem": "检验员发现原始读数与预期不一致时，可以删除原始读数，只保留更接近预期的复测结果。",
     "options": [
@@ -177,6 +185,8 @@
     "level": 5,
     "module": "检验记录与报告",
     "topic": "原始记录",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s01",
     "type": "single",
     "stem": "检验过程中发现样品编号与任务单不一致，尚未开始测定。最合适的做法是？",
     "options": [
@@ -221,6 +231,8 @@
     "level": 5,
     "module": "数据处理与质量控制",
     "topic": "检验数据处理",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s01",
     "type": "judge",
     "stem": "粮油质量安全风险监测样品包装破损且可能影响样品状态时，承检人员应记录并按任务程序处理，不能假装接收状态正常。",
     "options": [
@@ -257,6 +269,8 @@
     "level": 5,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "multiple",
     "stem": "为使一次受控检验能够被复核，原始记录通常需要对应哪些信息？（选择全部适用项）",
     "options": [
@@ -303,6 +317,8 @@
     "level": 5,
     "module": "检验记录与报告",
     "topic": "检验报告",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s02",
     "type": "single",
     "stem": "风险监测检验中，某项结果仍在规定的复核流程内。数据报送人员应如何处理？",
     "options": [

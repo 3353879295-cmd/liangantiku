@@ -8,6 +8,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "某粮油库本年度只开展粮食储存业务。保管员在交接资料时，关于粮食经营台账的做法，哪项符合现行规则？",
     "options": [
@@ -52,6 +54,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "保管员整理本周已发生业务的台账资料时，下列哪些材料可以作为形成粮食经营台账的原始依据？（选择全部适用项）",
     "options": [
@@ -98,6 +102,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "同一库点上午完成入库、下午完成出库，原始凭证均已齐全。保管员将两笔业务写入经营台账时，最符合要求的顺序是？",
     "options": [
@@ -142,6 +148,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "库内交接时要把台账资料按办法规定的基本类别归集。下列哪些属于粮食经营台账通常包含的信息类别？（选择全部适用项）",
     "options": [
@@ -188,6 +196,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "保管员核对经营主体基础信息页时，下列哪组信息属于市场主体的基础信息？",
     "options": [
@@ -232,6 +242,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "保管员补录一笔已经发生的粮食购销交易行为时，下列哪些内容属于应结合业务记录的交易信息？（选择全部适用项）",
     "options": [
@@ -278,6 +290,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：记录一笔粮食购进或销售业务时，台账还应能够反映该粮食的来源或去向。",
     "options": [
@@ -314,6 +328,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "在整理某批粮食的交易信息时，保管员要补充“其他信息”。下列哪项与这一部分最相符？",
     "options": [
@@ -358,6 +374,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "保管员协助核对经营资金财务信息的基础栏。下列哪一组最符合该栏应记录的内容？",
     "options": [
@@ -402,6 +420,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "库内正在执行已下达的政策性粮食轮换计划。保管员整理政策执行信息时，哪项最符合应反映的内容？",
     "options": [
@@ -446,6 +466,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "一家企业只从事商业性粮食经营。保管员整理其经营台账的基础资料时，最应覆盖哪几类基础信息？",
     "options": [
@@ -490,6 +512,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：承担政策性业务的主体建立政策性粮食经营台账时，可以只保留购销交易资料而不记录相关政策执行信息。",
     "options": [
@@ -526,6 +550,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：交接中发现台账数值与原始凭证不一致时，应以核对后的凭证和相关要求为依据处理，不能为了交接方便而伪造、篡改或损毁台账内容。",
     "options": [
@@ -562,6 +588,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "班组交接时，粮食购进、储存和销售的原始凭证散落在不同文件夹中。保管员首先应采取哪项记录措施？",
     "options": [
@@ -606,6 +634,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：某月没有发生粮食经营业务时，月度台账应完全留空，不需要结转上月末相关指标数据。",
     "options": [
@@ -642,6 +672,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "库房搬迁前，保管员整理可供查验的粮食经营台账。按照现行办法，相关资料的保存期限最低应为多久？",
     "options": [
@@ -686,6 +718,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "库房采用电子资料交接。下列哪些情形可以作为“已通过信息化方式建立粮食经营台账”的依据？（选择全部适用项）",
     "options": [
@@ -731,6 +765,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "经核对，库房使用的电子管理系统已经能够查询到办法列明的全部相关台账内容。为同一内容再次建立台账时，哪项做法最符合要求？",
     "options": [
@@ -775,6 +811,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "保管员按规定准备需报送的粮食经营基本数据时，下列哪一组业务属于办法明确列出的范围？",
     "options": [
@@ -819,6 +857,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "交接前，保管员发现准备报送的库存数据与当天已经核对的经营台账不一致。哪项处理原则最符合要求？",
     "options": [
@@ -863,6 +903,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "粮情检查",
     "topic": "粮温检查",
+    "chapter_id": "warehouse-l4-c07",
+    "section_id": "warehouse-l4-c07-s01",
     "type": "single",
     "stem": "在政策性粮食承储企业安排粮情检查时，哪种做法最有利于后续复核温度变化？",
     "options": [
@@ -907,6 +949,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "职业道德与安全生产",
     "topic": "安全生产责任",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s02",
     "type": "single",
     "stem": "机械通风设备运行中出现异常振动，现场人员尚未查明原因。保管员首先应怎么做？",
     "options": [
@@ -951,6 +995,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "仓房与设备管理",
     "topic": "仓房检查",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s01",
     "type": "multiple",
     "stem": "政策性粮食承储企业开展仓房日常检查时，为使问题可追踪，下列哪些信息应在发现异常时保留？（选择全部适用项）",
     "options": [
@@ -997,6 +1043,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "粮油储藏基础",
     "topic": "储粮生态条件",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s01",
     "type": "judge",
     "stem": "政策性粮食承储企业发现仓内局部水汽痕迹但原因未确认时，应先记录位置和现象并按制度报告，而不是直接把它写成粮食霉变结论。",
     "options": [
@@ -1033,6 +1081,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "仓房与设备管理",
     "topic": "储粮设备维护",
+    "chapter_id": "warehouse-l4-c07",
+    "section_id": "warehouse-l4-c07-s01",
     "type": "single",
     "stem": "检查发现测温设备外壳受损，但当天仍有测温任务。以下哪种处理最妥当？",
     "options": [
@@ -1077,6 +1127,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l4-c06",
+    "section_id": "warehouse-l4-c06-s03",
     "type": "single",
     "stem": "粮食经营者当天先发生一笔销售、后发生一笔入库，两笔原始凭证齐全。形成经营台账时应如何排列？",
     "options": [
@@ -1121,6 +1173,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l4-c06",
+    "section_id": "warehouse-l4-c06-s03",
     "type": "multiple",
     "stem": "整理粮食经营台账依据时，下列哪些已形成材料属于办法明确列举的原始凭证类型？（选择全部适用项）",
     "options": [
@@ -1167,6 +1221,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "粮情控制与处理",
     "topic": "异常粮情处理",
+    "chapter_id": "warehouse-l4-c08",
+    "section_id": "warehouse-l4-c08-s01",
     "type": "judge",
     "stem": "政策性粮食承储企业出现异常粮情线索时，只要保管员经验丰富，就可以不保留原始记录，直接实施未经批准的处置方案。",
     "options": [
@@ -1203,6 +1259,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "粮情检查",
     "topic": "粮温检查",
+    "chapter_id": "warehouse-l3-c10",
+    "section_id": "warehouse-l3-c10-s01",
     "type": "single",
     "stem": "政策性粮食承储企业复盘某仓连续一周的测温记录时，个别高点反复出现。作为高级保管人员，下一步最合理的是？",
     "options": [
@@ -1247,6 +1305,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "储粮害虫与霉变",
     "topic": "储粮害虫识别",
+    "chapter_id": "warehouse-l3-c10",
+    "section_id": "warehouse-l3-c10-s04",
     "type": "single",
     "stem": "多个仓间在不同点位陆续发现疑似害虫痕迹。为支持后续专业判断，汇总材料首先应突出什么？",
     "options": [
@@ -1291,6 +1351,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "粮情控制与处理",
     "topic": "异常粮情处理",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s06",
     "type": "multiple",
     "stem": "评审一项政策性粮食仓储异常处置建议时，为确保建议有事实依据，应同时核对哪些资料？（选择全部适用项）",
     "options": [
@@ -1337,6 +1399,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "职业道德与安全生产",
     "topic": "安全生产责任",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s02",
     "type": "judge",
     "stem": "粮食仓储企业发现可能构成重大生产安全事故隐患的线索时，应先控制相关风险并按制度组织核查，不能因为尚未定性就继续危险作业。",
     "options": [
@@ -1373,6 +1437,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "仓房与设备管理",
     "topic": "储粮设备维护",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s01",
     "type": "single",
     "stem": "同一类通风设备在三个月内多次出现相似异常。高级保管人员组织复盘时，哪项最能发现管理薄弱点？",
     "options": [
@@ -1417,6 +1483,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l3-c09",
+    "section_id": "warehouse-l3-c09-s03",
     "type": "single",
     "stem": "审核粮食经营台账时发现一笔出库业务没有对应原始凭证，但台账数字与月度汇总恰好一致。应如何处理？",
     "options": [
@@ -1461,6 +1529,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "账卡与记录",
     "topic": "粮情记录",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s01",
     "type": "multiple",
     "stem": "为比较某仓通风前后的粮情变化，汇总记录至少应保持哪些信息可以相互对应？（选择全部适用项）",
     "options": [
@@ -1507,6 +1577,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "粮情控制与处理",
     "topic": "通风降温",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s01",
     "type": "judge",
     "stem": "评价政策性粮食仓储通风作业时，只要设备正常运转就足以认定作业有效，无需比较作业前后粮情记录。",
     "options": [
@@ -1543,6 +1615,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "粮情控制与处理",
     "topic": "异常粮情处理",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s06",
     "type": "case",
     "stem": "【案例】某仓连续两次记录到同一点位温度异常，现场人员建议立即启动设备并进入粮堆查找原因。作为高级保管员，哪项初步处理最符合受控作业要求？",
     "options": [
@@ -1587,6 +1661,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "扦样分样与样品制备",
     "topic": "扦样方法",
+    "chapter_id": "inspector-c02",
+    "section_id": "inspector-c02-s01",
     "type": "single",
     "stem": "开展政府粮油储备质量检查扦样时，哪项做法最能保证后续结果可对应到被检查批次？",
     "options": [
@@ -1631,6 +1707,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "扦样分样与样品制备",
     "topic": "样品制备",
+    "chapter_id": "inspector-c02",
+    "section_id": "inspector-c02-s02",
     "type": "multiple",
     "stem": "粮油质量安全风险监测样品到达承检环节时，下列哪些信息适合在接收登记中核对？（选择全部适用项）",
     "options": [
@@ -1677,6 +1755,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "试剂器皿与仪器",
     "topic": "仪器校准",
+    "chapter_id": "inspector-c03",
+    "section_id": "inspector-c03-s02",
     "type": "single",
     "stem": "依法向社会出具具有证明作用数据的检验检测机构中，某仪器已超过规定的校准或核查状态确认周期。检验员应如何处理？",
     "options": [
@@ -1721,6 +1801,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "职业道德与实验室安全",
     "topic": "检验职业道德",
+    "chapter_id": "inspector-c01",
+    "section_id": "inspector-c01-s02",
     "type": "judge",
     "stem": "检验员发现原始读数与预期不一致时，可以删除原始读数，只保留更接近预期的复测结果。",
     "options": [
@@ -1758,6 +1840,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "检验记录与报告",
     "topic": "原始记录",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s01",
     "type": "single",
     "stem": "检验过程中发现样品编号与任务单不一致，尚未开始测定。最合适的做法是？",
     "options": [
@@ -1802,6 +1886,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "数据处理与质量控制",
     "topic": "检验数据处理",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s01",
     "type": "judge",
     "stem": "粮油质量安全风险监测样品包装破损且可能影响样品状态时，承检人员应记录并按任务程序处理，不能假装接收状态正常。",
     "options": [
@@ -1838,6 +1924,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "multiple",
     "stem": "为使一次受控检验能够被复核，原始记录通常需要对应哪些信息？（选择全部适用项）",
     "options": [
@@ -1884,6 +1972,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 5,
     "module": "检验记录与报告",
     "topic": "检验报告",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s02",
     "type": "single",
     "stem": "风险监测检验中，某项结果仍在规定的复核流程内。数据报送人员应如何处理？",
     "options": [
@@ -1928,6 +2018,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "理化检验方法",
     "topic": "水分测定",
+    "chapter_id": "inspector-c05",
+    "section_id": "inspector-c05-s01",
     "type": "single",
     "stem": "依法向社会出具具有证明作用数据的检验检测机构准备启用一项新引入的方法。正式用于出具结果前，首先应关注什么？",
     "options": [
@@ -1972,6 +2064,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "职业道德与实验室安全",
     "topic": "实验室安全规范",
+    "chapter_id": "inspector-c01",
+    "section_id": "inspector-c01-s01",
     "type": "single",
     "stem": "检验开始前发现实验室环境条件已超出该受控方法规定范围。中级检验员应如何处理？",
     "options": [
@@ -2016,6 +2110,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "试剂器皿与仪器",
     "topic": "仪器校准",
+    "chapter_id": "inspector-c03",
+    "section_id": "inspector-c03-s02",
     "type": "multiple",
     "stem": "审核一台用于出具检验数据的设备是否处于受控状态时，应同时关注哪些证据？（选择全部适用项）",
     "options": [
@@ -2062,6 +2158,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "judge",
     "stem": "检验检测机构参加能力验证时，应真实客观报送结果并保留原始记录，不能为了获得满意评价而选择性修改数据。",
     "options": [
@@ -2098,6 +2196,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "数据处理与质量控制",
     "topic": "检验数据处理",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s01",
     "type": "single",
     "stem": "风险监测检验中，一组平行结果出现明显不一致且原因未查明。以下哪项最符合质量控制要求？",
     "options": [
@@ -2143,6 +2243,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "扦样分样与样品制备",
     "topic": "样品制备",
+    "chapter_id": "inspector-c02",
+    "section_id": "inspector-c02-s02",
     "type": "single",
     "stem": "风险监测样品在制备过程中需要分出检验用样和留存部分。为维持可追溯性，哪项做法正确？",
     "options": [
@@ -2187,6 +2289,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "检验记录与报告",
     "topic": "检验报告",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s02",
     "type": "multiple",
     "stem": "风险监测数据在规定流程内报送前，哪些做法有助于保证信息质量？（选择全部适用项）",
     "options": [
@@ -2233,6 +2337,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 4,
     "module": "检验记录与报告",
     "topic": "原始记录",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s01",
     "type": "judge",
     "stem": "能力验证样品的检测结果已经上报后，原始记录仍应按机构要求保留；上报完成不等于可以销毁原始证据。",
     "options": [
@@ -2269,6 +2375,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "single",
     "stem": "某检验检测机构计划评价一项粮油检测能力的长期稳定性。下列哪种设计更有助于识别系统性变化？",
     "options": [
@@ -2313,6 +2421,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "理化检验方法",
     "topic": "杂质测定",
+    "chapter_id": "inspector-c05",
+    "section_id": "inspector-c05-s02",
     "type": "single",
     "stem": "评审人员发现某检验批次使用了偏离受控方法的操作，但记录中没有批准、技术判断或影响评价。应如何看待该批结果？",
     "options": [
@@ -2357,6 +2467,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "数据处理与质量控制",
     "topic": "检验数据处理",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s01",
     "type": "multiple",
     "stem": "粮油质量安全风险监测结果复核时，若发现结果与样品背景明显不协调，应重点核对哪些环节？（选择全部适用项）",
     "options": [
@@ -2404,6 +2516,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "数据处理与质量控制",
     "topic": "质量控制样",
+    "chapter_id": "inspector-c07",
+    "section_id": "inspector-c07-s02",
     "type": "judge",
     "stem": "检验检测机构能力验证出现不满意结果时，把该结果直接改成满意并删除原始记录，比调查原因和采取受控措施更合适。",
     "options": [
@@ -2440,6 +2554,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "试剂器皿与仪器",
     "topic": "仪器校准",
+    "chapter_id": "inspector-c03",
+    "section_id": "inspector-c03-s02",
     "type": "single",
     "stem": "一台关键设备被发现曾在校准状态失效期间用于多个样品。技术负责人评估影响时，哪项资料最关键？",
     "options": [
@@ -2484,6 +2600,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "检验记录与报告",
     "topic": "检验报告",
+    "chapter_id": "inspector-c08",
+    "section_id": "inspector-c08-s02",
     "type": "multiple",
     "stem": "高级检验人员审核风险监测数据报送包时，应确认哪些内容相互一致？（选择全部适用项）",
     "options": [
@@ -2530,6 +2648,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "职业道德与实验室安全",
     "topic": "检验职业道德",
+    "chapter_id": "inspector-c01",
+    "section_id": "inspector-c01-s02",
     "type": "single",
     "stem": "风险监测项目尚未按规定发布，一名无关人员要求检验员发送完整样品清单和未复核结果。最合适的处理是？",
     "options": [
@@ -2574,6 +2694,8 @@ export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = [
     "level": 3,
     "module": "粮油质量指标",
     "topic": "水分指标",
+    "chapter_id": "inspector-c04",
+    "section_id": "inspector-c04-s01",
     "type": "judge",
     "stem": "某机构在能力验证中表现满意，可以直接证明该机构今后检测的每一个粮油样品都必然得到正确质量结论。",
     "options": [

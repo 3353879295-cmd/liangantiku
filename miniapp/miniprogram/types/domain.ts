@@ -17,6 +17,8 @@ export interface Question {
   level: CertificateLevel;
   module: string;
   topic: string;
+  chapterId: string;
+  sectionId: string;
   type: QuestionType;
   stem: string;
   options: QuestionOption[];
@@ -36,6 +38,8 @@ export interface QuestionFilter {
   occupation?: OccupationCode;
   level?: CertificateLevel;
   module?: string;
+  chapterId?: string;
+  sectionId?: string;
   ids?: string[];
 }
 

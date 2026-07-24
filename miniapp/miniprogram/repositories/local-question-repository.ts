@@ -9,6 +9,8 @@ const adapt = (record: RuntimeQuestionRecord): Question => {
     level: record.level,
     module: record.module,
     topic: record.topic,
+    chapterId: record.chapter_id,
+    sectionId: record.section_id,
     type: record.type,
     stem: record.stem,
     options: record.options.map((option) => ({ ...option })),
@@ -32,6 +34,8 @@ const matchesFilter = (question: Question, filter: QuestionFilter): boolean => {
   if (filter.occupation && question.occupation !== filter.occupation) return false;
   if (filter.level && question.level !== filter.level) return false;
   if (filter.module && question.module !== filter.module) return false;
+  if (filter.chapterId && question.chapterId !== filter.chapterId) return false;
+  if (filter.sectionId && question.sectionId !== filter.sectionId) return false;
   if (filter.ids && !filter.ids.includes(question.id)) return false;
   return true;
 };

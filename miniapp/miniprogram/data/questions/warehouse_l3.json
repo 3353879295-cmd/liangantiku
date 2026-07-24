@@ -6,6 +6,8 @@
     "level": 3,
     "module": "粮情检查",
     "topic": "粮温检查",
+    "chapter_id": "warehouse-l3-c10",
+    "section_id": "warehouse-l3-c10-s01",
     "type": "single",
     "stem": "政策性粮食承储企业复盘某仓连续一周的测温记录时，个别高点反复出现。作为高级保管人员，下一步最合理的是？",
     "options": [
@@ -50,6 +52,8 @@
     "level": 3,
     "module": "储粮害虫与霉变",
     "topic": "储粮害虫识别",
+    "chapter_id": "warehouse-l3-c10",
+    "section_id": "warehouse-l3-c10-s04",
     "type": "single",
     "stem": "多个仓间在不同点位陆续发现疑似害虫痕迹。为支持后续专业判断，汇总材料首先应突出什么？",
     "options": [
@@ -94,6 +98,8 @@
     "level": 3,
     "module": "粮情控制与处理",
     "topic": "异常粮情处理",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s06",
     "type": "multiple",
     "stem": "评审一项政策性粮食仓储异常处置建议时，为确保建议有事实依据，应同时核对哪些资料？（选择全部适用项）",
     "options": [
@@ -140,6 +146,8 @@
     "level": 3,
     "module": "职业道德与安全生产",
     "topic": "安全生产责任",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s02",
     "type": "judge",
     "stem": "粮食仓储企业发现可能构成重大生产安全事故隐患的线索时，应先控制相关风险并按制度组织核查，不能因为尚未定性就继续危险作业。",
     "options": [
@@ -176,6 +184,8 @@
     "level": 3,
     "module": "仓房与设备管理",
     "topic": "储粮设备维护",
+    "chapter_id": "warehouse-basic-c02",
+    "section_id": "warehouse-basic-c02-s01",
     "type": "single",
     "stem": "同一类通风设备在三个月内多次出现相似异常。高级保管人员组织复盘时，哪项最能发现管理薄弱点？",
     "options": [
@@ -220,6 +230,8 @@
     "level": 3,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l3-c09",
+    "section_id": "warehouse-l3-c09-s03",
     "type": "single",
     "stem": "审核粮食经营台账时发现一笔出库业务没有对应原始凭证，但台账数字与月度汇总恰好一致。应如何处理？",
     "options": [
@@ -264,6 +276,8 @@
     "level": 3,
     "module": "账卡与记录",
     "topic": "粮情记录",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s01",
     "type": "multiple",
     "stem": "为比较某仓通风前后的粮情变化，汇总记录至少应保持哪些信息可以相互对应？（选择全部适用项）",
     "options": [
@@ -310,6 +324,8 @@
     "level": 3,
     "module": "粮情控制与处理",
     "topic": "通风降温",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s01",
     "type": "judge",
     "stem": "评价政策性粮食仓储通风作业时，只要设备正常运转就足以认定作业有效，无需比较作业前后粮情记录。",
     "options": [
@@ -346,6 +362,8 @@
     "level": 3,
     "module": "粮情控制与处理",
     "topic": "异常粮情处理",
+    "chapter_id": "warehouse-l3-c11",
+    "section_id": "warehouse-l3-c11-s06",
     "type": "case",
     "stem": "【案例】某仓连续两次记录到同一点位温度异常，现场人员建议立即启动设备并进入粮堆查找原因。作为高级保管员，哪项初步处理最符合受控作业要求？",
     "options": [

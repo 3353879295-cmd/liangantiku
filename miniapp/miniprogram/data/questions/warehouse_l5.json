@@ -6,6 +6,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "某粮油库本年度只开展粮食储存业务。保管员在交接资料时，关于粮食经营台账的做法，哪项符合现行规则？",
     "options": [
@@ -50,6 +52,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "保管员整理本周已发生业务的台账资料时，下列哪些材料可以作为形成粮食经营台账的原始依据？（选择全部适用项）",
     "options": [
@@ -96,6 +100,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "同一库点上午完成入库、下午完成出库，原始凭证均已齐全。保管员将两笔业务写入经营台账时，最符合要求的顺序是？",
     "options": [
@@ -140,6 +146,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "库内交接时要把台账资料按办法规定的基本类别归集。下列哪些属于粮食经营台账通常包含的信息类别？（选择全部适用项）",
     "options": [
@@ -186,6 +194,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "保管员核对经营主体基础信息页时，下列哪组信息属于市场主体的基础信息？",
     "options": [
@@ -230,6 +240,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "保管员补录一笔已经发生的粮食购销交易行为时，下列哪些内容属于应结合业务记录的交易信息？（选择全部适用项）",
     "options": [
@@ -276,6 +288,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：记录一笔粮食购进或销售业务时，台账还应能够反映该粮食的来源或去向。",
     "options": [
@@ -312,6 +326,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "在整理某批粮食的交易信息时，保管员要补充“其他信息”。下列哪项与这一部分最相符？",
     "options": [
@@ -356,6 +372,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "保管员协助核对经营资金财务信息的基础栏。下列哪一组最符合该栏应记录的内容？",
     "options": [
@@ -400,6 +418,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "库内正在执行已下达的政策性粮食轮换计划。保管员整理政策执行信息时，哪项最符合应反映的内容？",
     "options": [
@@ -444,6 +464,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "一家企业只从事商业性粮食经营。保管员整理其经营台账的基础资料时，最应覆盖哪几类基础信息？",
     "options": [
@@ -488,6 +510,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：承担政策性业务的主体建立政策性粮食经营台账时，可以只保留购销交易资料而不记录相关政策执行信息。",
     "options": [
@@ -524,6 +548,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：交接中发现台账数值与原始凭证不一致时，应以核对后的凭证和相关要求为依据处理，不能为了交接方便而伪造、篡改或损毁台账内容。",
     "options": [
@@ -560,6 +586,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "班组交接时，粮食购进、储存和销售的原始凭证散落在不同文件夹中。保管员首先应采取哪项记录措施？",
     "options": [
@@ -604,6 +632,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "judge",
     "stem": "判断：某月没有发生粮食经营业务时，月度台账应完全留空，不需要结转上月末相关指标数据。",
     "options": [
@@ -640,6 +670,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "库房搬迁前，保管员整理可供查验的粮食经营台账。按照现行办法，相关资料的保存期限最低应为多久？",
     "options": [
@@ -684,6 +716,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "multiple",
     "stem": "库房采用电子资料交接。下列哪些情形可以作为“已通过信息化方式建立粮食经营台账”的依据？（选择全部适用项）",
     "options": [
@@ -729,6 +763,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "经核对，库房使用的电子管理系统已经能够查询到办法列明的全部相关台账内容。为同一内容再次建立台账时，哪项做法最符合要求？",
     "options": [
@@ -773,6 +809,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "保管员按规定准备需报送的粮食经营基本数据时，下列哪一组业务属于办法明确列出的范围？",
     "options": [
@@ -817,6 +855,8 @@
     "level": 5,
     "module": "账卡与记录",
     "topic": "库存账卡",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "交接前，保管员发现准备报送的库存数据与当天已经核对的经营台账不一致。哪项处理原则最符合要求？",
     "options": [

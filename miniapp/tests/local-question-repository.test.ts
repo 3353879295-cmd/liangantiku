@@ -12,6 +12,8 @@ const runtimeQuestion = (
   level: 5,
   module: '粮情检查',
   topic: '粮温检查',
+  chapter_id: 'warehouse-l5-c03',
+  section_id: 'warehouse-l5-c03-s03',
   type: 'single',
   stem: '检查粮温时首先应确认什么？',
   options: [
@@ -39,6 +41,8 @@ describe('LocalQuestionRepository', () => {
       level: 4,
       module: '通风管理',
       topic: '机械通风',
+      chapter_id: 'warehouse-l4-c07',
+      section_id: 'warehouse-l4-c07-s01',
     }),
     runtimeQuestion({
       id: 'QI-L5-000001',
@@ -46,6 +50,8 @@ describe('LocalQuestionRepository', () => {
       direction: '粮油质量检验员',
       module: '水分检测',
       topic: '仪器检查',
+      chapter_id: 'inspector-c04',
+      section_id: 'inspector-c04-s01',
     }),
   ];
 
@@ -66,6 +72,15 @@ describe('LocalQuestionRepository', () => {
     const repository = new LocalQuestionRepository(records);
 
     await expect(repository.getById('missing')).resolves.toBeNull();
+  });
+
+  it('filters by stable catalog chapter and section ids', async () => {
+    const repository = new LocalQuestionRepository(records);
+
+    await expect(repository.list({ sectionId: 'warehouse-l5-c03-s03' })).resolves.toHaveLength(1);
+    await expect(repository.list({ chapterId: 'warehouse-l4-c07' })).resolves.toEqual([
+      expect.objectContaining({ id: 'WH-L4-000001' }),
+    ]);
   });
 
   it('preserves requested order and skips missing ids', async () => {
