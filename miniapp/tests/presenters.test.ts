@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CERTIFICATES } from '../miniprogram/data/certificates';
 import { KNOWLEDGE_CATALOG } from '../miniprogram/data/knowledge-catalog';
 import {
+  findCatalogChapterLabel,
   findCatalogChapterTitle,
   presentCatalogParts as presentCatalogPartsDirect,
 } from '../miniprogram/presenters/catalog-presenter';
@@ -152,6 +153,13 @@ describe('findCatalogChapterTitle', () => {
   });
 });
 
+describe('findCatalogChapterLabel', () => {
+  it('combines the exact catalog chapter number and title', () => {
+    expect(findCatalogChapterLabel(KNOWLEDGE_CATALOG, 'warehouse-l5-c04')).toBe('第 4 章 粮情检查');
+    expect(findCatalogChapterLabel(KNOWLEDGE_CATALOG, 'retired-chapter')).toBe('retired-chapter');
+  });
+});
+
 describe('presentReport', () => {
   it('formats the score, time and weakest module', () => {
     const report = presentReport(
@@ -265,6 +273,65 @@ describe('presentQuestionList', () => {
       id: 'warehouse-l5-c04',
       title: '第四章 粮情检查',
     });
+  });
+
+  it('narrows chapter candidates by occupation and level without applying chapterId', () => {
+    const scopedQuestions = [
+      makeQuestion({
+        id: 'Q1',
+        occupation: '4-02-06-01',
+        level: 5,
+        chapterId: 'warehouse-l5-c04',
+      }),
+      makeQuestion({
+        id: 'Q2',
+        occupation: '4-02-06-01',
+        level: 5,
+        chapterId: 'warehouse-l5-c07',
+      }),
+      makeQuestion({
+        id: 'Q3',
+        occupation: '4-02-06-01',
+        level: 3,
+        chapterId: 'warehouse-l3-c04',
+      }),
+      makeQuestion({
+        id: 'Q4',
+        occupation: '4-08-05-01',
+        level: 5,
+        chapterId: 'inspector-l5-c04',
+      }),
+    ];
+
+    const view = presentQuestionList({
+      kind: 'favorite',
+      questions: scopedQuestions,
+      ids: scopedQuestions.map((question) => question.id),
+      filter: {
+        occupation: '4-02-06-01',
+        level: 5,
+        chapterId: 'warehouse-l5-c04',
+      },
+    });
+
+    expect(view.items.map((item) => item.id)).toEqual(['Q1']);
+    expect(view.chapters.map((chapter) => chapter.id)).toEqual([
+      'warehouse-l5-c04',
+      'warehouse-l5-c07',
+    ]);
+  });
+
+  it('uses numbered labels for chapter filters while keeping card titles concise', () => {
+    const view = presentQuestionList({
+      kind: 'favorite',
+      questions: [questions[0]!],
+      ids: ['Q1'],
+      resolveChapterTitle: () => '粮情检查',
+      resolveChapterLabel: () => '第 4 章 粮情检查',
+    });
+
+    expect(view.items[0]?.chapterTitle).toBe('粮情检查');
+    expect(view.chapters).toEqual([{ id: 'warehouse-l5-c04', title: '第 4 章 粮情检查' }]);
   });
 
   it('provides useful empty copy for each list kind', () => {

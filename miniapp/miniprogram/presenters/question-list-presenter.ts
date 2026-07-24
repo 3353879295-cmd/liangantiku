@@ -17,6 +17,7 @@ export interface QuestionListInput {
   wrongRecords?: readonly WrongQuestionRecord[];
   filter?: QuestionListFilter;
   resolveChapterTitle?: (chapterId: string) => string;
+  resolveChapterLabel?: (chapterId: string) => string;
 }
 
 export interface QuestionListItemViewModel {
@@ -75,6 +76,7 @@ export const presentQuestionList = (input: QuestionListInput): QuestionListViewM
   const copy = COPY[input.kind];
   const filter = input.filter ?? {};
   const resolveChapterTitle = input.resolveChapterTitle ?? ((chapterId: string) => chapterId);
+  const resolveChapterLabel = input.resolveChapterLabel ?? resolveChapterTitle;
   const byId = new Map(input.questions.map((question) => [question.id, question]));
   const wrongById = new Map(
     (input.wrongRecords ?? []).map((record) => [record.questionId, record]),
@@ -107,12 +109,17 @@ export const presentQuestionList = (input: QuestionListInput): QuestionListViewM
         left.question.id.localeCompare(right.question.id),
     );
   }
-  const chapters = [...new Set(input.questions.map((question) => question.chapterId))].map(
-    (chapterId) => ({
-      id: chapterId,
-      title: resolveChapterTitle(chapterId),
-    }),
-  );
+  const chapterIds = input.questions
+    .filter((question) => {
+      if (filter.occupation && question.occupation !== filter.occupation) return false;
+      if (filter.level && question.level !== filter.level) return false;
+      return true;
+    })
+    .map((question) => question.chapterId);
+  const chapters = [...new Set(chapterIds)].map((chapterId) => ({
+    id: chapterId,
+    title: resolveChapterLabel(chapterId),
+  }));
   const filterActive = Boolean(filter.occupation || filter.level || filter.chapterId);
   return {
     ...copy,

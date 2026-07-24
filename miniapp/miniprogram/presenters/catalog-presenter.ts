@@ -50,14 +50,24 @@ const sectionStatusText = (questionCount: number, completed: number): string => 
   return `已完成 ${completed}/${questionCount}`;
 };
 
-export const findCatalogChapterTitle = (
-  catalog: RuntimeKnowledgeCatalog,
-  chapterId: string,
-): string =>
+const findCatalogChapter = (catalog: RuntimeKnowledgeCatalog, chapterId: string) =>
   Object.values(catalog.occupations)
     .flatMap((occupation) => occupation.parts)
     .flatMap((part) => part.chapters)
-    .find((chapter) => chapter.id === chapterId)?.title ?? chapterId;
+    .find((chapter) => chapter.id === chapterId);
+
+export const findCatalogChapterTitle = (
+  catalog: RuntimeKnowledgeCatalog,
+  chapterId: string,
+): string => findCatalogChapter(catalog, chapterId)?.title ?? chapterId;
+
+export const findCatalogChapterLabel = (
+  catalog: RuntimeKnowledgeCatalog,
+  chapterId: string,
+): string => {
+  const chapter = findCatalogChapter(catalog, chapterId);
+  return chapter ? `第 ${chapter.number} 章 ${chapter.title}` : chapterId;
+};
 
 export const presentCatalogParts = (input: PresentCatalogPartsInput): CatalogPartViewModel[] => {
   const questions = input.questions.filter(

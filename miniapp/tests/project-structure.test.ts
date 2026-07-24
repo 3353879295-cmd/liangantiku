@@ -99,6 +99,16 @@ describe('WeChat mini program structure', () => {
     expect(libraryMarkup).not.toContain('待录入');
   });
 
+  it('clears a selected saved-question chapter when occupation or level changes', () => {
+    const questionListPage = readFileSync(
+      join(miniappRoot, 'pages', 'question-list', 'index.ts'),
+      'utf8',
+    );
+
+    expect(questionListPage).toContain("this.setData({ occupation: value, chapterId: '' });");
+    expect(questionListPage).toContain("this.setData({ level: Number(value), chapterId: '' });");
+  });
+
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 

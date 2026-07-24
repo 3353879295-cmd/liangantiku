@@ -1,5 +1,8 @@
 import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
-import { findCatalogChapterTitle } from '../../presenters/catalog-presenter';
+import {
+  findCatalogChapterLabel,
+  findCatalogChapterTitle,
+} from '../../presenters/catalog-presenter';
 import { presentQuestionList } from '../../presenters/question-list-presenter';
 import { appServices } from '../../services/app-services';
 import {
@@ -88,6 +91,7 @@ Page({
         wrongRecords: this.data.wrongRecords,
         filter,
         resolveChapterTitle: (chapterId) => findCatalogChapterTitle(KNOWLEDGE_CATALOG, chapterId),
+        resolveChapterLabel: (chapterId) => findCatalogChapterLabel(KNOWLEDGE_CATALOG, chapterId),
       }),
     });
   },
@@ -96,9 +100,9 @@ Page({
     const group = String(event.currentTarget.dataset['group']);
     const value = String(event.currentTarget.dataset['value']);
     if (group === 'occupation') {
-      this.setData({ occupation: value });
+      this.setData({ occupation: value, chapterId: '' });
     } else if (group === 'level') {
-      this.setData({ level: Number(value) });
+      this.setData({ level: Number(value), chapterId: '' });
     } else if (group === 'chapter') {
       this.setData({ chapterId: value });
     }
