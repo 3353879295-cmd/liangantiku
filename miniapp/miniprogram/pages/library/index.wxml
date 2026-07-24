@@ -61,7 +61,12 @@
             <view class="catalog-chapter__copy">
               <text class="catalog-chapter__number">{{chapter.numberText}}</text>
               <view class="catalog-chapter__title">{{chapter.title}}</view>
-              <text class="catalog-chapter__meta">{{chapter.metaText}}</text>
+              <view class="catalog-chapter__metrics">
+                <text class="catalog-chapter__meta">{{chapter.metaText}}</text>
+                <text class="catalog-chapter__meta">完成 {{chapter.progressText}}</text>
+                <text class="catalog-chapter__meta">正确率 {{chapter.accuracyText}}</text>
+                <text class="catalog-chapter__meta">错题 {{chapter.wrongText}}</text>
+              </view>
             </view>
             <view
               class="catalog-chapter__chevron {{expandedChapterId === chapter.id ? 'catalog-chapter__chevron--expanded' : ''}}"
@@ -80,7 +85,10 @@
               <view class="catalog-section__copy">
                 <text class="catalog-section__number">{{section.numberText}}</text>
                 <view class="catalog-section__title">{{section.title}}</view>
-                <text class="catalog-section__count">{{section.countText}}</text>
+                <view class="catalog-section__meta">
+                  <text class="catalog-section__count">{{section.countText}}</text>
+                  <text class="catalog-section__status">{{section.statusText}}</text>
+                </view>
               </view>
               <view
                 wx:if="{{section.canStart}}"
@@ -88,7 +96,6 @@
                 data-section-id="{{section.id}}"
                 catch:tap="onSectionPractice"
               >开始</view>
-              <text wx:else class="catalog-section__pending">待录入</text>
             </view>
             <view
               wx:if="{{chapter.canStart}}"

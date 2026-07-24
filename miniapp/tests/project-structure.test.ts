@@ -84,6 +84,21 @@ describe('WeChat mini program structure', () => {
     expect(libraryPage).not.toContain('presentLibraryModules');
   });
 
+  it('renders textbook chapter metrics and section learning status', () => {
+    const libraryMarkup = readFileSync(join(miniappRoot, 'pages', 'library', 'index.wxml'), 'utf8');
+
+    for (const binding of [
+      '{{chapter.metaText}}',
+      '{{chapter.progressText}}',
+      '{{chapter.accuracyText}}',
+      '{{chapter.wrongText}}',
+      '{{section.statusText}}',
+    ]) {
+      expect(libraryMarkup).toContain(binding);
+    }
+    expect(libraryMarkup).not.toContain('待录入');
+  });
+
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 

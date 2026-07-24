@@ -8,6 +8,7 @@ export interface CatalogSectionViewModel {
   title: string;
   questionCount: number;
   countText: string;
+  statusText: string;
   canStart: boolean;
 }
 
@@ -41,6 +42,13 @@ interface PresentCatalogPartsInput {
 
 const percentage = (numerator: number, denominator: number): number =>
   denominator === 0 ? 0 : Math.round((numerator / denominator) * 100);
+
+const sectionStatusText = (questionCount: number, completed: number): string => {
+  if (questionCount === 0) return '待补充';
+  if (completed === 0) return '未开始';
+  if (completed >= questionCount) return '已完成';
+  return `已完成 ${completed}/${questionCount}`;
+};
 
 export const findCatalogChapterTitle = (
   catalog: RuntimeKnowledgeCatalog,
@@ -80,15 +88,19 @@ export const presentCatalogParts = (input: PresentCatalogPartsInput): CatalogPar
           wrongText: `${progress.wrongQuestions}`,
           canStart: questionCount > 0,
           sections: chapter.sections.map((section) => {
-            const sectionQuestionCount = questions.filter(
-              (question) => question.sectionId === section.id,
-            ).length;
+            const sectionQuestionIds = questions
+              .filter((question) => question.sectionId === section.id)
+              .map((question) => question.id);
+            const sectionQuestionCount = sectionQuestionIds.length;
+            const sectionCompleted =
+              sectionQuestionCount > 0 ? input.getProgress(sectionQuestionIds).completed : 0;
             return {
               id: section.id,
               numberText: `第 ${section.number} 节`,
               title: section.title,
               questionCount: sectionQuestionCount,
-              countText: sectionQuestionCount === 0 ? '待补充' : `${sectionQuestionCount} 题`,
+              countText: `${sectionQuestionCount} 题`,
+              statusText: sectionStatusText(sectionQuestionCount, sectionCompleted),
               canStart: sectionQuestionCount > 0,
             };
           }),

@@ -113,13 +113,15 @@ describe('presentCatalogParts', () => {
       expect.objectContaining({
         id: 'warehouse-l5-c03-s01',
         questionCount: 0,
-        countText: '待补充',
+        countText: '0 题',
+        statusText: '待补充',
         canStart: false,
       }),
       expect.objectContaining({
         id: 'warehouse-l5-c03-s03',
         questionCount: 1,
         countText: '1 题',
+        statusText: '已完成',
         canStart: true,
       }),
     ]);
@@ -132,8 +134,43 @@ describe('presentCatalogParts', () => {
       wrongText: '1',
       canStart: true,
     });
-    expect(requestedProgressIds).toEqual([['Q1']]);
+    expect(requestedProgressIds).toEqual([['Q1'], ['Q1']]);
     expect(view.map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l5']);
+  });
+
+  it('presents the learning status for empty, untouched, partial and completed sections', () => {
+    const sectionFor = (questionIds: string[], completed: number) => {
+      const view = presentCatalogParts({
+        catalog,
+        occupation: '4-02-06-01',
+        level: 5,
+        questions: questionIds.map((id) => makeQuestion({ id })),
+        getProgress: () => ({
+          completed,
+          attempts: completed,
+          correctAttempts: completed,
+          wrongQuestions: 0,
+        }),
+      });
+      return view[1]?.chapters[0]?.sections[1];
+    };
+
+    expect(sectionFor([], 0)).toMatchObject({
+      countText: '0 题',
+      statusText: '待补充',
+    });
+    expect(sectionFor(['Q1'], 0)).toMatchObject({
+      countText: '1 题',
+      statusText: '未开始',
+    });
+    expect(sectionFor(['Q1', 'Q2'], 1)).toMatchObject({
+      countText: '2 题',
+      statusText: '已完成 1/2',
+    });
+    expect(sectionFor(['Q1', 'Q2'], 2)).toMatchObject({
+      countText: '2 题',
+      statusText: '已完成',
+    });
   });
 
   it.each([
@@ -226,7 +263,11 @@ describe('presentCatalogParts', () => {
     expect(
       canonicalEmptySectionIds.every((sectionId) => {
         const section = presentedSections.get(sectionId);
-        return section?.questionCount === 0 && section.countText === '待补充';
+        return (
+          section?.questionCount === 0 &&
+          section.countText === '0 题' &&
+          section.statusText === '待补充'
+        );
       }),
     ).toBe(true);
   });

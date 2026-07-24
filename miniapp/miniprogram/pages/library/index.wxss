@@ -178,9 +178,22 @@
 }
 
 .catalog-chapter__meta,
-.catalog-section__count {
+.catalog-section__count,
+.catalog-section__status {
   color: var(--color-text-secondary);
   font-size: 22rpx;
+}
+
+.catalog-chapter__metrics,
+.catalog-section__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4rpx 18rpx;
+}
+
+.catalog-section__status {
+  color: var(--color-primary);
 }
 
 .catalog-chapter__chevron {
@@ -217,25 +230,16 @@
   line-height: 1.45;
 }
 
-.catalog-section__action,
-.catalog-section__pending {
+.catalog-section__action {
   display: flex;
   align-items: center;
   justify-content: center;
   min-width: 104rpx;
   min-height: 88rpx;
   margin-left: 16rpx;
+  color: var(--color-primary);
   font-size: 23rpx;
   font-weight: 600;
-}
-
-.catalog-section__action {
-  color: var(--color-primary);
-}
-
-.catalog-section__pending {
-  color: var(--color-text-secondary);
-  font-weight: 400;
 }
 
 .catalog-chapter__practice {
