@@ -1,6 +1,6 @@
 <view class="page-shell list-page">
   <view class="page-title">{{view.title}}</view>
-  <text class="page-subtitle">按职业、等级和模块筛选，逐题看清错误原因。</text>
+  <text class="page-subtitle">按职业、等级和章节筛选，逐题看清错误原因。</text>
 
   <view class="filter-section">
     <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
@@ -35,22 +35,22 @@
         bind:tap="onFilter"
       >{{item.label}}</view>
     </view>
-    <scroll-view wx:if="{{view.modules.length}}" scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
+    <scroll-view wx:if="{{view.chapters.length}}" scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
       <view class="filter-row">
         <view
-          class="filter-chip {{module === '' ? 'filter-chip--active' : ''}}"
-          data-group="module"
+          class="filter-chip {{chapterId === '' ? 'filter-chip--active' : ''}}"
+          data-group="chapter"
           data-value=""
           bind:tap="onFilter"
-        >全部模块</view>
+        >全部章节</view>
         <view
-          wx:for="{{view.modules}}"
-          wx:key="*this"
-          class="filter-chip {{module === item ? 'filter-chip--active' : ''}}"
-          data-group="module"
-          data-value="{{item}}"
+          wx:for="{{view.chapters}}"
+          wx:key="id"
+          class="filter-chip {{chapterId === item.id ? 'filter-chip--active' : ''}}"
+          data-group="chapter"
+          data-value="{{item.id}}"
           bind:tap="onFilter"
-        >{{item}}</view>
+        >{{item.title}}</view>
       </view>
     </scroll-view>
     <view
@@ -71,7 +71,7 @@
     <view wx:for="{{view.items}}" wx:key="id" class="question-item">
       <view class="question-item__head">
         <view class="question-item__tags">
-          <text class="tag">{{item.question.module}}</text>
+          <text class="tag">{{item.chapterTitle}}</text>
           <text wx:if="{{item.errorCountText}}" class="wrong-count">{{item.errorCountText}}</text>
           <text wx:if="{{item.mastered}}" class="mastered-label">已掌握</text>
         </view>

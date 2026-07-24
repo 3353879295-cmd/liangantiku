@@ -1,3 +1,5 @@
+import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
+import { findCatalogChapterTitle } from '../../presenters/catalog-presenter';
 import { presentReport } from '../../presenters/report-presenter';
 import {
   getActivePractice,
@@ -22,7 +24,9 @@ Page({
     if (!session?.report) return;
     this.setData({
       ready: true,
-      view: presentReport(session.report),
+      view: presentReport(session.report, (chapterId) =>
+        findCatalogChapterTitle(KNOWLEDGE_CATALOG, chapterId),
+      ),
       hasWrong: Boolean(session.report.wrongQuestionIds.length),
       sessionMode: session.mode,
     });

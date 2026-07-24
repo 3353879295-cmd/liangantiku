@@ -56,6 +56,31 @@ describe('practice session', () => {
     expect(submitted.answers[question.id]).toEqual(['B']);
   });
 
+  it('aggregates report progress by stable chapter ID', () => {
+    const questions = [
+      makeQuestion({
+        id: 'Q1',
+        chapterId: 'warehouse-l5-c04',
+        module: '粮情检查',
+      }),
+      makeQuestion({
+        id: 'Q2',
+        chapterId: 'warehouse-l5-c04',
+        module: '旧版粮情检查模块',
+        answer: ['B'],
+      }),
+    ];
+    const session = createPracticeSession(questions, { mode: 'mock', now: 1000 });
+    const submitted = submitSession(
+      answerQuestion(answerQuestion(session, 'Q1', ['A'], 1200), 'Q2', ['A'], 1300),
+      2000,
+    );
+
+    expect(submitted.report?.chapters).toEqual({
+      'warehouse-l5-c04': { total: 2, correct: 1 },
+    });
+  });
+
   it('navigates by validated question index', () => {
     const questions = [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })];
     const session = createPracticeSession(questions, { mode: 'sequential', now: 1000 });

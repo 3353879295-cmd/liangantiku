@@ -16,7 +16,7 @@ export interface PracticeReport {
   wrong: number;
   durationMs: number;
   wrongQuestionIds: string[];
-  modules: Record<string, ModuleReport>;
+  chapters: Record<string, ModuleReport>;
 }
 
 export interface PracticeSession {
@@ -124,15 +124,15 @@ export const getAnswerSheet = (
 export const submitSession = (session: PracticeSession, now: number): PracticeSession => {
   requireActive(session);
   const feedback: Record<string, GradeResult> = {};
-  const modules: Record<string, ModuleReport> = {};
+  const chapters: Record<string, ModuleReport> = {};
   const wrongQuestionIds: string[] = [];
   let correct = 0;
 
   for (const question of session.questions) {
     const result = gradeQuestion(question, session.answers[question.id] ?? []);
     feedback[question.id] = result;
-    const previous = modules[question.module] ?? { total: 0, correct: 0 };
-    modules[question.module] = {
+    const previous = chapters[question.chapterId] ?? { total: 0, correct: 0 };
+    chapters[question.chapterId] = {
       total: previous.total + 1,
       correct: previous.correct + (result.correct ? 1 : 0),
     };
@@ -146,7 +146,7 @@ export const submitSession = (session: PracticeSession, now: number): PracticeSe
     wrong: session.questions.length - correct,
     durationMs: Math.max(0, now - session.startedAt),
     wrongQuestionIds,
-    modules,
+    chapters,
   };
 
   return {

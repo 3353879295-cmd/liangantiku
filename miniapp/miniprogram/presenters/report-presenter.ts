@@ -28,17 +28,20 @@ const duration = (durationMs: number): string => {
   return `${minutesPart}:${secondsPart}`;
 };
 
-export const presentReport = (report: PracticeReport): ReportViewModel => ({
+export const presentReport = (
+  report: PracticeReport,
+  resolveChapterTitle: (chapterId: string) => string = (chapterId) => chapterId,
+): ReportViewModel => ({
   scoreText: `${percentage(report.correct, report.total)}`,
   accuracyText: `${percentage(report.correct, report.total)}%`,
   durationText: duration(report.durationMs),
   correctText: `${report.correct}`,
   wrongText: `${report.wrong}`,
-  weakModules: Object.entries(report.modules)
-    .map(([name, module]) => {
+  weakModules: Object.entries(report.chapters)
+    .map(([chapterId, module]) => {
       const accuracy = percentage(module.correct, module.total);
       return {
-        name,
+        name: resolveChapterTitle(chapterId),
         accuracy,
         accuracyText: `${accuracy}%`,
         summary: `${module.correct} / ${module.total} 题`,

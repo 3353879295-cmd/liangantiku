@@ -42,6 +42,15 @@ interface PresentCatalogPartsInput {
 const percentage = (numerator: number, denominator: number): number =>
   denominator === 0 ? 0 : Math.round((numerator / denominator) * 100);
 
+export const findCatalogChapterTitle = (
+  catalog: RuntimeKnowledgeCatalog,
+  chapterId: string,
+): string =>
+  Object.values(catalog.occupations)
+    .flatMap((occupation) => occupation.parts)
+    .flatMap((part) => part.chapters)
+    .find((chapter) => chapter.id === chapterId)?.title ?? chapterId;
+
 export const presentCatalogParts = (input: PresentCatalogPartsInput): CatalogPartViewModel[] => {
   const questions = input.questions.filter(
     (question) => question.occupation === input.occupation && question.level === input.level,

@@ -88,32 +88,56 @@ describe('library presenters', () => {
 
 describe('presentReport', () => {
   it('formats the score, time and weakest module', () => {
-    const report = presentReport({
-      total: 10,
-      correct: 7,
-      wrong: 3,
-      durationMs: 125_000,
-      wrongQuestionIds: ['Q1', 'Q2', 'Q3'],
-      modules: {
-        粮情检查: { total: 4, correct: 1 },
-        安全生产: { total: 6, correct: 6 },
+    const report = presentReport(
+      {
+        total: 10,
+        correct: 7,
+        wrong: 3,
+        durationMs: 125_000,
+        wrongQuestionIds: ['Q1', 'Q2', 'Q3'],
+        chapters: {
+          'warehouse-l5-c04': { total: 4, correct: 1 },
+          'warehouse-l5-c05': { total: 6, correct: 6 },
+        },
       },
-    });
+      (chapterId) => (chapterId === 'warehouse-l5-c04' ? '第四章 粮情检查' : chapterId),
+    );
 
     expect(report).toMatchObject({
       scoreText: '70',
       accuracyText: '70%',
       durationText: '02:05',
     });
-    expect(report.weakModules[0]).toMatchObject({ name: '粮情检查', accuracyText: '25%' });
+    expect(report.weakModules[0]).toMatchObject({
+      name: '第四章 粮情检查',
+      accuracyText: '25%',
+    });
   });
 });
 
 describe('presentQuestionList', () => {
   const questions = [
-    makeQuestion({ id: 'Q1', occupation: '4-02-06-01', level: 5, module: '粮情检查' }),
-    makeQuestion({ id: 'Q2', occupation: '4-08-05-01', level: 3, module: '样品检验' }),
-    makeQuestion({ id: 'Q3', occupation: '4-02-06-01', level: 3, module: '安全生产' }),
+    makeQuestion({
+      id: 'Q1',
+      occupation: '4-02-06-01',
+      level: 5,
+      module: '粮情检查',
+      chapterId: 'warehouse-l5-c04',
+    }),
+    makeQuestion({
+      id: 'Q2',
+      occupation: '4-08-05-01',
+      level: 3,
+      module: '样品检验',
+      chapterId: 'inspector-l3-c04',
+    }),
+    makeQuestion({
+      id: 'Q3',
+      occupation: '4-02-06-01',
+      level: 3,
+      module: '安全生产',
+      chapterId: 'warehouse-l3-c02',
+    }),
   ];
 
   it('retains favorite ID order, reports retired IDs and applies certificate filters', () => {
@@ -129,7 +153,7 @@ describe('presentQuestionList', () => {
     expect(view.unresolvedIds).toEqual(['retired']);
   });
 
-  it('sorts wrong questions, hides mastered records and filters modules', () => {
+  it('sorts wrong questions, hides mastered records and filters stable chapter IDs', () => {
     const view = presentQuestionList({
       kind: 'wrong',
       questions,
@@ -160,11 +184,21 @@ describe('presentQuestionList', () => {
           lastRetryCorrect: false,
         },
       ],
-      filter: { module: '粮情检查', includeMastered: false },
+      filter: { chapterId: 'warehouse-l5-c04', includeMastered: false },
+      resolveChapterTitle: (chapterId) =>
+        chapterId === 'warehouse-l5-c04' ? '第四章 粮情检查' : chapterId,
     });
 
     expect(view.items.map((item) => item.question.id)).toEqual(['Q1']);
-    expect(view.items[0]).toMatchObject({ errorCountText: '错 2 次', latestText: '最近 07-22' });
+    expect(view.items[0]).toMatchObject({
+      chapterTitle: '第四章 粮情检查',
+      errorCountText: '错 2 次',
+      latestText: '最近 07-22',
+    });
+    expect(view.chapters).toContainEqual({
+      id: 'warehouse-l5-c04',
+      title: '第四章 粮情检查',
+    });
   });
 
   it('provides useful empty copy for each list kind', () => {

@@ -1,3 +1,5 @@
+import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
+import { findCatalogChapterTitle } from '../../presenters/catalog-presenter';
 import { presentQuestionList } from '../../presenters/question-list-presenter';
 import { appServices } from '../../services/app-services';
 import {
@@ -26,7 +28,7 @@ Page({
     view: emptyView,
     occupation: '',
     level: 0,
-    module: '',
+    chapterId: '',
     includeMastered: false,
     expandedId: '',
     levelFilters: [
@@ -77,7 +79,7 @@ Page({
     };
     if (this.data.occupation) filter.occupation = this.data.occupation as OccupationCode;
     if (this.data.level) filter.level = this.data.level as CertificateLevel;
-    if (this.data.module) filter.module = this.data.module;
+    if (this.data.chapterId) filter.chapterId = this.data.chapterId;
     this.setData({
       view: presentQuestionList({
         kind: this.data.kind as QuestionListKind,
@@ -85,6 +87,7 @@ Page({
         ids: this.data.ids,
         wrongRecords: this.data.wrongRecords,
         filter,
+        resolveChapterTitle: (chapterId) => findCatalogChapterTitle(KNOWLEDGE_CATALOG, chapterId),
       }),
     });
   },
@@ -96,8 +99,8 @@ Page({
       this.setData({ occupation: value });
     } else if (group === 'level') {
       this.setData({ level: Number(value) });
-    } else if (group === 'module') {
-      this.setData({ module: value });
+    } else if (group === 'chapter') {
+      this.setData({ chapterId: value });
     }
     this.applyView();
   },
