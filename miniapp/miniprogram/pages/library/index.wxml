@@ -24,44 +24,87 @@
     <view class="library-summary__badge">{{questionCount ? '可练习' : '待补充'}}</view>
   </view>
 
-  <view wx:if="{{questionCount}}">
-    <view class="mode-grid">
-      <view
-        wx:for="{{modes}}"
-        wx:key="mode"
-        class="mode-card"
-        data-mode="{{item.mode}}"
-        bind:tap="onModeTap"
-      >
-        <view class="mode-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
-        <view class="mode-card__title">{{item.title}}</view>
-        <text class="mode-card__note">{{item.note}}</text>
-      </view>
+  <view wx:if="{{questionCount}}" class="mode-grid">
+    <view
+      wx:for="{{modes}}"
+      wx:key="mode"
+      class="mode-card"
+      data-mode="{{item.mode}}"
+      bind:tap="onModeTap"
+    >
+      <view class="mode-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
+      <view class="mode-card__title">{{item.title}}</view>
+      <text class="mode-card__note">{{item.note}}</text>
     </view>
+  </view>
 
-    <view id="module-list" class="module-section">
-      <view class="section-title">知识模块</view>
-      <view class="module-list">
+  <view id="catalog-list" class="catalog">
+    <view class="section-title">教材目录</view>
+    <view wx:for="{{parts}}" wx:key="id" class="catalog-part">
+      <view class="catalog-part__heading">
+        <text class="catalog-part__eyebrow">{{item.numberText}}</text>
+        <view class="catalog-part__title">{{item.title}}</view>
+      </view>
+
+      <view class="catalog-part__chapters">
         <view
-          wx:for="{{modules}}"
-          wx:key="name"
-          class="module-row"
-          data-module="{{item.name}}"
-          bind:tap="onModuleTap"
+          wx:for="{{item.chapters}}"
+          wx:for-item="chapter"
+          wx:key="id"
+          class="catalog-chapter"
         >
-          <view>
-            <view class="module-row__name">{{item.name}}</view>
-            <text class="module-row__count">{{item.countText}}</text>
+          <view
+            class="catalog-chapter__header"
+            data-chapter-id="{{chapter.id}}"
+            bind:tap="onToggleChapter"
+          >
+            <view class="catalog-chapter__copy">
+              <text class="catalog-chapter__number">{{chapter.numberText}}</text>
+              <view class="catalog-chapter__title">{{chapter.title}}</view>
+              <text class="catalog-chapter__meta">{{chapter.metaText}}</text>
+            </view>
+            <view
+              class="catalog-chapter__chevron {{expandedChapterId === chapter.id ? 'catalog-chapter__chevron--expanded' : ''}}"
+            >
+              <t-icon name="chevron-down" size="32rpx" color="#86868b" />
+            </view>
           </view>
-          <t-icon name="chevron-right" size="32rpx" color="#86868b" />
+
+          <view wx:if="{{expandedChapterId === chapter.id}}" class="catalog-section-list">
+            <view
+              wx:for="{{chapter.sections}}"
+              wx:for-item="section"
+              wx:key="id"
+              class="catalog-section"
+            >
+              <view class="catalog-section__copy">
+                <text class="catalog-section__number">{{section.numberText}}</text>
+                <view class="catalog-section__title">{{section.title}}</view>
+                <text class="catalog-section__count">{{section.countText}}</text>
+              </view>
+              <view
+                wx:if="{{section.canStart}}"
+                class="catalog-section__action"
+                data-section-id="{{section.id}}"
+                catch:tap="onSectionPractice"
+              >开始</view>
+              <text wx:else class="catalog-section__pending">待录入</text>
+            </view>
+            <view
+              wx:if="{{chapter.canStart}}"
+              class="catalog-chapter__practice"
+              data-chapter-id="{{chapter.id}}"
+              catch:tap="onChapterPractice"
+            >练习本章</view>
+          </view>
         </view>
       </view>
     </view>
   </view>
 
   <empty-state
-    wx:elif="{{!loading}}"
-    title="这个等级的题目还在整理"
-    description="题目经复核后才会进入练习，先切换其他等级看看。"
+    wx:if="{{!loading && !parts.length}}"
+    title="这个等级的目录还在整理"
+    description="教材目录整理完成后会显示在这里。"
   />
 </view>

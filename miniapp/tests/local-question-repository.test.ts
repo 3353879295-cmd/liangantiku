@@ -81,6 +81,20 @@ describe('LocalQuestionRepository', () => {
     await expect(repository.list({ chapterId: 'warehouse-l4-c07' })).resolves.toEqual([
       expect.objectContaining({ id: 'WH-L4-000001' }),
     ]);
+    await expect(
+      repository.list({
+        occupation: '4-02-06-01',
+        level: 5,
+        chapterId: 'warehouse-l5-c03',
+        sectionId: 'warehouse-l5-c03-s03',
+      }),
+    ).resolves.toEqual([expect.objectContaining({ id: 'WH-L5-000001' })]);
+    await expect(
+      repository.list({
+        chapterId: 'warehouse-l4-c07',
+        sectionId: 'warehouse-l5-c03-s03',
+      }),
+    ).resolves.toEqual([]);
   });
 
   it('preserves requested order and skips missing ids', async () => {

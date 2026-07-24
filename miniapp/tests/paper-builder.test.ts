@@ -4,10 +4,30 @@ import { buildPaper } from '../miniprogram/services/paper-builder';
 import { makeQuestion } from './factories';
 
 const questions = [
-  makeQuestion({ id: 'Q1', module: '粮情检查' }),
-  makeQuestion({ id: 'Q2', module: '安全生产' }),
-  makeQuestion({ id: 'Q3', module: '粮情检查' }),
-  makeQuestion({ id: 'Q4', module: '设备管理' }),
+  makeQuestion({
+    id: 'Q1',
+    module: '粮情检查',
+    chapterId: 'warehouse-l5-c04',
+    sectionId: 'warehouse-l5-c04-s01',
+  }),
+  makeQuestion({
+    id: 'Q2',
+    module: '安全生产',
+    chapterId: 'warehouse-l5-c03',
+    sectionId: 'warehouse-l5-c03-s01',
+  }),
+  makeQuestion({
+    id: 'Q3',
+    module: '粮情检查',
+    chapterId: 'warehouse-l5-c04',
+    sectionId: 'warehouse-l5-c04-s02',
+  }),
+  makeQuestion({
+    id: 'Q4',
+    module: '设备管理',
+    chapterId: 'warehouse-l5-c05',
+    sectionId: 'warehouse-l5-c05-s01',
+  }),
 ];
 
 describe('buildPaper', () => {
@@ -24,6 +44,23 @@ describe('buildPaper', () => {
         (item) => item.id,
       ),
     ).toEqual(['Q1', 'Q3']);
+  });
+
+  it('filters chapter and section practice by stable catalog IDs', () => {
+    expect(
+      buildPaper(questions, {
+        mode: 'chapter',
+        chapterId: 'warehouse-l5-c04',
+        limit: 20,
+      }).map((item) => item.id),
+    ).toEqual(['Q1', 'Q3']);
+    expect(
+      buildPaper(questions, {
+        mode: 'chapter',
+        sectionId: 'warehouse-l5-c04-s01',
+        limit: 20,
+      }).map((item) => item.id),
+    ).toEqual(['Q1']);
   });
 
   it('returns a random paper without duplicates or input mutation', () => {

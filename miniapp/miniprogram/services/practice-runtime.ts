@@ -15,6 +15,8 @@ export interface StartPracticeInput {
   level: CertificateLevel;
   mode: PracticeMode;
   module?: string;
+  chapterId?: string;
+  sectionId?: string;
 }
 
 let activeSession: PracticeSession | null = null;
@@ -46,6 +48,8 @@ const loadCandidates = async (input: StartPracticeInput): Promise<Question[]> =>
     occupation: input.occupation,
     level: input.level,
     ...(input.module ? { module: input.module } : {}),
+    ...(input.chapterId ? { chapterId: input.chapterId } : {}),
+    ...(input.sectionId ? { sectionId: input.sectionId } : {}),
   });
 };
 
@@ -56,6 +60,8 @@ export const startPractice = async (input: StartPracticeInput): Promise<Practice
     mode: input.mode,
     limit: input.mode === 'mock' ? 50 : 20,
     ...(input.module ? { module: input.module } : {}),
+    ...(input.chapterId ? { chapterId: input.chapterId } : {}),
+    ...(input.sectionId ? { sectionId: input.sectionId } : {}),
   });
   activeSession = createPracticeSession(paper, { mode: input.mode, now: Date.now() });
   appServices.progress.saveSession(serializePracticeSession(activeSession));

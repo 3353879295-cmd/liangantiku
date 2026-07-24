@@ -49,6 +49,8 @@ const parseRoute = (options: Record<string, string | undefined>) => {
       level,
       mode,
       ...(options['module'] ? { module: decodeURIComponent(options['module']) } : {}),
+      ...(options['chapterId'] ? { chapterId: decodeURIComponent(options['chapterId']) } : {}),
+      ...(options['sectionId'] ? { sectionId: decodeURIComponent(options['sectionId']) } : {}),
     },
   } as const;
 };

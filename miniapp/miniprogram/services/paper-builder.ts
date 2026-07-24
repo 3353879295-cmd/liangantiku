@@ -4,6 +4,8 @@ export interface BuildPaperOptions {
   mode: PracticeMode;
   limit: number;
   module?: string;
+  chapterId?: string;
+  sectionId?: string;
   random?: () => number;
 }
 
@@ -31,9 +33,12 @@ export const buildPaper = (
     throw new Error('paper limit must be a positive integer');
   }
 
-  const candidates = options.module
-    ? questions.filter((question) => question.module === options.module)
-    : [...questions];
+  const candidates = questions.filter((question) => {
+    if (options.chapterId && question.chapterId !== options.chapterId) return false;
+    if (options.sectionId && question.sectionId !== options.sectionId) return false;
+    if (options.module && question.module !== options.module) return false;
+    return true;
+  });
   const shouldShuffle = options.mode === 'random' || options.mode === 'mock';
   const ordered = shouldShuffle ? shuffle(candidates, options.random ?? Math.random) : candidates;
 
