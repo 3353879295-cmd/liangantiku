@@ -71,6 +71,19 @@ describe('WeChat mini program structure', () => {
     ]);
   });
 
+  it('ships the canonical and generated catalogs without the legacy library presenter', () => {
+    for (const relativePath of [
+      join(miniappRoot, '..', '..', 'data', 'knowledge_catalog.json'),
+      join(miniappRoot, 'data', 'knowledge-catalog.ts'),
+      join(miniappRoot, 'data', 'questions', 'runtime-knowledge-catalog.ts'),
+    ]) {
+      expect(existsSync(relativePath)).toBe(true);
+    }
+
+    const libraryPage = readFileSync(join(miniappRoot, 'pages', 'library', 'index.ts'), 'utf8');
+    expect(libraryPage).not.toContain('presentLibraryModules');
+  });
+
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 

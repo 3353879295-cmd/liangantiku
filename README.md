@@ -16,7 +16,7 @@
 
 ## 目录
 
-- `data/`：题目、来源与分类的人工维护源数据。
+- `data/`：题目、来源、分类与 `knowledge_catalog.json` 知识目录的人工维护源数据。
 - `src/grain_quiz/`：验证、查重和发布工具。
 - `dist/`：本地构建产物，不提交版本库。
 - `miniapp/`：原生微信小程序工程；组件库使用 TDesign MiniProgram 1.15.3。
@@ -24,38 +24,40 @@
 
 ## 从源数据构建
 
-在仓库根目录执行：
+安装开发依赖后，在仓库根目录执行完整发布与验证。显式设置 `PYTHONPATH` 可确保命令使用当前 worktree 的 `src/`，而不是其他检出目录中已安装的旧版本：
 
 ```powershell
-python -m pip install -e ".[test]"
-grain-quiz validate --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json
-grain-quiz dedupe --questions data/questions --threshold 92
-grain-quiz build --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --output dist
+$env:PYTHONPATH=(Resolve-Path 'src').Path
 python -m pytest -q
-```
-
-`build` 会先执行发布门禁。只要存在校验错误，就不会发布运行时题库。成功后生成六个仅含 `verified` 题目的 JSON 分片和版本报告；默认构建只依赖 Python 与已声明的项目依赖，可在干净环境执行。
-
-需要人工审核工作簿时，可在已配置 Node.js 与 `@oai/artifact-tool` 运行时的环境中显式增加 `--review-workbook`：
-
-```powershell
-grain-quiz build --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --output dist --review-workbook
-```
-
-该选项额外生成 `dist/question-bank.xlsx`，不会改变 JSON 运行时分片。
-
-## 安装并验证小程序
-
-题库发布成功后执行：
-
-```powershell
+python -m grain_quiz.cli validate --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --catalog data/knowledge_catalog.json
+python -m grain_quiz.cli build --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --catalog data/knowledge_catalog.json --output dist
 Set-Location miniapp
-npm install
 npm run sync:questions
 npm run verify
 ```
 
-`sync:questions` 只读取 `dist/json` 的六个固定分片，任何分片少于 8 题或包含非 `verified` 记录都会失败。
+`build` 会先执行发布门禁。只要存在校验错误，就不会发布运行时题库。成功后生成六个仅含 `verified` 题目的 JSON 分片、`knowledge_catalog.json` 和版本报告；默认构建只依赖 Python 与已声明的项目依赖，可在干净环境执行。
+
+需要人工审核工作簿时，可在已配置 Node.js 与 `@oai/artifact-tool` 运行时的环境中显式增加 `--review-workbook`：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path 'src').Path
+python -m grain_quiz.cli build --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --catalog data/knowledge_catalog.json --output dist --review-workbook
+```
+
+该选项额外生成 `dist/question-bank.xlsx`，不会改变 JSON 运行时分片。
+
+## 知识目录与运行时映射
+
+`data/knowledge_catalog.json` 是稳定目录 ID、教材层级和页码的唯一人工维护源。仓储目录按等级拆成 4 个部分、11 章、44 节；粮油质检员使用独立的 1 个部分、8 章、16 节目录，不复用仓储章节。
+
+Python 发布记录到小程序运行时的关键映射为：
+
+- `chapter_id` → `chapterId`
+- `section_id` → `sectionId`
+- `knowledge_catalog.json` → `runtime-knowledge-catalog.ts`
+
+`npm run sync:questions` 从 `dist/json` 读取六个固定分片和 `knowledge_catalog.json`，生成小程序 JSON 分片、聚合题目模块与目录模块。任何分片少于 8 题、包含非 `verified` 记录，或目录无效都会失败；`npm run verify` 随后执行类型检查、代码检查、格式检查和全部 Vitest 测试。
 
 ## 在微信开发者工具中运行
 
