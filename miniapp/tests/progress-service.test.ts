@@ -79,6 +79,36 @@ describe('ProgressService', () => {
     });
   });
 
+  it('summarizes unique completion, attempt accuracy and active wrong questions by ID', () => {
+    const { repository } = createService();
+    const service = new ProgressService(repository);
+    service.recordAnswer({
+      questionId: 'Q1',
+      correct: false,
+      durationMs: 10,
+      at: '2026-07-23',
+    });
+    service.recordAnswer({
+      questionId: 'Q1',
+      correct: true,
+      durationMs: 10,
+      at: '2026-07-23',
+    });
+    service.recordAnswer({
+      questionId: 'Q2',
+      correct: true,
+      durationMs: 10,
+      at: '2026-07-23',
+    });
+
+    expect(service.getQuestionProgress(['Q1', 'Q2', 'Q3'])).toEqual({
+      completed: 2,
+      attempts: 3,
+      correctAttempts: 2,
+      wrongQuestions: 1,
+    });
+  });
+
   it('calculates a consecutive streak across a month boundary', () => {
     const { service } = createService();
     service.recordAnswer({ questionId: 'Q1', correct: true, durationMs: 10, at: '2026-01-31' });

@@ -24,6 +24,13 @@ export interface DashboardStats {
   dailyGoal: number;
 }
 
+export interface QuestionProgressSummary {
+  completed: number;
+  attempts: number;
+  correctAttempts: number;
+  wrongQuestions: number;
+}
+
 export interface ActivityDay {
   date: string;
   answered: number;
@@ -152,6 +159,19 @@ export class ProgressService {
 
   getWrongQuestion(questionId: string): WrongQuestionRecord | null {
     return this.data.wrongQuestions[questionId] ?? null;
+  }
+
+  getQuestionProgress(questionIds: readonly string[]): QuestionProgressSummary {
+    const ids = new Set(questionIds);
+    const answers = this.data.answers.filter((answer) => ids.has(answer.questionId));
+    return {
+      completed: new Set(answers.map((answer) => answer.questionId)).size,
+      attempts: answers.length,
+      correctAttempts: answers.filter((answer) => answer.correct).length,
+      wrongQuestions: Object.values(this.data.wrongQuestions).filter(
+        (record) => ids.has(record.questionId) && !record.mastered,
+      ).length,
+    };
   }
 
   listWrongQuestions(includeMastered = true): WrongQuestionRecord[] {

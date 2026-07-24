@@ -1,6 +1,13 @@
 import type { Certificate } from '../data/certificates';
 import type { OccupationCode, Question } from '../types/domain';
 
+export { presentCatalogParts } from './catalog-presenter';
+export type {
+  CatalogChapterViewModel,
+  CatalogPartViewModel,
+  CatalogSectionViewModel,
+} from './catalog-presenter';
+
 export interface CertificateGroup {
   occupation: OccupationCode;
   title: string;

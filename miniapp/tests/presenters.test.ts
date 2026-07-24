@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { CERTIFICATES } from '../miniprogram/data/certificates';
+import { presentCatalogParts as presentCatalogPartsDirect } from '../miniprogram/presenters/catalog-presenter';
 import { presentDashboard } from '../miniprogram/presenters/home-presenter';
 import {
   groupCertificates,
+  presentCatalogParts,
   presentLibraryModules,
 } from '../miniprogram/presenters/library-presenter';
 import { presentQuestionOption } from '../miniprogram/presenters/question-option-presenter';
@@ -76,6 +78,11 @@ describe('library presenters', () => {
       { name: '粮情检查', count: 2, countText: '2 题' },
       { name: '安全生产', count: 1, countText: '1 题' },
     ]);
+  });
+
+  it('keeps the catalog presenter available without removing the legacy module presenter', () => {
+    expect(presentCatalogParts).toBe(presentCatalogPartsDirect);
+    expect(presentLibraryModules([makeQuestion()])).toHaveLength(1);
   });
 });
 
