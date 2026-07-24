@@ -19,18 +19,19 @@ def write_inputs(
     tmp_path: Path,
     questions: list[dict[str, object]],
     sources: list[dict[str, object]],
-) -> tuple[Path, Path, Path]:
+) -> tuple[Path, Path, Path, Path]:
     question_directory = tmp_path / "questions"
     question_directory.mkdir()
     write_jsonl(question_directory / "questions.jsonl", questions)
     source_path = tmp_path / "sources.json"
     source_path.write_text(json.dumps(sources, ensure_ascii=False), encoding="utf-8")
     taxonomy_path = Path("data/taxonomy.json")
-    return question_directory, source_path, taxonomy_path
+    catalog_path = Path("data/knowledge_catalog.json")
+    return question_directory, source_path, taxonomy_path, catalog_path
 
 
 def test_validate_prints_release_errors_for_missing_source(tmp_path: Path, capsys):
-    questions, sources, taxonomy = write_inputs(
+    questions, sources, taxonomy, catalog = write_inputs(
         tmp_path,
         [valid_question_data()],
         [],
@@ -45,6 +46,8 @@ def test_validate_prints_release_errors_for_missing_source(tmp_path: Path, capsy
             str(sources),
             "--taxonomy",
             str(taxonomy),
+            "--catalog",
+            str(catalog),
         ]
     )
 
@@ -53,7 +56,7 @@ def test_validate_prints_release_errors_for_missing_source(tmp_path: Path, capsy
 
 
 def test_dedupe_prints_exact_pairs(tmp_path: Path, capsys):
-    questions, _, _ = write_inputs(
+    questions, _, _, _ = write_inputs(
         tmp_path,
         [
             valid_question_data(),
@@ -69,7 +72,7 @@ def test_dedupe_prints_exact_pairs(tmp_path: Path, capsys):
 
 
 def test_build_rejects_missing_source_without_publishing(tmp_path: Path, capsys):
-    questions, sources, taxonomy = write_inputs(
+    questions, sources, taxonomy, catalog = write_inputs(
         tmp_path,
         [valid_question_data()],
         [],
@@ -85,6 +88,8 @@ def test_build_rejects_missing_source_without_publishing(tmp_path: Path, capsys)
             str(sources),
             "--taxonomy",
             str(taxonomy),
+            "--catalog",
+            str(catalog),
             "--output",
             str(output),
         ]
@@ -96,7 +101,7 @@ def test_build_rejects_missing_source_without_publishing(tmp_path: Path, capsys)
 
 
 def test_build_exports_portable_runtime_artifacts_by_default(tmp_path: Path):
-    questions, sources, taxonomy = write_inputs(
+    questions, sources, taxonomy, catalog = write_inputs(
         tmp_path,
         [valid_question_data()],
         [SOURCE],
@@ -112,6 +117,8 @@ def test_build_exports_portable_runtime_artifacts_by_default(tmp_path: Path):
             str(sources),
             "--taxonomy",
             str(taxonomy),
+            "--catalog",
+            str(catalog),
             "--output",
             str(output),
         ]
@@ -125,6 +132,7 @@ def test_build_exports_portable_runtime_artifacts_by_default(tmp_path: Path):
     )
     assert exit_code == 0
     assert not (output / "question-bank.xlsx").exists()
+    assert (output / "json" / "knowledge_catalog.json").is_file()
     assert [record["id"] for record in shard] == ["WH-L5-000001"]
     assert version_report["validation_errors"] == 0
     assert version_report["source_count"] == 1
@@ -132,7 +140,7 @@ def test_build_exports_portable_runtime_artifacts_by_default(tmp_path: Path):
 
 
 def test_build_can_request_an_optional_review_workbook(tmp_path: Path, monkeypatch):
-    questions, sources, taxonomy = write_inputs(
+    questions, sources, taxonomy, catalog = write_inputs(
         tmp_path,
         [valid_question_data()],
         [SOURCE],
@@ -153,6 +161,8 @@ def test_build_can_request_an_optional_review_workbook(tmp_path: Path, monkeypat
             str(sources),
             "--taxonomy",
             str(taxonomy),
+            "--catalog",
+            str(catalog),
             "--output",
             str(output),
             "--review-workbook",

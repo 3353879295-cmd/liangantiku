@@ -4,8 +4,13 @@ import argparse
 import json
 from pathlib import Path
 
+from grain_quiz.catalog import KnowledgeCatalog, load_knowledge_catalog
 from grain_quiz.dedupe import find_duplicates
-from grain_quiz.export import export_json_shards, export_workbook
+from grain_quiz.export import (
+    export_json_shards,
+    export_knowledge_catalog,
+    export_workbook,
+)
 from grain_quiz.io import load_questions, load_sources
 from grain_quiz.stats import build_stats
 from grain_quiz.taxonomy import load_taxonomy
@@ -19,7 +24,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "dedupe":
         return _dedupe(Path(args.questions), args.threshold)
 
-    questions, sources, report = _load_and_validate(args)
+    questions, sources, catalog, report = _load_and_validate(args)
     _print_validation_report(report)
     if args.command == "validate":
         return 1 if report.errors else 0
@@ -28,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     return _publish(
         questions,
         sources,
+        catalog,
         report,
         Path(args.output),
         review_workbook=args.review_workbook,
@@ -61,15 +67,18 @@ def _add_validation_inputs(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--questions", required=True)
     parser.add_argument("--sources", required=True)
     parser.add_argument("--taxonomy", required=True)
+    parser.add_argument("--catalog", required=True)
 
 
 def _load_and_validate(
     args: argparse.Namespace,
-) -> tuple[list, dict, ValidationReport]:
+) -> tuple[list, dict, KnowledgeCatalog, ValidationReport]:
     questions = load_questions(Path(args.questions))
     sources = load_sources(Path(args.sources))
     taxonomy = load_taxonomy(Path(args.taxonomy))
-    return questions, sources, validate_dataset(questions, sources, taxonomy)
+    catalog = load_knowledge_catalog(Path(args.catalog))
+    report = validate_dataset(questions, sources, taxonomy, catalog)
+    return questions, sources, catalog, report
 
 
 def _dedupe(question_path: Path, threshold: float) -> int:
@@ -96,6 +105,7 @@ def _print_issue(prefix: str, code: str, question_id: str | None, message: str) 
 def _publish(
     questions: list,
     sources: dict,
+    catalog: KnowledgeCatalog,
     report: ValidationReport,
     output: Path,
     *,
@@ -105,6 +115,7 @@ def _publish(
     if review_workbook:
         export_workbook(questions, sources, report, output / "question-bank.xlsx")
     shard_counts = export_json_shards(questions, output / "json")
+    export_knowledge_catalog(catalog, output / "json" / "knowledge_catalog.json")
     version_report = _version_report(questions, sources, report, shard_counts)
     (output / "version-report.json").write_text(
         json.dumps(version_report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",

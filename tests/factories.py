@@ -13,6 +13,8 @@ BASE: dict[str, Any] = {
     "level": 5,
     "module": "test module",
     "topic": "test topic",
+    "chapter_id": "warehouse-l5-c03",
+    "section_id": "warehouse-l5-c03-s03",
     "type": "single",
     "stem": "test stem",
     "options": [

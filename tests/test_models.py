@@ -9,6 +9,13 @@ def test_valid_single_question():
     assert Question.model_validate(BASE).answer == ["A"]
 
 
+def test_question_keeps_stable_catalog_references():
+    question = Question.model_validate(BASE)
+
+    assert question.chapter_id == "warehouse-l5-c03"
+    assert question.section_id == "warehouse-l5-c03-s03"
+
+
 def test_single_question_rejects_two_answers():
     with pytest.raises(ValidationError):
         Question.model_validate({**BASE, "answer": ["A", "B"]})

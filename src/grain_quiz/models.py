@@ -106,6 +106,8 @@ class Question(BaseModel):
     level: Literal[5, 4, 3]
     module: NonBlankString
     topic: NonBlankString
+    chapter_id: NonBlankString
+    section_id: NonBlankString
     type: QuestionType
     stem: NonBlankString
     options: list[Option]

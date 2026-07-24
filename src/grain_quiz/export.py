@@ -8,6 +8,7 @@ import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
+from grain_quiz.catalog import KnowledgeCatalog
 from grain_quiz.models import Question, ReviewStatus, Source
 from grain_quiz.stats import build_stats
 from grain_quiz.validate import ValidationReport
@@ -108,6 +109,18 @@ def export_json_shards(questions: list[Question], output_dir: Path) -> dict[str,
     return counts
 
 
+def export_knowledge_catalog(catalog: KnowledgeCatalog, output: Path) -> None:
+    """Export the stable runtime knowledge catalog."""
+    output.write_text(
+        json.dumps(
+            catalog.runtime_document(),
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
+        encoding="utf-8",
+    )
+
+
 def _runtime_record(question: Question) -> dict[str, object]:
     """Select the stable fields consumed by the runtime question player."""
     return {
@@ -117,6 +130,8 @@ def _runtime_record(question: Question) -> dict[str, object]:
         "level": question.level,
         "module": question.module,
         "topic": question.topic,
+        "chapter_id": question.chapter_id,
+        "section_id": question.section_id,
         "type": question.type.value,
         "stem": question.stem,
         "options": [option.model_dump() for option in question.options],

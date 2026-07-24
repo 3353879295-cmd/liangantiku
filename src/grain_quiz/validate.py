@@ -3,6 +3,7 @@
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
+from grain_quiz.catalog import KnowledgeCatalog
 from grain_quiz.dedupe import find_duplicates
 from grain_quiz.models import Question, QuestionType, ReviewStatus, Source
 from grain_quiz.taxonomy import Taxonomy
@@ -29,13 +30,14 @@ def validate_dataset(
     questions: list[Question],
     sources: dict[str, Source],
     taxonomy: Taxonomy,
+    catalog: KnowledgeCatalog,
 ) -> ValidationReport:
     """Validate release gates and cross-record consistency for questions."""
     errors: list[ValidationIssue] = []
     warnings: list[ValidationIssue] = []
 
     _validate_duplicate_ids(questions, errors)
-    _validate_questions(questions, sources, taxonomy, errors, warnings)
+    _validate_questions(questions, sources, taxonomy, catalog, errors, warnings)
     _validate_duplicates(questions, errors, warnings)
     _validate_distribution(questions, warnings)
 
@@ -65,6 +67,7 @@ def _validate_questions(
     questions: list[Question],
     sources: dict[str, Source],
     taxonomy: Taxonomy,
+    catalog: KnowledgeCatalog,
     errors: list[ValidationIssue],
     warnings: list[ValidationIssue],
 ) -> None:
@@ -80,6 +83,23 @@ def _validate_questions(
                     code="unknown_taxonomy",
                     question_id=question.id,
                     message="question classification is not in the taxonomy",
+                )
+            )
+
+        if not catalog.allows(
+            question.occupation_code.value,
+            question.level,
+            question.chapter_id,
+            question.section_id,
+        ):
+            errors.append(
+                ValidationIssue(
+                    code="unknown_catalog",
+                    question_id=question.id,
+                    message=(
+                        "question chapter or section is not valid for its "
+                        "occupation and level"
+                    ),
                 )
             )
 

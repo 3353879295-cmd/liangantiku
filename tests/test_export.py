@@ -122,6 +122,8 @@ def test_export_json_shards_are_sorted_and_verified_only(tmp_path: Path):
         "level",
         "module",
         "topic",
+        "chapter_id",
+        "section_id",
         "type",
         "stem",
         "options",
