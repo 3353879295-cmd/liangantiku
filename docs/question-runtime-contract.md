@@ -1,6 +1,6 @@
 # 小程序题库运行时契约
 
-Python `grain_quiz.cli build` 是题目与知识目录数据的唯一发布端。小程序同步脚本只读取 `dist/json` 下六个固定 JSON 分片和 `knowledge_catalog.json`，并拒绝题量不足、包含非 `verified` 记录或目录无效的发布。
+Python `grain_quiz.cli validate/build --catalog` 是知识目录完整结构的严格校验边界，`build` 是题目与知识目录数据的唯一发布端。小程序同步脚本只对 `dist/json` 发布产物做基础传输检查：目录文件必须存在、可解析为 JSON 对象且包含顶层 `occupations`，六个固定 JSON 分片必须存在、可解析为数组、满足最低题量且只含 `verified` 记录。脚本会先读取并检查全部输入，任何检查失败都发生在写入小程序目标文件之前；它不重复验证目录内部的 part、chapter、section 完整结构。
 
 ## 固定分片
 

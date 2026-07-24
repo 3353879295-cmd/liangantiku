@@ -57,7 +57,7 @@ Python 发布记录到小程序运行时的关键映射为：
 - `section_id` → `sectionId`
 - `knowledge_catalog.json` → `runtime-knowledge-catalog.ts`
 
-`npm run sync:questions` 从 `dist/json` 读取六个固定分片和 `knowledge_catalog.json`，生成小程序 JSON 分片、聚合题目模块与目录模块。任何分片少于 8 题、包含非 `verified` 记录，或目录无效都会失败；`npm run verify` 随后执行类型检查、代码检查、格式检查和全部 Vitest 测试。
+完整目录结构的合法性由 `grain_quiz.cli validate/build --catalog` 保证。`npm run sync:questions` 只对 `dist/json` 发布产物执行传输边界检查：目录文件必须存在、可解析为 JSON 对象且包含顶层 `occupations`，六个固定分片必须存在、可解析为数组、每片不少于 8 题且只含 `verified` 记录；脚本会先检查所有输入，失败时不会写入小程序目标文件。检查通过后才生成小程序 JSON 分片、聚合题目模块与目录模块；`npm run verify` 随后执行类型检查、代码检查、格式检查和全部 Vitest 测试。
 
 ## 在微信开发者工具中运行
 
