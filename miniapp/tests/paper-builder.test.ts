@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { buildPaper } from '../miniprogram/services/paper-builder';
 import { makeQuestion } from './factories';
@@ -81,4 +81,98 @@ describe('buildPaper', () => {
   it('rejects non-positive limits', () => {
     expect(() => buildPaper(questions, { mode: 'random', limit: 0 })).toThrow(/positive/);
   });
+});
+
+interface LibraryPageModule {
+  buildTextbookPracticeRoute?: (input: {
+    loading: boolean;
+    questionCount: number;
+    occupation: '4-02-06-01' | '4-08-05-01';
+    level: 5 | 4 | 3;
+    mode: 'chapter';
+    chapterId?: string;
+    sectionId?: string;
+    chapterIds: readonly string[];
+    sectionIds: readonly string[];
+  }) => string | null;
+}
+
+interface PracticePageModule {
+  parsePracticeRoute?: (options: Record<string, string | undefined>) => unknown;
+}
+
+const stubMiniProgramPageGlobals = () => {
+  vi.stubGlobal('Page', vi.fn());
+  vi.stubGlobal('wx', {
+    getStorageSync: vi.fn(() => ''),
+    setStorageSync: vi.fn(),
+    removeStorageSync: vi.fn(),
+  });
+};
+
+describe('textbook practice route guards', () => {
+  it('does not build a stale or cross-certificate route while the catalog is loading', async () => {
+    stubMiniProgramPageGlobals();
+    const pageModule =
+      (await import('../miniprogram/pages/library/index')) as unknown as LibraryPageModule;
+
+    expect(pageModule.buildTextbookPracticeRoute).toBeTypeOf('function');
+    expect(
+      pageModule.buildTextbookPracticeRoute?.({
+        loading: true,
+        questionCount: 12,
+        occupation: '4-08-05-01',
+        level: 5,
+        mode: 'chapter',
+        sectionId: 'warehouse-l5-c04-s01',
+        chapterIds: ['inspector-c04'],
+        sectionIds: ['inspector-c04-s01'],
+      }),
+    ).toBeNull();
+    expect(
+      pageModule.buildTextbookPracticeRoute?.({
+        loading: false,
+        questionCount: 12,
+        occupation: '4-08-05-01',
+        level: 5,
+        mode: 'chapter',
+        sectionId: 'warehouse-l5-c04-s01',
+        chapterIds: ['inspector-c04'],
+        sectionIds: ['inspector-c04-s01'],
+      }),
+    ).toBeNull();
+    expect(
+      pageModule.buildTextbookPracticeRoute?.({
+        loading: false,
+        questionCount: 12,
+        occupation: '4-08-05-01',
+        level: 5,
+        mode: 'chapter',
+        sectionId: 'inspector-c04-s01',
+        chapterIds: ['inspector-c04'],
+        sectionIds: ['inspector-c04-s01'],
+      }),
+    ).toBe(
+      '/pages/practice/index?occupation=4-08-05-01&level=5&mode=chapter&sectionId=inspector-c04-s01',
+    );
+  });
+
+  it.each(['chapterId', 'sectionId'] as const)(
+    'treats malformed encoded %s as an invalid route',
+    async (field) => {
+      stubMiniProgramPageGlobals();
+      const pageModule =
+        (await import('../miniprogram/pages/practice/index')) as unknown as PracticePageModule;
+      const options = {
+        occupation: '4-02-06-01',
+        level: '5',
+        mode: 'chapter',
+        [field]: '%',
+      };
+
+      expect(pageModule.parsePracticeRoute).toBeTypeOf('function');
+      expect(() => pageModule.parsePracticeRoute?.(options)).not.toThrow();
+      expect(pageModule.parsePracticeRoute?.(options)).toBeNull();
+    },
+  );
 });

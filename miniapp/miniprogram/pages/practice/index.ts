@@ -36,23 +36,27 @@ const TYPE_LABELS: Record<Question['type'], string> = {
   case: '案例题',
 };
 
-const parseRoute = (options: Record<string, string | undefined>) => {
+export const parsePracticeRoute = (options: Record<string, string | undefined>) => {
   if (options['resume'] === '1') return { resume: true } as const;
   const occupation = options['occupation'] as OccupationCode;
   const level = Number(options['level']) as CertificateLevel;
   const mode = options['mode'] as PracticeMode;
   if (!OCCUPATIONS.has(occupation) || !LEVELS.has(level) || !MODES.has(mode)) return null;
-  return {
-    resume: false,
-    input: {
-      occupation,
-      level,
-      mode,
-      ...(options['module'] ? { module: decodeURIComponent(options['module']) } : {}),
-      ...(options['chapterId'] ? { chapterId: decodeURIComponent(options['chapterId']) } : {}),
-      ...(options['sectionId'] ? { sectionId: decodeURIComponent(options['sectionId']) } : {}),
-    },
-  } as const;
+  try {
+    return {
+      resume: false,
+      input: {
+        occupation,
+        level,
+        mode,
+        ...(options['module'] ? { module: decodeURIComponent(options['module']) } : {}),
+        ...(options['chapterId'] ? { chapterId: decodeURIComponent(options['chapterId']) } : {}),
+        ...(options['sectionId'] ? { sectionId: decodeURIComponent(options['sectionId']) } : {}),
+      },
+    } as const;
+  } catch {
+    return null;
+  }
 };
 
 Page({
@@ -79,7 +83,7 @@ Page({
   },
 
   async onLoad(options: Record<string, string | undefined>) {
-    const route = parseRoute(options);
+    const route = parsePracticeRoute(options);
     if (!route) {
       this.setData({
         loading: false,

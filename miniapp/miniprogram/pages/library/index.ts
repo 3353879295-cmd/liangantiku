@@ -3,12 +3,38 @@ import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
 import { groupCertificates, presentCatalogParts } from '../../presenters/library-presenter';
 import { appServices } from '../../services/app-services';
 import type { CatalogPartViewModel } from '../../presenters/catalog-presenter';
-import type { CertificateKey, PracticeMode } from '../../types/domain';
+import type {
+  CertificateKey,
+  CertificateLevel,
+  OccupationCode,
+  PracticeMode,
+} from '../../types/domain';
 
 const STARTABLE_MODES = new Set<PracticeMode>(['sequential', 'random', 'mock']);
 
 const getCertificate = (key: CertificateKey) =>
   CERTIFICATES.find((certificate) => certificate.key === key) ?? CERTIFICATES[0];
+
+interface TextbookPracticeRouteInput {
+  loading: boolean;
+  questionCount: number;
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  mode: PracticeMode;
+  chapterId?: string;
+  sectionId?: string;
+  chapterIds: readonly string[];
+  sectionIds: readonly string[];
+}
+
+export const buildTextbookPracticeRoute = (input: TextbookPracticeRouteInput): string | null => {
+  if (input.loading || !input.questionCount) return null;
+  if (input.chapterId && !input.chapterIds.includes(input.chapterId)) return null;
+  if (input.sectionId && !input.sectionIds.includes(input.sectionId)) return null;
+  const chapterQuery = input.chapterId ? `&chapterId=${encodeURIComponent(input.chapterId)}` : '';
+  const sectionQuery = input.sectionId ? `&sectionId=${encodeURIComponent(input.sectionId)}` : '';
+  return `/pages/practice/index?occupation=${input.occupation}&level=${input.level}&mode=${input.mode}${chapterQuery}${sectionQuery}`;
+};
 
 Page({
   data: {
@@ -35,10 +61,18 @@ Page({
   async loadCertificate(key: CertificateKey) {
     const certificate = getCertificate(key);
     if (!certificate) return;
+    const certificateChanged = this.data.selectedKey !== certificate.key;
     this.setData({
       selectedKey: certificate.key,
       selectedTitle: certificate.title,
       loading: true,
+      ...(certificateChanged
+        ? {
+            questionCount: 0,
+            parts: [] as CatalogPartViewModel[],
+            expandedChapterId: '',
+          }
+        : {}),
     });
     const questions = await appServices.questions.list({
       occupation: certificate.occupation,
@@ -64,11 +98,11 @@ Page({
     if (!CERTIFICATES.some((certificate) => certificate.key === key)) return;
     appServices.progress.updatePreferences({ selectedCertificateKey: key });
     getApp<IAppOption>().globalData.selectedCertificateKey = key;
-    this.setData({ expandedChapterId: '' });
     void this.loadCertificate(key);
   },
 
   onModeTap(event: WechatMiniprogram.TouchEvent) {
+    if (this.data.loading) return;
     const mode = String(event.currentTarget.dataset['mode']) as PracticeMode;
     if (mode === 'chapter') {
       if (!this.data.parts.length) return;
@@ -79,6 +113,7 @@ Page({
   },
 
   onToggleChapter(event: WechatMiniprogram.TouchEvent) {
+    if (this.data.loading) return;
     const chapterId = String(event.currentTarget.dataset['chapterId'] ?? '');
     if (!chapterId) return;
     this.setData({
@@ -87,22 +122,35 @@ Page({
   },
 
   onChapterPractice(event: WechatMiniprogram.TouchEvent) {
+    if (this.data.loading) return;
     const chapterId = String(event.currentTarget.dataset['chapterId'] ?? '');
     if (chapterId) this.start('chapter', { chapterId });
   },
 
   onSectionPractice(event: WechatMiniprogram.TouchEvent) {
+    if (this.data.loading) return;
     const sectionId = String(event.currentTarget.dataset['sectionId'] ?? '');
     if (sectionId) this.start('chapter', { sectionId });
   },
 
   start(mode: PracticeMode, scope: { chapterId?: string; sectionId?: string } = {}) {
+    if (this.data.loading) return;
     const certificate = getCertificate(this.data.selectedKey as CertificateKey);
-    if (!certificate || !this.data.questionCount) return;
-    const chapterQuery = scope.chapterId ? `&chapterId=${encodeURIComponent(scope.chapterId)}` : '';
-    const sectionQuery = scope.sectionId ? `&sectionId=${encodeURIComponent(scope.sectionId)}` : '';
-    void wx.navigateTo({
-      url: `/pages/practice/index?occupation=${certificate.occupation}&level=${certificate.level}&mode=${mode}${chapterQuery}${sectionQuery}`,
+    if (!certificate) return;
+    const chapters = this.data.parts.flatMap((part) => part.chapters);
+    const url = buildTextbookPracticeRoute({
+      loading: this.data.loading,
+      questionCount: this.data.questionCount,
+      occupation: certificate.occupation,
+      level: certificate.level,
+      mode,
+      chapterIds: chapters.filter((chapter) => chapter.canStart).map((chapter) => chapter.id),
+      sectionIds: chapters.flatMap((chapter) =>
+        chapter.sections.filter((section) => section.canStart).map((section) => section.id),
+      ),
+      ...(scope.chapterId ? { chapterId: scope.chapterId } : {}),
+      ...(scope.sectionId ? { sectionId: scope.sectionId } : {}),
     });
+    if (url) void wx.navigateTo({ url });
   },
 });

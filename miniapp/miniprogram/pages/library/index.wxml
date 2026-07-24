@@ -24,7 +24,7 @@
     <view class="library-summary__badge">{{questionCount ? '可练习' : '待补充'}}</view>
   </view>
 
-  <view wx:if="{{questionCount}}" class="mode-grid">
+  <view wx:if="{{!loading && questionCount}}" class="mode-grid">
     <view
       wx:for="{{modes}}"
       wx:key="mode"
@@ -38,7 +38,7 @@
     </view>
   </view>
 
-  <view id="catalog-list" class="catalog">
+  <view wx:if="{{!loading}}" id="catalog-list" class="catalog">
     <view class="section-title">教材目录</view>
     <view wx:for="{{parts}}" wx:key="id" class="catalog-part">
       <view class="catalog-part__heading">
