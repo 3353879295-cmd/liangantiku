@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { CERTIFICATES } from '../miniprogram/data/certificates';
-import { presentCatalogParts as presentCatalogPartsDirect } from '../miniprogram/presenters/catalog-presenter';
+import { KNOWLEDGE_CATALOG } from '../miniprogram/data/knowledge-catalog';
+import {
+  findCatalogChapterTitle,
+  presentCatalogParts as presentCatalogPartsDirect,
+} from '../miniprogram/presenters/catalog-presenter';
+import type { RuntimeKnowledgeCatalog } from '../miniprogram/types/knowledge-catalog';
 import { presentDashboard } from '../miniprogram/presenters/home-presenter';
 import {
   groupCertificates,
@@ -83,6 +88,67 @@ describe('library presenters', () => {
   it('keeps the catalog presenter available without removing the legacy module presenter', () => {
     expect(presentCatalogParts).toBe(presentCatalogPartsDirect);
     expect(presentLibraryModules([makeQuestion()])).toHaveLength(1);
+  });
+});
+
+describe('findCatalogChapterTitle', () => {
+  it('resolves a known chapter ID from the generated catalog', () => {
+    expect(findCatalogChapterTitle(KNOWLEDGE_CATALOG, 'warehouse-l5-c03')).toBe('粮油出入库作业');
+  });
+
+  it('returns an unknown chapter ID unchanged', () => {
+    expect(findCatalogChapterTitle(KNOWLEDGE_CATALOG, 'retired-chapter')).toBe('retired-chapter');
+  });
+
+  it('keeps same-title chapters in different occupations isolated by chapter ID', () => {
+    const catalog: RuntimeKnowledgeCatalog = {
+      occupations: {
+        '4-02-06-01': {
+          title: '粮油仓储管理员',
+          parts: [
+            {
+              id: 'warehouse',
+              number: 1,
+              title: '仓储目录',
+              levels: [5],
+              chapters: [
+                {
+                  id: 'warehouse-shared',
+                  number: 1,
+                  title: '同名章节',
+                  page: null,
+                  sections: [],
+                },
+              ],
+            },
+          ],
+        },
+        '4-08-05-01': {
+          title: '粮油质检员',
+          parts: [
+            {
+              id: 'inspector',
+              number: 1,
+              title: '质检目录',
+              levels: [5],
+              chapters: [
+                {
+                  id: 'inspector-shared',
+                  number: 1,
+                  title: '同名章节',
+                  page: null,
+                  sections: [],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    };
+
+    expect(findCatalogChapterTitle(catalog, 'warehouse-shared')).toBe('同名章节');
+    expect(findCatalogChapterTitle(catalog, 'inspector-shared')).toBe('同名章节');
+    expect(findCatalogChapterTitle(catalog, 'shared')).toBe('shared');
   });
 });
 
