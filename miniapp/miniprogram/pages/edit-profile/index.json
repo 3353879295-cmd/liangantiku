@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "编辑资料",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-topbar": "/components/app-topbar/index"
+  }
+}

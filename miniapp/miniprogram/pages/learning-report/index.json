@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "学习报告",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-topbar": "/components/app-topbar/index",
+    "stat-card": "/components/stat-card/index"
+  }
+}

@@ -1,0 +1,47 @@
+<view class="page-shell page-shell--secondary edit-page">
+  <app-topbar title="编辑资料" subtitle="资料保存在本机" fallback-tab="profile" />
+
+  <view class="edit-card matte-card">
+    <view class="field-label">昵称</view>
+    <view class="nickname-field">
+      <input
+        class="nickname-input"
+        type="nickname"
+        value="{{nickname}}"
+        maxlength="12"
+        placeholder="请输入昵称"
+        bindinput="onNicknameInput"
+      />
+      <text class="nickname-count">{{nickname.length}} / 12</text>
+    </view>
+    <text class="field-note">昵称会显示在首页和个人中心。</text>
+  </view>
+
+  <view class="section-heading edit-section-heading">
+    <view class="section-title">选择内置头像</view>
+    <text class="section-note">不上传临时图片</text>
+  </view>
+  <view class="avatar-card matte-card">
+    <view
+      wx:for="{{avatarOptions}}"
+      wx:key="id"
+      class="avatar-option {{avatarUrl === item.url ? 'avatar-option--selected' : ''}}"
+      data-avatar-url="{{item.url}}"
+      aria-label="选择{{item.label}}头像"
+      bindtap="onAvatarTap"
+    >
+      <image class="avatar-option__image" src="{{item.url}}" mode="aspectFill" />
+      <view class="avatar-option__label">{{item.label}}</view>
+      <view wx:if="{{avatarUrl === item.url}}" class="avatar-option__check">
+        <t-icon name="check" size="24rpx" />
+      </view>
+    </view>
+  </view>
+
+  <view class="privacy-note matte-card">
+    <t-icon name="lock-on" size="30rpx" />
+    <text>这里只保存昵称和小程序内置头像路径，不会保存相册临时文件，也不会上传到云端。</text>
+  </view>
+
+  <button class="save-button" bindtap="onSave">保存资料</button>
+</view>

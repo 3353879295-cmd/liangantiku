@@ -1,0 +1,49 @@
+<view class="page-shell page-shell--secondary member-page">
+  <app-topbar title="会员中心" subtitle="权益说明" fallback-tab="profile" />
+
+  <view class="member-hero">
+    <text class="member-hero__eyebrow">GRAIN PRACTICE</text>
+    <view class="member-hero__title">会员功能逐步开放</view>
+    <text class="member-hero__body">
+      当前仅展示权益方向与开放状态，本页不提供付费、开通或结算操作。
+    </text>
+  </view>
+
+  <view class="section-heading member-section-heading">
+    <view class="section-title">权益进度</view>
+    <text class="section-note">以实际开放为准</text>
+  </view>
+  <view class="rights-card matte-card">
+    <view class="right-row">
+      <view class="right-row__icon"><t-icon name="chart-bar" size="34rpx" /></view>
+      <view class="right-row__copy">
+        <view class="right-row__title">学习数据洞察</view>
+        <text class="right-row__note">基础学习报告已面向所有用户开放</text>
+      </view>
+      <text class="right-row__status right-row__status--open">基础版开放</text>
+    </view>
+    <view class="right-row">
+      <view class="right-row__icon"><t-icon name="book-open" size="34rpx" /></view>
+      <view class="right-row__copy">
+        <view class="right-row__title">更多专项题库</view>
+        <text class="right-row__note">将随题库校验进度逐步补充</text>
+      </view>
+      <text class="right-row__status">规划中</text>
+    </view>
+    <view class="right-row">
+      <view class="right-row__icon"><t-icon name="cloud-upload" size="34rpx" /></view>
+      <view class="right-row__copy">
+        <view class="right-row__title">更多学习能力</view>
+        <text class="right-row__note">开放时间与方式将在功能就绪后公布</text>
+      </view>
+      <text class="right-row__status">规划中</text>
+    </view>
+  </view>
+
+  <view class="member-notice matte-card">
+    <view class="member-notice__title">状态说明</view>
+    <text class="member-notice__body">
+      页面不代表会员身份，也不会发起支付。后续若有变化，将在功能真实可用时明确说明。
+    </text>
+  </view>
+</view>

@@ -11,6 +11,10 @@
     "pages/question-list/index",
     "pages/practical/index",
     "pages/practical-detail/index",
+    "pages/learning-report/index",
+    "pages/member/index",
+    "pages/edit-profile/index",
+    "pages/learning-settings/index",
     "pages/profile/index"
   ],
   "window": {

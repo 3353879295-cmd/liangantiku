@@ -1,0 +1,59 @@
+<view class="page-shell page-shell--secondary settings-page">
+  <app-topbar title="学习设置" subtitle="偏好自动保存在本机" fallback-tab="profile" />
+
+  <view class="settings-intro matte-card">
+    <view class="settings-intro__mark"><t-icon name="setting" size="36rpx" /></view>
+    <view>
+      <view class="settings-intro__title">按你的节奏学习</view>
+      <text class="settings-intro__body">设置会用于今日目标和后续答题页面。</text>
+    </view>
+  </view>
+
+  <view class="section-heading settings-section-heading">
+    <view class="section-title">每日目标</view>
+    <text class="section-note">当前 {{dailyGoal}} 题</text>
+  </view>
+  <view class="goal-grid">
+    <view
+      wx:for="{{goalOptions}}"
+      wx:key="value"
+      class="goal-option {{item.selected ? 'goal-option--selected' : ''}}"
+      data-goal="{{item.value}}"
+      bindtap="onGoalTap"
+    >
+      <view class="goal-option__label">{{item.label}}</view>
+      <text class="goal-option__note">{{item.selected ? '当前目标' : '选择'}}</text>
+    </view>
+  </view>
+
+  <view class="section-heading settings-section-heading">
+    <view class="section-title">默认答题主题</view>
+    <text class="section-note">{{answerTheme === 'night' ? '护眼深色' : '明亮主题'}}</text>
+  </view>
+  <view class="theme-card matte-card">
+    <view
+      wx:for="{{themeOptions}}"
+      wx:key="value"
+      class="theme-option {{item.selected ? 'theme-option--selected' : ''}}"
+      data-theme="{{item.value}}"
+      bindtap="onThemeTap"
+    >
+      <view class="theme-preview theme-preview--{{item.value}}">
+        <view class="theme-preview__line"></view>
+        <view class="theme-preview__answer"></view>
+      </view>
+      <view class="theme-option__copy">
+        <view class="theme-option__title">{{item.title}}</view>
+        <text class="theme-option__note">{{item.note}}</text>
+      </view>
+      <view class="theme-option__check">
+        <t-icon name="{{item.selected ? 'check-circle-filled' : 'circle'}}" size="34rpx" />
+      </view>
+    </view>
+  </view>
+
+  <view class="settings-note matte-card">
+    <t-icon name="info-circle" size="28rpx" />
+    <text>清除学习记录时，每日目标、答题主题、昵称和头像都会保留。</text>
+  </view>
+</view>

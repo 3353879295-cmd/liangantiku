@@ -1,0 +1,69 @@
+<view class="page-shell page-shell--secondary report-page">
+  <app-topbar title="学习报告" subtitle="{{certificateTitle}}" fallback-tab="profile" />
+
+  <view wx:if="{{loading}}" class="report-loading matte-card">
+    <t-icon name="loading" size="36rpx" />
+    <text>正在整理真实学习记录</text>
+  </view>
+
+  <view wx:elif="{{!hasLearningData}}" class="report-empty matte-card">
+    <view class="report-empty__mark"><t-icon name="chart-bar" size="42rpx" /></view>
+    <view class="report-empty__title">还没有可生成的学习报告</view>
+    <text class="report-empty__body">
+      完成练习后，这里会根据真实答题记录展示累计数据、七日趋势与薄弱章节。
+    </text>
+    <button class="report-empty__action" bindtap="onStartPractice">开始练习</button>
+  </view>
+
+  <block wx:else>
+    <view class="report-intro matte-card">
+      <text class="report-intro__eyebrow">累计学习概览</text>
+      <view class="report-intro__title">每一次作答，都算作真实进步</view>
+    </view>
+
+    <view class="report-stats">
+      <stat-card label="累计练习" value="{{answeredText}}" note="题" />
+      <stat-card label="正确率" value="{{accuracyText}}" note="全部作答" />
+      <stat-card label="学习时长" value="{{durationText}}" note="{{streakText}}" />
+    </view>
+
+    <view class="section-heading report-section-heading">
+      <view class="section-title">近七天趋势</view>
+      <text class="section-note">每日作答题数</text>
+    </view>
+    <view class="activity-card matte-card">
+      <view wx:for="{{activity}}" wx:key="date" class="activity-day">
+        <view class="activity-day__count">{{item.answered}}</view>
+        <view class="activity-day__track">
+          <view class="activity-day__bar" style="height: {{item.height}}rpx;"></view>
+        </view>
+        <text class="activity-day__label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="section-heading report-section-heading">
+      <view class="section-title">当前教材薄弱章节</view>
+      <text class="section-note">按真实正确率排序</text>
+    </view>
+    <view wx:if="{{weakChapters.length}}" class="weak-card matte-card">
+      <view
+        wx:for="{{weakChapters}}"
+        wx:key="id"
+        class="weak-row"
+        data-chapter-id="{{item.id}}"
+        bindtap="onWeakChapterTap"
+      >
+        <view class="weak-row__rank">{{index + 1}}</view>
+        <view class="weak-row__copy">
+          <view class="weak-row__title">{{item.title}}</view>
+          <text class="weak-row__meta">{{item.attemptsText}} · {{item.wrongText}}</text>
+        </view>
+        <view class="weak-row__accuracy">{{item.accuracyText}}</view>
+        <t-icon name="chevron-right" size="28rpx" />
+      </view>
+    </view>
+    <view wx:else class="weak-empty matte-card">
+      当前教材尚无可分析的章节练习。累计数据仍来自全部真实作答记录。
+    </view>
+  </block>
+</view>

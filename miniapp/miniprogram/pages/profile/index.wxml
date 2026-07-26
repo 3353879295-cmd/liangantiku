@@ -1,19 +1,51 @@
 <view class="page-shell profile-page">
   <view class="profile-header">
-    <view class="profile-avatar">粮</view>
-    <view>
-      <view class="page-title">我的学习</view>
-      <text class="page-subtitle">{{certificateTitle}}</text>
+    <view class="profile-identity">
+      <image wx:if="{{avatarUrl}}" class="profile-avatar" src="{{avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="profile-avatar profile-avatar--fallback">粮</view>
+      <view class="profile-copy">
+        <view class="profile-name">{{nickname}}</view>
+        <text class="profile-certificate">{{certificateTitle}}</text>
+      </view>
     </view>
+    <view class="edit-profile" bind:tap="onOpenEditProfile">
+      <text>编辑资料</text>
+      <t-icon name="chevron-right" size="28rpx" />
+    </view>
+  </view>
+
+  <view class="member-card" bind:tap="onOpenMember">
+    <view>
+      <text class="member-card__eyebrow">MEMBER</text>
+      <view class="member-card__title">会员权益</view>
+      <text class="member-card__note">查看功能开放计划</text>
+    </view>
+    <view class="member-card__action">了解权益</view>
   </view>
 
   <view class="profile-stats">
     <stat-card label="累计练习" value="{{dashboard.answeredText}}" note="题" />
     <stat-card label="正确率" value="{{dashboard.accuracyText}}" note="累计" />
-    <stat-card label="坚持学习" value="{{dashboard.streakText}}" note="当前" />
+    <stat-card label="连续学习" value="{{dashboard.streakText}}" note="当前" />
   </view>
 
-  <view class="section-title">近七天</view>
+  <view class="goal-card" bind:tap="onOpenLearningSettings">
+    <view class="goal-card__heading">
+      <view>
+        <text class="goal-card__eyebrow">今日目标</text>
+        <view class="goal-card__value">{{dashboard.goalText}}</view>
+      </view>
+      <view class="goal-card__percent">{{dashboard.goalPercent}}%</view>
+    </view>
+    <view class="goal-card__track">
+      <view class="goal-card__progress" style="width: {{dashboard.goalPercent}}%;"></view>
+    </view>
+  </view>
+
+  <view class="section-heading profile-section-heading">
+    <view class="section-title">近七天</view>
+    <text class="section-note">学习题数</text>
+  </view>
   <view class="activity-card">
     <view wx:for="{{activity}}" wx:key="date" class="activity-day">
       <view class="activity-day__count">{{item.answered}}</view>
@@ -24,37 +56,50 @@
     </view>
   </view>
 
-  <view class="section-title">复习</view>
-  <view class="settings-card">
-    <view class="setting-row" bind:tap="onOpenWrong">
-      <view class="setting-row__left">
-        <view class="setting-icon setting-icon--wrong"><t-icon name="error-circle" size="34rpx" /></view>
-        <text>错题本</text>
-      </view>
-      <view class="setting-row__right"><text>{{wrongCount}} 题</text><t-icon name="chevron-right" size="30rpx" /></view>
-    </view>
-    <view class="setting-row" bind:tap="onOpenFavorite">
-      <view class="setting-row__left">
-        <view class="setting-icon"><t-icon name="star" size="34rpx" /></view>
-        <text>我的收藏</text>
-      </view>
-      <view class="setting-row__right"><text>{{favoriteCount}} 题</text><t-icon name="chevron-right" size="30rpx" /></view>
-    </view>
+  <view class="section-heading profile-section-heading">
+    <view class="section-title">更多服务</view>
   </view>
-
-  <view class="section-title">设置</view>
-  <view class="settings-card">
-    <view class="setting-row" bind:tap="onChangeCertificate">
-      <view class="setting-row__left"><text>当前证书</text></view>
-      <view class="setting-row__right"><text>{{certificateTitle}}</text><t-icon name="chevron-right" size="30rpx" /></view>
+  <view class="menu-card">
+    <view class="menu-row" bind:tap="onOpenLearningReport">
+      <view class="menu-row__left">
+        <view class="menu-row__icon"><t-icon name="chart-bar" size="32rpx" /></view>
+        <view>
+          <view class="menu-row__title">学习报告</view>
+          <text class="menu-row__note">查看趋势与薄弱章节</text>
+        </view>
+      </view>
+      <t-icon name="chevron-right" size="30rpx" />
     </view>
-    <view class="setting-row" bind:tap="onChangeGoal">
-      <view class="setting-row__left"><text>每日目标</text></view>
-      <view class="setting-row__right"><text>{{dailyGoal}} 题</text><t-icon name="chevron-right" size="30rpx" /></view>
+    <view class="menu-row" bind:tap="onOpenLearningSettings">
+      <view class="menu-row__left">
+        <view class="menu-row__icon"><t-icon name="setting" size="32rpx" /></view>
+        <view>
+          <view class="menu-row__title">学习设置</view>
+          <text class="menu-row__note">每日目标与答题主题</text>
+        </view>
+      </view>
+      <t-icon name="chevron-right" size="30rpx" />
     </view>
-    <view class="setting-row setting-row--danger" bind:tap="onClearLearningData">
-      <view class="setting-row__left"><text>清除学习数据</text></view>
+    <view class="menu-row menu-row--danger" bind:tap="onClearLearningData">
+      <view class="menu-row__left">
+        <view class="menu-row__icon"><t-icon name="delete" size="32rpx" /></view>
+        <view>
+          <view class="menu-row__title">数据管理</view>
+          <text class="menu-row__note">清除学习记录并保留偏好</text>
+        </view>
+      </view>
+      <t-icon name="chevron-right" size="30rpx" />
     </view>
+    <button class="menu-row feedback-row" open-type="feedback">
+      <view class="menu-row__left">
+        <view class="menu-row__icon"><t-icon name="chat" size="32rpx" /></view>
+        <view class="feedback-row__copy">
+          <view class="menu-row__title">意见反馈</view>
+          <text class="menu-row__note">通过微信官方反馈能力提交</text>
+        </view>
+      </view>
+      <t-icon name="chevron-right" size="30rpx" />
+    </button>
   </view>
 
   <view class="version">粮安题库 0.1.0 · 题目解析仅用于学习参考</view>

@@ -185,6 +185,23 @@ describe('ProgressService', () => {
     expect(new ProgressService(repository).restoreSession()).toEqual(session);
   });
 
+  it('persists profile and study preference updates across service instances', () => {
+    const { repository, service } = createService();
+
+    service.updatePreferences({
+      nickname: '麦穗',
+      avatarUrl: '/assets/avatars/granary.svg',
+    });
+    service.updatePreferences({ dailyGoal: 30 });
+
+    expect(new ProgressService(repository).getPreferences()).toEqual({
+      ...createEmptyProgress().preferences,
+      nickname: '麦穗',
+      avatarUrl: '/assets/avatars/granary.svg',
+      dailyGoal: 30,
+    });
+  });
+
   it('clears learning data but preserves preferences and other storage', () => {
     const { storage, repository, service } = createService();
     storage.set('unrelated:key', { keep: true });

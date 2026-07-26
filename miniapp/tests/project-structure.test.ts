@@ -171,7 +171,7 @@ describe('WeChat mini program structure', () => {
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 
-    expect(app.pages).toHaveLength(12);
+    expect(app.pages).toHaveLength(16);
     for (const page of app.pages) {
       const pagePath = join(miniappRoot, page);
       assertUnitFiles(pagePath);
@@ -188,6 +188,10 @@ describe('WeChat mini program structure', () => {
     expect(app.pages).toContain('pages/chapter-detail/index');
     expect(app.pages).toContain('pages/random-settings/index');
     expect(app.pages).toContain('pages/mock-info/index');
+    expect(app.pages).toContain('pages/learning-report/index');
+    expect(app.pages).toContain('pages/member/index');
+    expect(app.pages).toContain('pages/edit-profile/index');
+    expect(app.pages).toContain('pages/learning-settings/index');
     for (const item of app.tabBar?.list ?? []) {
       expect(app.pages).toContain(item.pagePath);
     }
@@ -301,6 +305,10 @@ describe('WeChat mini program structure', () => {
       'report',
       'question-list',
       'practical-detail',
+      'learning-report',
+      'member',
+      'edit-profile',
+      'learning-settings',
     ];
 
     for (const page of secondaryPages) {
@@ -310,6 +318,71 @@ describe('WeChat mini program structure', () => {
 
     const app = readJson<ComponentConfig>(join(miniappRoot, 'app.json'));
     expect(app.usingComponents?.['app-topbar']).toBeUndefined();
+  });
+
+  it('keeps profile focused on progress and account actions without duplicate review entries', () => {
+    const markup = readFileSync(join(miniappRoot, 'pages', 'profile', 'index.wxml'), 'utf8');
+    const source = readFileSync(join(miniappRoot, 'pages', 'profile', 'index.ts'), 'utf8');
+
+    for (const label of ['编辑资料', '会员权益', '学习报告', '学习设置', '数据管理', '意见反馈']) {
+      expect(markup).toContain(label);
+    }
+    expect(markup).toContain('open-type="feedback"');
+    expect(markup).not.toContain('>复习<');
+    expect(markup).not.toContain('错题本');
+    expect(markup).not.toContain('收藏试题');
+    expect(source).not.toContain('onOpenWrong');
+    expect(source).not.toContain('onOpenFavorite');
+
+    const orderedLabels = [
+      '编辑资料',
+      '会员权益',
+      '累计练习',
+      '今日目标',
+      '近七天',
+      '学习报告',
+      '学习设置',
+      '数据管理',
+      '意见反馈',
+    ];
+    const positions = orderedLabels.map((label) => markup.indexOf(label));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+  });
+
+  it('wires profile secondary pages to existing services and truthful platform capabilities', () => {
+    const editSource = readFileSync(join(miniappRoot, 'pages', 'edit-profile', 'index.ts'), 'utf8');
+    const settingsSource = readFileSync(
+      join(miniappRoot, 'pages', 'learning-settings', 'index.ts'),
+      'utf8',
+    );
+    const reportSource = readFileSync(
+      join(miniappRoot, 'pages', 'learning-report', 'index.ts'),
+      'utf8',
+    );
+    const memberMarkup = readFileSync(join(miniappRoot, 'pages', 'member', 'index.wxml'), 'utf8');
+
+    expect(editSource).toContain('appServices.progress.updatePreferences');
+    expect(editSource).toContain('/assets/avatars/');
+    expect(editSource).not.toContain('chooseAvatar');
+    expect(editSource).not.toContain('chooseMedia');
+    expect(settingsSource).toContain('appServices.progress.updatePreferences');
+    expect(settingsSource).toContain('appServices.theme.set');
+    expect(reportSource).toContain('appServices.progress.getDashboard');
+    expect(reportSource).toContain('appServices.progress.getActivity');
+    expect(reportSource).toContain('appServices.progress.getQuestionProgress');
+    expect(reportSource).toContain('presentCatalogParts');
+    expect(memberMarkup).toContain('功能逐步开放');
+    expect(memberMarkup).toContain('name="book-open"');
+    expect(memberMarkup).not.toContain('name="books"');
+    expect(memberMarkup).not.toContain('requestPayment');
+    expect(memberMarkup).not.toContain('立即支付');
+    expect(memberMarkup).not.toContain('立即开通');
+
+    for (const source of [editSource, settingsSource, reportSource]) {
+      expect(source).not.toContain('wx.getStorageSync');
+      expect(source).not.toContain('wx.setStorageSync');
+    }
   });
 
   it('ships substantial local practical artwork and references it without remote URLs', () => {

@@ -1,0 +1,117 @@
+.edit-page {
+  padding-bottom: calc(56rpx + env(safe-area-inset-bottom));
+}
+
+.edit-card {
+  padding: 30rpx;
+}
+
+.field-label,
+.section-title {
+  font-size: 29rpx;
+  font-weight: 680;
+}
+
+.nickname-field {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  margin-top: 18rpx;
+  padding: 20rpx 22rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+}
+
+.nickname-input {
+  min-width: 0;
+  flex: 1;
+  color: var(--color-text);
+  font-size: 28rpx;
+}
+
+.nickname-count,
+.field-note,
+.section-note {
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+}
+
+.field-note {
+  display: block;
+  margin-top: 14rpx;
+}
+
+.edit-section-heading {
+  margin: 42rpx 4rpx 16rpx;
+}
+
+.avatar-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  padding: 20rpx;
+}
+
+.avatar-option {
+  position: relative;
+  padding: 18rpx;
+  border: 3rpx solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-secondary);
+  text-align: center;
+}
+
+.avatar-option--selected {
+  border-color: var(--color-primary-strong);
+  background: var(--color-primary-soft);
+}
+
+.avatar-option__image {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 34rpx;
+}
+
+.avatar-option__label {
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  font-weight: 650;
+}
+
+.avatar-option__check {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  display: flex;
+  width: 36rpx;
+  height: 36rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999rpx;
+  background: var(--color-text);
+  color: var(--color-primary);
+}
+
+.privacy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin-top: 18rpx;
+  padding: 24rpx;
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+  line-height: 1.6;
+}
+
+.save-button {
+  margin-top: 34rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.save-button::after {
+  border: 0;
+}

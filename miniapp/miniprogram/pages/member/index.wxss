@@ -1,0 +1,126 @@
+.member-page {
+  padding-bottom: calc(56rpx + env(safe-area-inset-bottom));
+}
+
+.member-hero {
+  padding: 38rpx 34rpx;
+  border-radius: var(--radius-xl);
+  background: #11120f;
+  color: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.member-hero__eyebrow {
+  color: var(--color-primary);
+  font-size: 19rpx;
+  font-weight: 700;
+  letter-spacing: 3rpx;
+}
+
+.member-hero__title {
+  margin-top: 13rpx;
+  font-size: 40rpx;
+  font-weight: 680;
+}
+
+.member-hero__body {
+  display: block;
+  margin-top: 18rpx;
+  color: rgb(255 255 255 / 68%);
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.member-section-heading {
+  margin: 44rpx 4rpx 16rpx;
+}
+
+.section-title {
+  font-size: 31rpx;
+  font-weight: 680;
+}
+
+.section-note {
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+}
+
+.rights-card {
+  overflow: hidden;
+}
+
+.right-row {
+  display: flex;
+  min-height: 126rpx;
+  align-items: center;
+  gap: 17rpx;
+  margin-left: 26rpx;
+  padding: 20rpx 24rpx 20rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.right-row:last-child {
+  border-bottom: 0;
+}
+
+.right-row__icon {
+  display: flex;
+  width: 66rpx;
+  height: 66rpx;
+  flex: 0 0 66rpx;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22rpx;
+  background: var(--color-primary-soft);
+}
+
+.right-row__copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.right-row__title {
+  font-size: 27rpx;
+  font-weight: 650;
+}
+
+.right-row__note {
+  display: block;
+  margin-top: 7rpx;
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+  line-height: 1.45;
+}
+
+.right-row__status {
+  flex: 0 0 auto;
+  padding: 9rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  font-size: 18rpx;
+  font-weight: 650;
+}
+
+.right-row__status--open {
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+}
+
+.member-notice {
+  margin-top: 18rpx;
+  padding: 28rpx 30rpx;
+}
+
+.member-notice__title {
+  font-size: 26rpx;
+  font-weight: 650;
+}
+
+.member-notice__body {
+  display: block;
+  margin-top: 10rpx;
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  line-height: 1.65;
+}

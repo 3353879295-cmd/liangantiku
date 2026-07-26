@@ -2,47 +2,190 @@
   padding-top: 30rpx;
 }
 
-.profile-header {
+.profile-header,
+.profile-identity,
+.edit-profile,
+.member-card,
+.goal-card__heading,
+.menu-row,
+.menu-row__left {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+}
+
+.profile-header,
+.member-card,
+.goal-card__heading,
+.menu-row {
+  justify-content: space-between;
+}
+
+.profile-header {
+  gap: 22rpx;
+}
+
+.profile-identity {
+  min-width: 0;
+  gap: 20rpx;
 }
 
 .profile-avatar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 104rpx;
-  height: 104rpx;
+  width: 96rpx;
+  height: 96rpx;
+  flex: 0 0 96rpx;
   border-radius: 32rpx;
   background: var(--color-primary);
+}
+
+.profile-avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.profile-copy {
+  min-width: 0;
+}
+
+.profile-name {
+  overflow: hidden;
+  font-size: 34rpx;
+  font-weight: 680;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-certificate {
+  display: block;
+  overflow: hidden;
+  margin-top: 7rpx;
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit-profile {
+  flex: 0 0 auto;
+  gap: 2rpx;
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+}
+
+.member-card {
+  gap: 24rpx;
+  margin-top: 32rpx;
+  padding: 30rpx 28rpx;
+  border-radius: var(--radius-xl);
+  background: #11120f;
   color: #fff;
-  font-size: 44rpx;
-  font-weight: 650;
+  box-shadow: var(--shadow-soft);
+}
+
+.member-card__eyebrow {
+  color: var(--color-primary);
+  font-size: 18rpx;
+  font-weight: 700;
+  letter-spacing: 3rpx;
+}
+
+.member-card__title {
+  margin-top: 8rpx;
+  font-size: 31rpx;
+  font-weight: 680;
+}
+
+.member-card__note {
+  display: block;
+  margin-top: 6rpx;
+  color: rgb(255 255 255 / 58%);
+  font-size: 21rpx;
+}
+
+.member-card__action {
+  flex: 0 0 auto;
+  padding: 13rpx 20rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: #11120f;
+  font-size: 21rpx;
+  font-weight: 700;
 }
 
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx;
-  margin-top: 34rpx;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.goal-card,
+.activity-card,
+.menu-card {
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.goal-card {
+  margin-top: 18rpx;
+  padding: 28rpx;
+}
+
+.goal-card__eyebrow {
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+  font-weight: 600;
+}
+
+.goal-card__value {
+  margin-top: 7rpx;
+  font-size: 29rpx;
+  font-weight: 680;
+}
+
+.goal-card__percent {
+  color: var(--color-primary-strong);
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.goal-card__track {
+  overflow: hidden;
+  height: 14rpx;
+  margin-top: 22rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface-secondary);
+}
+
+.goal-card__progress {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+
+.profile-section-heading {
+  margin: 42rpx 4rpx 16rpx;
 }
 
 .section-title {
-  margin: 46rpx 4rpx 18rpx;
   font-size: 32rpx;
-  font-weight: 650;
+  font-weight: 680;
+}
+
+.section-note {
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
 }
 
 .activity-card {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 10rpx;
-  padding: 28rpx 18rpx 24rpx;
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-soft);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8rpx;
+  padding: 26rpx 16rpx 22rpx;
 }
 
 .activity-day {
@@ -54,18 +197,18 @@
 .activity-day__count,
 .activity-day__label {
   color: var(--color-text-secondary);
-  font-size: 19rpx;
+  font-size: 18rpx;
 }
 
 .activity-day__track {
   display: flex;
+  width: 27rpx;
+  height: 106rpx;
   align-items: flex-end;
   justify-content: center;
-  width: 28rpx;
-  height: 112rpx;
   margin: 10rpx 0;
   border-radius: 999rpx;
-  background: #eeeef0;
+  background: var(--color-surface-secondary);
 }
 
 .activity-day__bar {
@@ -75,69 +218,77 @@
   background: var(--color-primary);
 }
 
-.settings-card {
+.menu-card {
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-soft);
 }
 
-.setting-row,
-.setting-row__left,
-.setting-row__right {
-  display: flex;
-  align-items: center;
-}
-
-.setting-row {
-  justify-content: space-between;
-  min-height: 104rpx;
-  margin-left: 28rpx;
-  padding: 16rpx 28rpx 16rpx 0;
+.menu-row {
+  box-sizing: border-box;
+  width: auto;
+  min-height: 112rpx;
+  margin-left: 26rpx;
+  padding: 18rpx 26rpx 18rpx 0;
   border-bottom: 1rpx solid var(--color-border);
-  font-size: 27rpx;
+  color: var(--color-text);
 }
 
-.setting-row:last-child {
+.menu-row:last-child {
   border-bottom: 0;
 }
 
-.setting-row__left {
+.menu-row__left {
+  min-width: 0;
   gap: 18rpx;
-  font-weight: 550;
 }
 
-.setting-row__right {
-  gap: 6rpx;
-  max-width: 65%;
-  color: var(--color-text-secondary);
-  font-size: 23rpx;
-  text-align: right;
-}
-
-.setting-icon {
+.menu-row__icon {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: 62rpx;
   height: 62rpx;
+  flex: 0 0 62rpx;
+  align-items: center;
+  justify-content: center;
   border-radius: 20rpx;
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--color-text);
 }
 
-.setting-icon--wrong {
+.menu-row__title {
+  font-size: 27rpx;
+  font-weight: 650;
+}
+
+.menu-row__note {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+}
+
+.menu-row--danger .menu-row__icon {
   background: var(--color-danger-soft);
   color: var(--color-danger);
 }
 
-.setting-row--danger {
-  color: var(--color-danger);
+.feedback-row {
+  border-radius: 0;
+  background: transparent;
+  font-family: inherit;
+  line-height: normal;
+  text-align: left;
+}
+
+.feedback-row::after {
+  border: 0;
+}
+
+.feedback-row__copy {
+  min-width: 0;
 }
 
 .version {
-  padding: 42rpx 0 14rpx;
+  padding: 40rpx 0 12rpx;
   color: var(--color-text-secondary);
-  font-size: 21rpx;
+  font-size: 20rpx;
   text-align: center;
 }
