@@ -1,8 +1,11 @@
 import { appServices } from './services/app-services';
 
+const preferences = appServices.progress.getPreferences();
+
 App<IAppOption>({
   globalData: {
-    selectedCertificateKey: '4-02-06-01:5',
+    selectedCertificateKey: preferences.selectedCertificateKey,
+    answerTheme: preferences.answerTheme,
     recoveryNotice: appServices.progress.consumeRecoveryNotice() ?? '',
   },
 });

@@ -66,11 +66,31 @@ describe('presentDashboard', () => {
 });
 
 describe('library presenters', () => {
-  it('groups the six certificates by occupation', () => {
+  it('groups certificates by occupation', () => {
     const groups = groupCertificates(CERTIFICATES);
 
-    expect(groups.map((group) => group.items.length)).toEqual([3, 3]);
+    expect(groups).toHaveLength(2);
     expect(groups.map((group) => group.title)).toEqual(['储粮保管员', '粮油质检员']);
+  });
+
+  it('exposes five levels for each occupation and marks unavailable banks explicitly', () => {
+    const groups = groupCertificates(CERTIFICATES);
+
+    expect(groups.map((group) => group.items.length)).toEqual([5, 5]);
+    expect(groups[0]?.items.map((item) => item.levelName)).toEqual([
+      '初级',
+      '中级',
+      '高级',
+      '技师',
+      '高级技师',
+    ]);
+    expect(groups[0]?.items.map((item) => item.availability)).toEqual([
+      'available',
+      'available',
+      'available',
+      'coming-soon',
+      'coming-soon',
+    ]);
   });
 
   it('sorts modules by first appearance and includes their counts', () => {

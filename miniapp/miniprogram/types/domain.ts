@@ -1,5 +1,8 @@
 export type OccupationCode = '4-02-06-01' | '4-08-05-01';
-export type CertificateLevel = 5 | 4 | 3;
+export type CertificateLevel = 5 | 4 | 3 | 2 | 1;
+export type AvailableQuestionLevel = 5 | 4 | 3;
+export type CertificateAvailability = 'available' | 'coming-soon';
+export type AnswerTheme = 'light' | 'night';
 export type CertificateKey = `${OccupationCode}:${CertificateLevel}`;
 export type QuestionType = 'single' | 'multiple' | 'judge' | 'case';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -63,6 +66,7 @@ export interface StorageAdapter {
 
 export interface AppGlobalData {
   selectedCertificateKey: CertificateKey;
+  answerTheme: AnswerTheme;
   recoveryNotice: string;
 }
 

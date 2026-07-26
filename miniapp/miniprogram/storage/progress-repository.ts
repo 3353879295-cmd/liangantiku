@@ -1,5 +1,5 @@
 import { migrateProgress } from './migrations';
-import type { MigrationResult, ProgressDataV1 } from './migrations';
+import type { MigrationResult, ProgressDataV2 } from './migrations';
 import type { StorageAdapter } from '../types/domain';
 
 export const STORAGE_KEY = 'grain-practice:progress';
@@ -26,12 +26,14 @@ export class ProgressRepository {
         reason: result.reason ?? 'unknown recovery reason',
         value,
       });
+    }
+    if (result.recovered || (value !== null && result.data !== value)) {
       this.storage.set(STORAGE_KEY, result.data);
     }
     return result;
   }
 
-  save(data: ProgressDataV1): void {
+  save(data: ProgressDataV2): void {
     this.storage.set(STORAGE_KEY, data);
   }
 

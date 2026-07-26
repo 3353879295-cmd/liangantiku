@@ -161,7 +161,13 @@ describe('ProgressService', () => {
   it('clears learning data but preserves preferences and other storage', () => {
     const { storage, repository, service } = createService();
     storage.set('unrelated:key', { keep: true });
-    service.updatePreferences({ selectedCertificateKey: '4-08-05-01:3', dailyGoal: 30 });
+    service.updatePreferences({
+      selectedCertificateKey: '4-08-05-01:3',
+      dailyGoal: 30,
+      answerTheme: 'night',
+      nickname: '麦穗',
+      avatarUrl: 'https://example.com/avatar.png',
+    });
     service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 10, at: '2026-07-22' });
 
     service.clearLearningData();
@@ -170,6 +176,9 @@ describe('ProgressService', () => {
     expect(service.getPreferences()).toEqual({
       selectedCertificateKey: '4-08-05-01:3',
       dailyGoal: 30,
+      answerTheme: 'night',
+      nickname: '麦穗',
+      avatarUrl: 'https://example.com/avatar.png',
     });
     expect(storage.get('unrelated:key')).toEqual({ keep: true });
     expect(storage.get(STORAGE_KEY)).not.toBeNull();
@@ -188,9 +197,41 @@ describe('ProgressService', () => {
     expect(service.consumeRecoveryNotice()).toBeNull();
     expect(storage.get(RECOVERY_BACKUP_KEY)).toMatchObject({
       capturedAt: 1234,
-      reason: 'invalid version-one learning data',
+      reason: 'invalid learning data',
     });
     expect(storage.get(STORAGE_KEY)).toEqual(createEmptyProgress());
     expect(service.getPreferences()).toEqual(createEmptyProgress().preferences);
+  });
+
+  it('persists a normal version-one migration without creating a recovery backup', () => {
+    const storage = new MemoryStorageAdapter();
+    storage.set(STORAGE_KEY, {
+      schemaVersion: 1,
+      answers: [],
+      wrongQuestions: {},
+      favorites: {},
+      session: null,
+      dailyTotals: {},
+      recordedSessionIds: [],
+      preferences: {
+        selectedCertificateKey: '4-08-05-01:3',
+        dailyGoal: 30,
+      },
+    });
+
+    const service = new ProgressService(new ProgressRepository(storage));
+
+    expect(service.getPreferences()).toEqual({
+      selectedCertificateKey: '4-08-05-01:3',
+      dailyGoal: 30,
+      answerTheme: 'light',
+      nickname: '仓廪小麦',
+      avatarUrl: '',
+    });
+    expect(storage.get(STORAGE_KEY)).toMatchObject({
+      schemaVersion: 2,
+      preferences: service.getPreferences(),
+    });
+    expect(storage.get(RECOVERY_BACKUP_KEY)).toBeNull();
   });
 });

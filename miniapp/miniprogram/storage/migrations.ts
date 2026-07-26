@@ -1,6 +1,6 @@
-import type { CertificateKey, PracticeMode } from '../types/domain';
+import type { AnswerTheme, CertificateKey, PracticeMode } from '../types/domain';
 
-export const CURRENT_SCHEMA_VERSION = 1 as const;
+export const CURRENT_SCHEMA_VERSION = 2 as const;
 
 export interface AnswerHistoryRecord {
   questionId: string;
@@ -40,9 +40,23 @@ export interface PersistedPracticeSession {
 export interface ProgressPreferences {
   selectedCertificateKey: CertificateKey;
   dailyGoal: number;
+  answerTheme: AnswerTheme;
+  nickname: string;
+  avatarUrl: string;
 }
 
 export interface ProgressDataV1 {
+  schemaVersion: 1;
+  answers: AnswerHistoryRecord[];
+  wrongQuestions: Record<string, WrongQuestionRecord>;
+  favorites: Record<string, number>;
+  session: PersistedPracticeSession | null;
+  dailyTotals: Record<string, DailyTotal>;
+  recordedSessionIds?: string[];
+  preferences: Pick<ProgressPreferences, 'selectedCertificateKey' | 'dailyGoal'>;
+}
+
+export interface ProgressDataV2 {
   schemaVersion: typeof CURRENT_SCHEMA_VERSION;
   answers: AnswerHistoryRecord[];
   wrongQuestions: Record<string, WrongQuestionRecord>;
@@ -54,12 +68,12 @@ export interface ProgressDataV1 {
 }
 
 export interface MigrationResult {
-  data: ProgressDataV1;
+  data: ProgressDataV2;
   recovered: boolean;
   reason?: string;
 }
 
-export const createEmptyProgress = (): ProgressDataV1 => ({
+export const createEmptyProgress = (): ProgressDataV2 => ({
   schemaVersion: CURRENT_SCHEMA_VERSION,
   answers: [],
   wrongQuestions: {},
@@ -70,6 +84,9 @@ export const createEmptyProgress = (): ProgressDataV1 => ({
   preferences: {
     selectedCertificateKey: '4-02-06-01:5',
     dailyGoal: 20,
+    answerTheme: 'light',
+    nickname: '仓廪小麦',
+    avatarUrl: '',
   },
 });
 
@@ -77,7 +94,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const CERTIFICATE_PATTERN = /^(4-02-06-01|4-08-05-01):[345]$/;
+const CERTIFICATE_PATTERN = /^(4-02-06-01|4-08-05-01):[12345]$/;
 const PRACTICE_MODES = new Set<PracticeMode>([
   'chapter',
   'sequential',
@@ -123,12 +140,22 @@ const isDailyTotal = (value: unknown): value is DailyTotal =>
   Number(value.correct) <= Number(value.answered) &&
   isNonNegativeNumber(value.durationMs);
 
-const isPreferences = (value: unknown): value is ProgressPreferences =>
+const isVersionOnePreferences = (value: unknown): value is ProgressDataV1['preferences'] =>
   isRecord(value) &&
   typeof value.selectedCertificateKey === 'string' &&
   CERTIFICATE_PATTERN.test(value.selectedCertificateKey) &&
   Number.isInteger(value.dailyGoal) &&
   Number(value.dailyGoal) > 0;
+
+const isVersionTwoPreferences = (value: unknown): value is ProgressPreferences =>
+  isRecord(value) &&
+  typeof value.selectedCertificateKey === 'string' &&
+  CERTIFICATE_PATTERN.test(value.selectedCertificateKey) &&
+  Number.isInteger(value.dailyGoal) &&
+  Number(value.dailyGoal) > 0 &&
+  (value.answerTheme === 'light' || value.answerTheme === 'night') &&
+  typeof value.nickname === 'string' &&
+  typeof value.avatarUrl === 'string';
 
 const isPersistedSession = (value: unknown): value is PersistedPracticeSession => {
   if (!isRecord(value)) return false;
@@ -168,31 +195,51 @@ const isPersistedSession = (value: unknown): value is PersistedPracticeSession =
   return value.progressRecorded === undefined || typeof value.progressRecorded === 'boolean';
 };
 
-const isProgressDataV1 = (value: unknown): value is ProgressDataV1 => {
-  if (!isRecord(value) || value.schemaVersion !== CURRENT_SCHEMA_VERSION) return false;
-  return (
-    Array.isArray(value.answers) &&
-    value.answers.every(isAnswerHistoryRecord) &&
-    isRecord(value.wrongQuestions) &&
-    Object.entries(value.wrongQuestions).every(
-      ([questionId, record]) => isWrongQuestionRecord(record) && record.questionId === questionId,
-    ) &&
-    isRecord(value.favorites) &&
-    Object.entries(value.favorites).every(
-      ([questionId, savedAt]) => isNonBlankString(questionId) && isNonNegativeNumber(savedAt),
-    ) &&
-    (value.session === null || isPersistedSession(value.session)) &&
-    isRecord(value.dailyTotals) &&
-    Object.entries(value.dailyTotals).every(
-      ([date, total]) => DATE_PATTERN.test(date) && isDailyTotal(total),
-    ) &&
-    (value.recordedSessionIds === undefined ||
-      (Array.isArray(value.recordedSessionIds) &&
-        value.recordedSessionIds.every(isNonBlankString) &&
-        new Set(value.recordedSessionIds).size === value.recordedSessionIds.length)) &&
-    isPreferences(value.preferences)
-  );
+const hasValidLearningData = (
+  value: Record<string, unknown>,
+  allowMissingRecordedSessionIds: boolean,
+): boolean =>
+  Array.isArray(value.answers) &&
+  value.answers.every(isAnswerHistoryRecord) &&
+  isRecord(value.wrongQuestions) &&
+  Object.entries(value.wrongQuestions).every(
+    ([questionId, record]) => isWrongQuestionRecord(record) && record.questionId === questionId,
+  ) &&
+  isRecord(value.favorites) &&
+  Object.entries(value.favorites).every(
+    ([questionId, savedAt]) => isNonBlankString(questionId) && isNonNegativeNumber(savedAt),
+  ) &&
+  (value.session === null || isPersistedSession(value.session)) &&
+  isRecord(value.dailyTotals) &&
+  Object.entries(value.dailyTotals).every(
+    ([date, total]) => DATE_PATTERN.test(date) && isDailyTotal(total),
+  ) &&
+  ((allowMissingRecordedSessionIds && value.recordedSessionIds === undefined) ||
+    (Array.isArray(value.recordedSessionIds) &&
+      value.recordedSessionIds.every(isNonBlankString) &&
+      new Set(value.recordedSessionIds).size === value.recordedSessionIds.length));
+
+export const isProgressDataV1 = (value: unknown): value is ProgressDataV1 => {
+  if (!isRecord(value) || value.schemaVersion !== 1) return false;
+  return hasValidLearningData(value, true) && isVersionOnePreferences(value.preferences);
 };
+
+export const isProgressDataV2 = (value: unknown): value is ProgressDataV2 => {
+  if (!isRecord(value) || value.schemaVersion !== CURRENT_SCHEMA_VERSION) return false;
+  return hasValidLearningData(value, false) && isVersionTwoPreferences(value.preferences);
+};
+
+export const migrateVersionOne = (value: ProgressDataV1): ProgressDataV2 => ({
+  ...value,
+  schemaVersion: CURRENT_SCHEMA_VERSION,
+  recordedSessionIds: value.recordedSessionIds ?? [],
+  preferences: {
+    ...value.preferences,
+    answerTheme: 'light',
+    nickname: '仓廪小麦',
+    avatarUrl: '',
+  },
+});
 
 export const migrateProgress = (value: unknown): MigrationResult => {
   if (value === null || value === undefined) {
@@ -205,19 +252,17 @@ export const migrateProgress = (value: unknown): MigrationResult => {
     }
   }
 
-  if (!isProgressDataV1(value)) {
-    return {
-      data: createEmptyProgress(),
-      recovered: true,
-      reason: 'invalid version-one learning data',
-    };
+  if (isProgressDataV2(value)) {
+    return { data: value, recovered: false };
+  }
+
+  if (isProgressDataV1(value)) {
+    return { data: migrateVersionOne(value), recovered: false };
   }
 
   return {
-    data: {
-      ...value,
-      recordedSessionIds: value.recordedSessionIds ?? [],
-    },
-    recovered: false,
+    data: createEmptyProgress(),
+    recovered: true,
+    reason: 'invalid learning data',
   };
 };
