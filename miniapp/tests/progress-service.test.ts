@@ -172,6 +172,7 @@ describe('ProgressService', () => {
     const session: PersistedPracticeSession = {
       id: 'session-1',
       mode: 'random',
+      answerRevealMode: 'immediate',
       questionIds: ['Q1'],
       currentIndex: 0,
       answers: { Q1: ['A'] },
@@ -202,6 +203,17 @@ describe('ProgressService', () => {
     });
   });
 
+  it('preserves the answer reveal preference when clearing learning data', () => {
+    const { service } = createService();
+
+    service.updatePreferences({ answerRevealMode: 'deferred' });
+    expect(service.getPreferences().answerRevealMode).toBe('deferred');
+
+    service.clearLearningData();
+
+    expect(service.getPreferences().answerRevealMode).toBe('deferred');
+  });
+
   it('clears learning data but preserves preferences and other storage', () => {
     const { storage, repository, service } = createService();
     storage.set('unrelated:key', { keep: true });
@@ -211,6 +223,7 @@ describe('ProgressService', () => {
       answerTheme: 'night',
       nickname: '麦穗',
       avatarUrl: 'https://example.com/avatar.png',
+      answerRevealMode: 'immediate',
     });
     service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 10, at: '2026-07-22' });
 
@@ -223,6 +236,7 @@ describe('ProgressService', () => {
       answerTheme: 'night',
       nickname: '麦穗',
       avatarUrl: 'https://example.com/avatar.png',
+      answerRevealMode: 'immediate',
     });
     expect(storage.get('unrelated:key')).toEqual({ keep: true });
     expect(storage.get(STORAGE_KEY)).not.toBeNull();
@@ -251,7 +265,7 @@ describe('ProgressService', () => {
     const storage = new MemoryStorageAdapter();
     const futureData = {
       ...createEmptyProgress(),
-      schemaVersion: 3,
+      schemaVersion: 4,
       futureOnlyField: { keep: 'verbatim' },
     };
     storage.set(STORAGE_KEY, futureData);
@@ -261,7 +275,7 @@ describe('ProgressService', () => {
     expect(service.consumeRecoveryNotice()).toMatch(/备份/);
     expect(storage.get(RECOVERY_BACKUP_KEY)).toEqual({
       capturedAt: 5678,
-      reason: 'unsupported learning data schema version 3',
+      reason: 'unsupported learning data schema version 4',
       value: futureData,
     });
     expect(storage.get(STORAGE_KEY)).toEqual(createEmptyProgress());
@@ -292,9 +306,10 @@ describe('ProgressService', () => {
       answerTheme: 'light',
       nickname: '仓廪小麦',
       avatarUrl: '',
+      answerRevealMode: 'immediate',
     });
     expect(storage.get(STORAGE_KEY)).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: 3,
       preferences: service.getPreferences(),
     });
     expect(storage.get(RECOVERY_BACKUP_KEY)).toBeNull();

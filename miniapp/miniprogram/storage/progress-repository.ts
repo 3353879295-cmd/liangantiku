@@ -1,5 +1,5 @@
 import { migrateProgress } from './migrations';
-import type { MigrationResult, ProgressDataV2 } from './migrations';
+import type { MigrationResult, ProgressDataV3 } from './migrations';
 import type { StorageAdapter } from '../types/domain';
 
 export const STORAGE_KEY = 'grain-practice:progress';
@@ -33,7 +33,7 @@ export class ProgressRepository {
     return result;
   }
 
-  save(data: ProgressDataV2): void {
+  save(data: ProgressDataV3): void {
     this.storage.set(STORAGE_KEY, data);
   }
 

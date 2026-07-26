@@ -3,6 +3,7 @@ export type CertificateLevel = 5 | 4 | 3 | 2 | 1;
 export type AvailableQuestionLevel = 5 | 4 | 3;
 export type CertificateAvailability = 'available' | 'coming-soon';
 export type AnswerTheme = 'light' | 'night';
+export type AnswerRevealMode = 'immediate' | 'deferred';
 export type CertificateKey = `${OccupationCode}:${CertificateLevel}`;
 export const QUESTION_TYPES = ['single', 'multiple', 'judge', 'case'] as const;
 export type QuestionType = (typeof QUESTION_TYPES)[number];

@@ -1,7 +1,7 @@
 import { createEmptyProgress } from '../storage/migrations';
 import type {
   PersistedPracticeSession,
-  ProgressDataV2,
+  ProgressDataV3,
   ProgressPreferences,
   WrongQuestionRecord,
 } from '../storage/migrations';
@@ -46,7 +46,7 @@ const previousDate = (date: string): string => {
   return parsed.toISOString().slice(0, 10);
 };
 
-const calculateStreak = (dailyTotals: ProgressDataV2['dailyTotals'], today: string): number => {
+const calculateStreak = (dailyTotals: ProgressDataV3['dailyTotals'], today: string): number => {
   const activeDates = Object.keys(dailyTotals)
     .filter((date) => date <= today && dailyTotals[date]?.answered)
     .sort();
@@ -70,7 +70,7 @@ const validateRecordInput = (input: RecordAnswerInput): void => {
   }
 };
 
-const appendAnswer = (data: ProgressDataV2, input: RecordAnswerInput): ProgressDataV2 => {
+const appendAnswer = (data: ProgressDataV3, input: RecordAnswerInput): ProgressDataV3 => {
   const answer = { ...input };
   const previousDay = data.dailyTotals[input.at] ?? {
     answered: 0,
@@ -122,7 +122,7 @@ const appendAnswer = (data: ProgressDataV2, input: RecordAnswerInput): ProgressD
 };
 
 export class ProgressService {
-  private data: ProgressDataV2;
+  private data: ProgressDataV3;
   private recoveryNotice: string | null;
 
   constructor(private readonly repository: ProgressRepository) {
