@@ -5,7 +5,7 @@ const preferences = appServices.progress.getPreferences();
 App<IAppOption>({
   globalData: {
     selectedCertificateKey: preferences.selectedCertificateKey,
-    answerTheme: preferences.answerTheme,
+    answerTheme: appServices.theme.get(),
     recoveryNotice: appServices.progress.consumeRecoveryNotice() ?? '',
   },
 });

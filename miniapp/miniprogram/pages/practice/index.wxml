@@ -1,4 +1,4 @@
-<view class="practice-page">
+<view class="practice-page {{themeClass}}">
   <view wx:if="{{!loading && question}}">
     <view class="practice-topbar">
       <view>
@@ -6,9 +6,8 @@
         <text class="practice-topbar__index">{{indexText}}</text>
       </view>
       <view class="practice-topbar__actions">
-        <view class="icon-action" bind:tap="onToggleFavorite">
-          <t-icon name="{{favorite ? 'star-filled' : 'star'}}" size="38rpx" />
-        </view>
+        <theme-toggle theme="{{theme}}" bind:change="onToggleTheme" />
+        <favorite-button active="{{favorite}}" bind:change="onToggleFavorite" />
         <view class="answer-sheet-link" bind:tap="onOpenAnswerSheet">答题卡</view>
       </view>
     </view>
@@ -63,5 +62,10 @@
     wx:elif="{{!loading}}"
     title="{{errorTitle}}"
     description="{{errorDescription}}"
+  />
+  <app-toast
+    visible="{{toastVisible}}"
+    message="{{toastMessage}}"
+    bind:close="onToastClose"
   />
 </view>

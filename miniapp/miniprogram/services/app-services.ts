@@ -3,11 +3,14 @@ import { LocalQuestionRepository } from '../repositories/local-question-reposito
 import { ProgressRepository } from '../storage/progress-repository';
 import { WechatStorageAdapter } from '../storage/storage-adapter';
 import { ProgressService } from './progress-service';
+import { ThemeService } from './theme-service';
 
 const progressRepository = new ProgressRepository(new WechatStorageAdapter());
+const progress = new ProgressService(progressRepository);
 
 export const appServices = {
-  progress: new ProgressService(progressRepository),
+  progress,
+  theme: new ThemeService(progress),
   questions: new LocalQuestionRepository(QUESTION_RECORDS),
 };
 

@@ -1,7 +1,28 @@
 .practice-page {
+  --practice-option-selected-background: #dff58f;
+  --practice-option-selected-text: #272d23;
+  --practice-option-correct-background: #e4f4df;
+  --practice-option-correct-text: #285b43;
+  --practice-option-wrong-background: #fde9e6;
+  --practice-option-wrong-text: #8d3535;
+
   box-sizing: border-box;
   min-height: 100vh;
   padding: 24rpx 32rpx 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.practice-page.theme-night {
+  --practice-option-selected-background: #33431f;
+  --practice-option-selected-text: #eef2e8;
+  --practice-option-correct-background: #20382a;
+  --practice-option-correct-text: #d8ecdd;
+  --practice-option-wrong-background: #412726;
+  --practice-option-wrong-text: #f3d9d5;
 }
 
 .practice-topbar,
@@ -24,17 +45,6 @@
 .practice-topbar__index {
   color: var(--color-text-secondary);
   font-size: 23rpx;
-}
-
-.icon-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: var(--color-surface);
-  color: var(--color-primary);
 }
 
 .answer-sheet-link {
@@ -126,11 +136,15 @@
   background: rgb(245 245 247 / 94%);
 }
 
+.theme-night .practice-footer {
+  background: rgb(21 25 17 / 94%);
+}
+
 .primary-button {
   min-height: 92rpx;
   border-radius: 24rpx;
   background: var(--color-primary);
-  color: #fff;
+  color: #11120f;
   font-size: 30rpx;
   font-weight: 600;
   line-height: 92rpx;
@@ -144,10 +158,20 @@
     background-color 200ms ease;
 }
 
+.theme-night .primary-button--confirm {
+  background: var(--color-primary-strong);
+  color: #11120f;
+}
+
 .primary-button--confirm[disabled] {
   background: #e7e9e1;
   color: #979d90;
   opacity: 1;
+}
+
+.theme-night .primary-button--confirm[disabled] {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
 }
 
 .primary-button::after {

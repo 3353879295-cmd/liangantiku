@@ -1,0 +1,9 @@
+<view
+  wx:if="{{visible}}"
+  class="app-toast"
+  role="status"
+  aria-live="polite"
+  aria-label="{{message}}"
+>
+  {{message}}
+</view>

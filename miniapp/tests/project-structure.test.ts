@@ -190,11 +190,14 @@ describe('WeChat mini program structure', () => {
 
     for (const component of [
       'analysis-panel',
+      'app-toast',
       'app-topbar',
       'certificate-selector',
       'empty-state',
+      'favorite-button',
       'question-option',
       'stat-card',
+      'theme-toggle',
     ]) {
       const componentPath = join(miniappRoot, 'components', component, 'index');
       assertUnitFiles(componentPath);
@@ -205,6 +208,32 @@ describe('WeChat mini program structure', () => {
     expect(home.usingComponents?.['certificate-selector']).toBe(
       '/components/certificate-selector/index',
     );
+  });
+
+  it('wires practice theme and custom favorite feedback through local components', () => {
+    const practiceConfig = readJson<ComponentConfig>(
+      join(miniappRoot, 'pages', 'practice', 'index.json'),
+    );
+    expect(practiceConfig.usingComponents).toMatchObject({
+      'app-toast': '/components/app-toast/index',
+      'favorite-button': '/components/favorite-button/index',
+      'theme-toggle': '/components/theme-toggle/index',
+    });
+
+    const practiceMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'practice', 'index.wxml'),
+      'utf8',
+    );
+    expect(practiceMarkup).toContain('class="practice-page {{themeClass}}"');
+    expect(practiceMarkup).toContain('<theme-toggle');
+    expect(practiceMarkup).toContain('<favorite-button');
+    expect(practiceMarkup).toContain('<app-toast');
+
+    const favoriteMarkup = readFileSync(
+      join(miniappRoot, 'components', 'favorite-button', 'index.wxml'),
+      'utf8',
+    );
+    expect(favoriteMarkup.match(/<view\s+class="favorite-button__ripple /g)).toHaveLength(1);
   });
 
   it('registers the shared topbar locally on every current secondary page', () => {

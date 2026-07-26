@@ -1,0 +1,31 @@
+.app-toast {
+  position: fixed;
+  z-index: 30;
+  right: 50%;
+  bottom: calc(150rpx + env(safe-area-inset-bottom));
+  max-width: 560rpx;
+  padding: 20rpx 30rpx;
+  border: 1rpx solid rgb(255 255 255 / 10%);
+  border-radius: 999rpx;
+  background: rgb(17 18 15 / 92%);
+  box-shadow: 0 12rpx 32rpx rgb(0 0 0 / 18%);
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  transform: translateX(50%);
+  animation: app-toast-in 180ms ease-out;
+}
+
+@keyframes app-toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(50%, 12rpx);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(50%, 0);
+  }
+}

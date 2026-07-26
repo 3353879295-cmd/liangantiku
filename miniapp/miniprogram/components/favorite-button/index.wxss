@@ -1,0 +1,82 @@
+.favorite-button {
+  position: relative;
+  display: flex;
+  overflow: visible;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #11120f;
+  line-height: 64rpx;
+  transition:
+    transform 100ms ease,
+    background-color 180ms ease;
+}
+
+.favorite-button::after {
+  display: none;
+}
+
+.favorite-button--active {
+  background: #11120f;
+  color: var(--color-primary);
+}
+
+.favorite-button--pressed {
+  transform: scale(0.88);
+}
+
+.favorite-button--pop {
+  animation: favorite-pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.favorite-button__icon {
+  position: relative;
+  z-index: 2;
+}
+
+.favorite-button__ripple {
+  position: absolute;
+  z-index: 1;
+  width: 64rpx;
+  height: 64rpx;
+  border: 2rpx solid var(--color-primary);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.favorite-button__ripple--active {
+  animation: favorite-ripple 420ms ease-out;
+}
+
+@keyframes favorite-pop {
+  0% {
+    transform: scale(0.88);
+  }
+
+  55% {
+    transform: scale(1.12);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes favorite-ripple {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.78);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.58);
+  }
+}

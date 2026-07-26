@@ -120,9 +120,14 @@ Page({
     analysisCorrect: false,
     expectedText: '',
     favorite: false,
+    theme: 'light',
+    themeClass: '',
+    toastVisible: false,
+    toastMessage: '',
   },
 
   async onLoad(options: Record<string, string | undefined>) {
+    this.syncTheme();
     const route = parsePracticeRoute(options);
     if (!route) {
       this.setData({
@@ -156,8 +161,17 @@ Page({
   },
 
   onShow() {
+    this.syncTheme();
     const session = getActivePractice();
     if (this.data.sessionReady && session) this.renderSession(session);
+  },
+
+  syncTheme() {
+    const theme = appServices.theme.get();
+    this.setData({
+      theme,
+      themeClass: theme === 'night' ? 'theme-night' : '',
+    });
   },
 
   renderSession(session: NonNullable<ReturnType<typeof getActivePractice>>, draft?: string[]) {
@@ -253,11 +267,26 @@ Page({
     void wx.navigateTo({ url: '/pages/answer-sheet/index' });
   },
 
+  onToggleTheme() {
+    const theme = appServices.theme.toggle();
+    this.setData({
+      theme,
+      themeClass: theme === 'night' ? 'theme-night' : '',
+    });
+  },
+
   onToggleFavorite() {
     const question = this.data.question;
     if (!question) return;
     const favorite = appServices.progress.toggleFavorite(question.id, Date.now());
-    this.setData({ favorite });
-    void wx.showToast({ title: favorite ? '已收藏' : '已取消收藏', icon: 'none' });
+    this.setData({
+      favorite,
+      toastMessage: favorite ? '已收藏' : '已取消收藏',
+      toastVisible: true,
+    });
+  },
+
+  onToastClose() {
+    this.setData({ toastVisible: false });
   },
 });

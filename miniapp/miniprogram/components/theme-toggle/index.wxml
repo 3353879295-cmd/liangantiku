@@ -1,0 +1,9 @@
+<button
+  class="theme-toggle"
+  hover-class="theme-toggle--pressed"
+  hover-start-time="0"
+  aria-label="{{theme === 'night' ? '切换至日间模式' : '切换至夜间护眼模式'}}"
+  bindtap="handleTap"
+>
+  <text aria-hidden="{{true}}">{{theme === 'night' ? '☀' : '☾'}}</text>
+</button>

@@ -1,10 +1,12 @@
 {
   "navigationBarTitleText": "答题",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-toast": "/components/app-toast/index",
     "app-topbar": "/components/app-topbar/index",
-    "question-option": "/components/question-option/index",
     "analysis-panel": "/components/analysis-panel/index",
-    "empty-state": "/components/empty-state/index"
+    "empty-state": "/components/empty-state/index",
+    "favorite-button": "/components/favorite-button/index",
+    "question-option": "/components/question-option/index",
+    "theme-toggle": "/components/theme-toggle/index"
   }
 }

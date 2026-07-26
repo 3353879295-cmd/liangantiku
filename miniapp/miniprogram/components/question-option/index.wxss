@@ -8,7 +8,7 @@
   padding: 20rpx 24rpx;
   border: 1rpx solid transparent;
   border-radius: 34rpx;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-option-text);
   font: inherit;
   line-height: 1.5;
@@ -33,17 +33,17 @@
 
 .option--selected {
   border-color: rgb(114 145 36 / 16%);
-  background: #dff58f;
+  background: var(--practice-option-selected-background, #dff58f);
 }
 
 .option--correct {
   border-color: rgb(47 107 79 / 16%);
-  background: #e4f4df;
+  background: var(--practice-option-correct-background, #e4f4df);
 }
 
 .option--wrong {
   border-color: rgb(196 71 71 / 16%);
-  background: #fde9e6;
+  background: var(--practice-option-wrong-background, #fde9e6);
 }
 
 .option__key {
@@ -86,6 +86,18 @@
   font-size: 28rpx;
   font-weight: 600;
   line-height: 1.5;
+}
+
+.option--selected .option__text {
+  color: var(--practice-option-selected-text, #272d23);
+}
+
+.option--correct .option__text {
+  color: var(--practice-option-correct-text, #285b43);
+}
+
+.option--wrong .option__text {
+  color: var(--practice-option-wrong-text, #8d3535);
 }
 
 @keyframes option-key-pop {

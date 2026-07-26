@@ -1,0 +1,20 @@
+<button
+  class="favorite-button {{active ? 'favorite-button--active' : ''}} {{popActive ? 'favorite-button--pop' : ''}}"
+  hover-class="favorite-button--pressed"
+  hover-start-time="0"
+  aria-label="{{active ? '取消收藏' : '收藏本题'}}"
+  aria-pressed="{{active}}"
+  bindtap="handleTap"
+>
+  <view
+    class="favorite-button__ripple {{rippleActive ? 'favorite-button__ripple--active' : ''}}"
+    aria-hidden="{{true}}"
+  ></view>
+  <t-icon
+    class="favorite-button__icon"
+    name="{{active ? 'star-filled' : 'star'}}"
+    size="38rpx"
+    color="{{active ? '#b8ec32' : '#11120f'}}"
+    aria-hidden="{{true}}"
+  />
+</button>

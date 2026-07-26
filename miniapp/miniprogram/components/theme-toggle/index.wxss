@@ -1,0 +1,25 @@
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 34rpx;
+  line-height: 64rpx;
+  transition:
+    transform 100ms ease,
+    background-color 200ms ease;
+}
+
+.theme-toggle::after {
+  display: none;
+}
+
+.theme-toggle--pressed {
+  transform: scale(0.92);
+}
