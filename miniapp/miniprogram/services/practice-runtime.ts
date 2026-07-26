@@ -9,6 +9,7 @@ import {
 import { appServices, localDateKey } from './app-services';
 import type { PracticeSession } from './practice-session';
 import type {
+  AnswerRevealMode,
   CertificateLevel,
   OccupationCode,
   PracticeMode,
@@ -29,6 +30,11 @@ export interface StartPracticeInput {
 }
 
 let activeSession: PracticeSession | null = null;
+
+export const resolveAnswerRevealMode = (
+  mode: PracticeMode,
+  preference: AnswerRevealMode,
+): AnswerRevealMode => (mode === 'mock' ? 'deferred' : preference);
 
 const filterCertificate = (
   questions: readonly Question[],
@@ -74,7 +80,12 @@ export const startPractice = async (input: StartPracticeInput): Promise<Practice
     ...(input.sectionId ? { sectionId: input.sectionId } : {}),
   });
   if (!paper.length) return null;
-  activeSession = createPracticeSession(paper, { mode: input.mode, now: Date.now() });
+  const preference = appServices.progress.getPreferences().answerRevealMode;
+  activeSession = createPracticeSession(paper, {
+    mode: input.mode,
+    answerRevealMode: resolveAnswerRevealMode(input.mode, preference),
+    now: Date.now(),
+  });
   appServices.progress.saveSession(serializePracticeSession(activeSession));
   return activeSession;
 };
@@ -84,7 +95,12 @@ export const startPracticeFromQuestions = (
   mode: PracticeMode,
 ): PracticeSession | null => {
   if (!questions.length) return null;
-  activeSession = createPracticeSession(questions.slice(0, 20), { mode, now: Date.now() });
+  const preference = appServices.progress.getPreferences().answerRevealMode;
+  activeSession = createPracticeSession(questions.slice(0, 20), {
+    mode,
+    answerRevealMode: resolveAnswerRevealMode(mode, preference),
+    now: Date.now(),
+  });
   appServices.progress.saveSession(serializePracticeSession(activeSession));
   return activeSession;
 };

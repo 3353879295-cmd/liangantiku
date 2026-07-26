@@ -41,14 +41,82 @@ describe('practice session', () => {
   });
 
   it('keeps a requested deferred reveal mode for current non-mock sessions', () => {
-    const session = createPracticeSession([makeQuestion()], {
+    const question = makeQuestion();
+    const session = createPracticeSession([question], {
       mode: 'random',
       now: 1000,
       answerRevealMode: 'deferred',
     });
+    const answered = answerQuestion(session, question.id, ['A'], 1200);
 
-    expect(session.answerRevealMode).toBe('deferred');
-    expect(serializePracticeSession(session).answerRevealMode).toBe('deferred');
+    expect(answered.answerRevealMode).toBe('deferred');
+    expect(answered.feedback).toEqual({});
+    expect(serializePracticeSession(answered).answerRevealMode).toBe('deferred');
+  });
+
+  it('uses immediate session policy to reveal feedback for current non-mock sessions', () => {
+    const question = makeQuestion();
+    const session = createPracticeSession([question], {
+      mode: 'sequential',
+      now: 1000,
+      answerRevealMode: 'immediate',
+    });
+
+    const answered = answerQuestion(session, question.id, ['A'], 1200);
+
+    expect(answered.feedback[question.id]?.correct).toBe(true);
+  });
+
+  it('restores active feedback only for sessions locked to immediate reveal', () => {
+    const question = makeQuestion();
+    const createAnswered = (answerRevealMode: 'immediate' | 'deferred') =>
+      answerQuestion(
+        createPracticeSession([question], {
+          mode: 'sequential',
+          answerRevealMode,
+          now: 1000,
+        }),
+        question.id,
+        ['A'],
+        1200,
+      );
+
+    const immediate = rehydratePracticeSession(
+      serializePracticeSession(createAnswered('immediate')),
+      [question],
+    );
+    const deferred = rehydratePracticeSession(
+      serializePracticeSession(createAnswered('deferred')),
+      [question],
+    );
+
+    expect(immediate.answerRevealMode).toBe('immediate');
+    expect(immediate.feedback[question.id]?.correct).toBe(true);
+    expect(deferred.answerRevealMode).toBe('deferred');
+    expect(deferred.feedback).toEqual({});
+  });
+
+  it('restores complete feedback after a deferred session is submitted', () => {
+    const question = makeQuestion();
+    const submitted = submitSession(
+      answerQuestion(
+        createPracticeSession([question], {
+          mode: 'sequential',
+          answerRevealMode: 'deferred',
+          now: 1000,
+        }),
+        question.id,
+        ['A'],
+        1200,
+      ),
+      1600,
+    );
+
+    const restored = rehydratePracticeSession(serializePracticeSession(submitted), [question]);
+
+    expect(restored.status).toBe('submitted');
+    expect(restored.answerRevealMode).toBe('deferred');
+    expect(restored.feedback[question.id]?.correct).toBe(true);
   });
 
   it('shows immediate feedback in normal practice', () => {

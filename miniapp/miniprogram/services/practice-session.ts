@@ -98,7 +98,9 @@ export const answerQuestion = (
 
   const result = gradeQuestion(question, selectedIds);
   const feedback =
-    session.mode === 'mock' ? session.feedback : { ...session.feedback, [questionId]: result };
+    session.answerRevealMode === 'deferred'
+      ? session.feedback
+      : { ...session.feedback, [questionId]: result };
 
   return {
     ...session,
@@ -259,7 +261,7 @@ export const rehydratePracticeSession = (
     };
   }
 
-  if (persisted.mode === 'mock') return base;
+  if (base.answerRevealMode === 'deferred') return base;
   const feedback = Object.fromEntries(
     Object.entries(base.answers).map(([questionId, selected]) => {
       const question = byId.get(questionId);
