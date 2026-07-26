@@ -5,6 +5,21 @@ import {
   saveActivePractice,
 } from '../../services/practice-runtime';
 import { appServices } from '../../services/app-services';
+import type { PracticeMode } from '../../types/domain';
+
+export const buildAnswerSheetSubmitModal = (
+  mode: PracticeMode,
+  unanswered: number,
+): { title: string; content: string; confirmText: string } => {
+  const isMock = mode === 'mock';
+  return {
+    title: isMock ? '确认交卷' : '结束本次练习',
+    content: unanswered
+      ? `未答题 ${unanswered} 道，提交后将按未答处理。`
+      : '未答题 0 道，提交后将生成本次结果。',
+    confirmText: isMock ? '确认交卷' : '结束本次练习',
+  };
+};
 
 Page({
   data: {
@@ -74,14 +89,7 @@ Page({
     const unanswered = getAnswerSheet(session).filter(
       (item) => item.status === 'unanswered',
     ).length;
-    const isMock = session.mode === 'mock';
-    const result = await wx.showModal({
-      title: isMock ? '确认交卷' : '结束本次练习',
-      content: unanswered
-        ? `未答题 ${unanswered} 道，提交后将按未答处理。`
-        : '未答题 0 道，提交后将生成本次结果。',
-      confirmText: isMock ? '确认交卷' : '结束练习',
-    });
+    const result = await wx.showModal(buildAnswerSheetSubmitModal(session.mode, unanswered));
     if (result.confirm) void wx.redirectTo({ url: '/pages/report/index' });
   },
 

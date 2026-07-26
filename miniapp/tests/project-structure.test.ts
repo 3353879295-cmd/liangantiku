@@ -268,6 +268,8 @@ describe('WeChat mini program structure', () => {
     const positions = labels.map((label) => analysisMarkup.indexOf(label));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    expect(analysisMarkup).not.toContain('wx:if="{{commonMistake}}"');
+    expect(analysisMarkup).toContain('本题暂无单独易错提示，请结合题目解析复习。');
     expect(analysisMarkup).toContain('open-type="feedback"');
     expect(analysisMarkup).toContain('bindtap="handleCopyQuestionId"');
 

@@ -24,9 +24,11 @@
       <view class="analysis__label">知识点</view>
       <text class="analysis__body">{{knowledgePoint}}</text>
     </view>
-    <view wx:if="{{commonMistake}}" class="analysis__card">
+    <view class="analysis__card">
       <view class="analysis__label">易错原因</view>
-      <text class="analysis__body">{{commonMistake}}</text>
+      <text class="analysis__body">
+        {{commonMistake || '本题暂无单独易错提示，请结合题目解析复习。'}}
+      </text>
     </view>
     <view wx:if="{{standardReference}}" class="analysis__card">
       <view class="analysis__label">标准依据</view>

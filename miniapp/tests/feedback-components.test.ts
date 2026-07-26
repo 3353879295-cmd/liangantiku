@@ -69,7 +69,7 @@ interface AnalysisContext {
 
 interface AnalysisDefinition {
   methods: {
-    handleCopyQuestionId?(this: AnalysisContext): void;
+    handleCopyQuestionId?(this: AnalysisContext): Promise<unknown> | void;
   };
 }
 
@@ -290,22 +290,52 @@ describe('theme-toggle event contract', () => {
 });
 
 describe('analysis correction fallback', () => {
-  it('copies the stable question ID without claiming a correction was submitted', async () => {
-    const setClipboardData = vi.fn();
+  it('shows copied feedback only after the clipboard operation resolves', async () => {
+    const setClipboardData = vi.fn().mockResolvedValue({});
     const showToast = vi.fn();
-    vi.stubGlobal('wx', { setClipboardData, showToast });
+    const showModal = vi.fn();
+    vi.stubGlobal('wx', { setClipboardData, showToast, showModal });
     const definition = await loadComponent<AnalysisDefinition>(
       '../miniprogram/components/analysis-panel/index',
     );
     const context: AnalysisContext = { data: { questionId: 'WH-L5-000001' } };
 
     expect(typeof definition.methods.handleCopyQuestionId).toBe('function');
-    definition.methods.handleCopyQuestionId?.call(context);
+    const pending = definition.methods.handleCopyQuestionId?.call(context);
 
     expect(setClipboardData).toHaveBeenCalledWith({ data: 'WH-L5-000001' });
+    expect(showToast).not.toHaveBeenCalled();
+    await pending;
     expect(showToast).toHaveBeenCalledWith({ title: '题目 ID 已复制', icon: 'none' });
+    expect(showModal).not.toHaveBeenCalled();
     expect(showToast).not.toHaveBeenCalledWith(
       expect.objectContaining({ title: expect.stringContaining('提交') }),
     );
+  });
+
+  it('provides the stable question ID for manual recording when clipboard copy rejects', async () => {
+    const setClipboardData = vi.fn().mockRejectedValue(new Error('clipboard denied'));
+    const showToast = vi.fn();
+    const showModal = vi.fn();
+    vi.stubGlobal('wx', { setClipboardData, showToast, showModal });
+    const definition = await loadComponent<AnalysisDefinition>(
+      '../miniprogram/components/analysis-panel/index',
+    );
+    const context: AnalysisContext = { data: { questionId: 'WH-L5-000001' } };
+
+    const pending = definition.methods.handleCopyQuestionId?.call(context);
+
+    expect(showModal).not.toHaveBeenCalled();
+    await pending;
+    expect(showToast).not.toHaveBeenCalledWith({
+      title: '题目 ID 已复制',
+      icon: 'none',
+    });
+    expect(showModal).toHaveBeenCalledWith({
+      title: '复制失败',
+      content: '复制未完成，请手动记录题目 ID：WH-L5-000001',
+      showCancel: false,
+      confirmText: '知道了',
+    });
   });
 });

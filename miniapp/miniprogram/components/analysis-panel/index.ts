@@ -25,8 +25,19 @@ Component({
     handleCopyQuestionId() {
       const questionId = String(this.data.questionId);
       if (!questionId) return;
-      void wx.setClipboardData({ data: questionId });
-      void wx.showToast({ title: '题目 ID 已复制', icon: 'none' });
+      return wx.setClipboardData({ data: questionId }).then(
+        () => {
+          void wx.showToast({ title: '题目 ID 已复制', icon: 'none' });
+        },
+        () => {
+          void wx.showModal({
+            title: '复制失败',
+            content: `复制未完成，请手动记录题目 ID：${questionId}`,
+            showCancel: false,
+            confirmText: '知道了',
+          });
+        },
+      );
     },
   },
 });
