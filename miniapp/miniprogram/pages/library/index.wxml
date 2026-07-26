@@ -1,117 +1,76 @@
-<view class="page-shell library-page">
-  <view class="page-title">题库</view>
-  <text class="page-subtitle">选择职业和等级，开始一组有针对性的练习。</text>
+<view class="page-shell page-shell--secondary library-page">
+  <app-topbar title="教材目录" subtitle="{{selectedTitle}}" fallback-tab="home" />
 
-  <view wx:for="{{groups}}" wx:key="occupation" class="certificate-group">
-    <view class="certificate-group__title">{{item.title}}</view>
-    <view class="certificate-row">
-      <view
-        wx:for="{{item.items}}"
-        wx:for-item="certificate"
-        wx:key="key"
-        class="certificate-chip {{selectedKey === certificate.key ? 'certificate-chip--active' : ''}}"
-        data-key="{{certificate.key}}"
-        bind:tap="onSelectCertificate"
-      >{{certificate.shortTitle}}</view>
-    </view>
+  <view wx:if="{{comingSoon}}" class="availability-card">
+    <view class="availability-card__mark">待</view>
+    <view class="availability-card__eyebrow">当前选择</view>
+    <view class="availability-card__title">{{occupationTitle}} · {{levelName}}</view>
+    <text class="availability-card__body">
+      当前职业与等级的教材目录和题库正在整理，暂不能开始练习。返回首页可切换到已开放等级。
+    </text>
   </view>
 
-  <view class="library-summary">
-    <view>
-      <view class="library-summary__title">{{selectedTitle}}</view>
-      <text class="library-summary__note">已收录 {{questionCount}} 题</text>
-    </view>
-    <view class="library-summary__badge">{{questionCount ? '可练习' : '待补充'}}</view>
-  </view>
+  <view wx:elif="{{loading}}" class="loading-card">正在读取当前教材目录…</view>
 
-  <view wx:if="{{!loading && questionCount}}" class="mode-grid">
-    <view
-      wx:for="{{modes}}"
-      wx:key="mode"
-      class="mode-card"
-      data-mode="{{item.mode}}"
-      bind:tap="onModeTap"
-    >
-      <view class="mode-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
-      <view class="mode-card__title">{{item.title}}</view>
-      <text class="mode-card__note">{{item.note}}</text>
-    </view>
-  </view>
-
-  <view wx:if="{{!loading}}" id="catalog-list" class="catalog">
-    <view class="section-title">教材目录</view>
-    <view wx:for="{{parts}}" wx:key="id" class="catalog-part">
-      <view class="catalog-part__heading">
-        <text class="catalog-part__eyebrow">{{item.numberText}}</text>
-        <view class="catalog-part__title">{{item.title}}</view>
+  <block wx:else>
+    <view class="catalog-context">
+      <view>
+        <text class="catalog-context__label">当前题库</text>
+        <view class="catalog-context__title">{{occupationTitle}} · {{levelName}}</view>
+        <text class="catalog-context__meta">
+          {{questionCount ? '已收录 ' + questionCount + ' 题' : '题目待补充'}}
+        </text>
       </view>
+      <view class="catalog-context__status">{{questionCount ? '可练习' : '待补充'}}</view>
+    </view>
 
-      <view class="catalog-part__chapters">
-        <view
-          wx:for="{{item.chapters}}"
-          wx:for-item="chapter"
-          wx:key="id"
-          class="catalog-chapter"
-        >
+    <view wx:if="{{parts.length}}" class="catalog">
+      <view wx:for="{{parts}}" wx:key="id" class="catalog-part">
+        <view class="catalog-part__heading">
+          <text class="catalog-part__eyebrow">{{item.numberText}}</text>
+          <view class="catalog-part__title">{{item.title}}</view>
+        </view>
+
+        <view class="catalog-part__chapters">
           <view
-            class="catalog-chapter__header"
+            wx:for="{{item.chapters}}"
+            wx:for-item="chapter"
+            wx:key="id"
+            class="chapter-card"
             data-chapter-id="{{chapter.id}}"
-            bind:tap="onToggleChapter"
+            bind:tap="onChapterTap"
           >
-            <view class="catalog-chapter__copy">
-              <text class="catalog-chapter__number">{{chapter.numberText}}</text>
-              <view class="catalog-chapter__title">{{chapter.title}}</view>
-              <view class="catalog-chapter__metrics">
-                <text class="catalog-chapter__meta">{{chapter.metaText}}</text>
-                <text class="catalog-chapter__meta">完成 {{chapter.progressText}}</text>
-                <text class="catalog-chapter__meta">正确率 {{chapter.accuracyText}}</text>
-                <text class="catalog-chapter__meta">错题 {{chapter.wrongText}}</text>
-              </view>
-            </view>
-            <view
-              class="catalog-chapter__chevron {{expandedChapterId === chapter.id ? 'catalog-chapter__chevron--expanded' : ''}}"
-            >
-              <t-icon name="chevron-down" size="32rpx" color="#86868b" />
-            </view>
-          </view>
-
-          <view wx:if="{{expandedChapterId === chapter.id}}" class="catalog-section-list">
-            <view
-              wx:for="{{chapter.sections}}"
-              wx:for-item="section"
-              wx:key="id"
-              class="catalog-section"
-            >
-              <view class="catalog-section__copy">
-                <text class="catalog-section__number">{{section.numberText}}</text>
-                <view class="catalog-section__title">{{section.title}}</view>
-                <view class="catalog-section__meta">
-                  <text class="catalog-section__count">{{section.countText}}</text>
-                  <text class="catalog-section__status">{{section.statusText}}</text>
+            <view class="chapter-card__number">{{chapter.numberText}}</view>
+            <view class="chapter-card__content">
+              <view class="chapter-card__topline">
+                <view class="chapter-card__title">{{chapter.title}}</view>
+                <view class="chapter-card__availability">
+                  {{chapter.canStart ? '可练习' : '待补充'}}
                 </view>
               </view>
-              <view
-                wx:if="{{section.canStart}}"
-                class="catalog-section__action"
-                data-section-id="{{section.id}}"
-                catch:tap="onSectionPractice"
-              >开始</view>
+              <view class="chapter-card__counts">
+                <text>{{chapter.sectionCountText}}</text>
+                <text>{{chapter.questionCountText}}</text>
+              </view>
+              <view class="chapter-card__metrics">
+                <text>完成 {{chapter.progressText}}</text>
+                <text>正确率 {{chapter.accuracyText}}</text>
+                <text>错题 {{chapter.wrongText}}</text>
+              </view>
             </view>
-            <view
-              wx:if="{{chapter.canStart}}"
-              class="catalog-chapter__practice"
-              data-chapter-id="{{chapter.id}}"
-              catch:tap="onChapterPractice"
-            >练习本章</view>
+            <view class="chapter-card__chevron">
+              <t-icon name="chevron-right" size="32rpx" />
+            </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
 
-  <empty-state
-    wx:if="{{!loading && !parts.length}}"
-    title="这个等级的目录还在整理"
-    description="教材目录整理完成后会显示在这里。"
-  />
+    <view wx:else class="catalog-empty">
+      <view class="catalog-empty__title">当前等级目录待补充</view>
+      <text class="catalog-empty__body">
+        {{occupationTitle}} {{levelName}}的教材目录正在整理，请稍后再来。
+      </text>
+    </view>
+  </block>
 </view>

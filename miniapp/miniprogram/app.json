@@ -2,6 +2,7 @@
   "pages": [
     "pages/home/index",
     "pages/library/index",
+    "pages/chapter-detail/index",
     "pages/practice/index",
     "pages/answer-sheet/index",
     "pages/report/index",

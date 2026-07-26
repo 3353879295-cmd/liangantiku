@@ -84,19 +84,42 @@ describe('WeChat mini program structure', () => {
     expect(libraryPage).not.toContain('presentLibraryModules');
   });
 
-  it('renders textbook chapter metrics and section learning status', () => {
+  it('renders the current textbook as linked chapter cards without certificate or mode selectors', () => {
     const libraryMarkup = readFileSync(join(miniappRoot, 'pages', 'library', 'index.wxml'), 'utf8');
 
     for (const binding of [
-      '{{chapter.metaText}}',
+      '<app-topbar',
+      '{{chapter.sectionCountText}}',
+      '{{chapter.questionCountText}}',
       '{{chapter.progressText}}',
       '{{chapter.accuracyText}}',
       '{{chapter.wrongText}}',
-      '{{section.statusText}}',
+      'bind:tap="onChapterTap"',
     ]) {
       expect(libraryMarkup).toContain(binding);
     }
-    expect(libraryMarkup).not.toContain('待录入');
+    expect(libraryMarkup).not.toContain('certificate-chip');
+    expect(libraryMarkup).not.toContain('mode-grid');
+    expect(libraryMarkup).not.toContain('onSelectCertificate');
+  });
+
+  it('renders chapter detail status and gates chapter practice on real availability', () => {
+    const detailMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'chapter-detail', 'index.wxml'),
+      'utf8',
+    );
+
+    for (const binding of [
+      '<app-topbar',
+      '{{chapter.questionCountText}}',
+      '{{chapter.progressText}}',
+      '{{section.statusText}}',
+      'bind:tap="onSectionPractice"',
+      'wx:if="{{chapter.canStart}}"',
+      'bind:tap="onChapterPractice"',
+    ]) {
+      expect(detailMarkup).toContain(binding);
+    }
   });
 
   it('clears a selected saved-question chapter when occupation or level changes', () => {
@@ -112,7 +135,7 @@ describe('WeChat mini program structure', () => {
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 
-    expect(app.pages).toHaveLength(9);
+    expect(app.pages).toHaveLength(10);
     for (const page of app.pages) {
       const pagePath = join(miniappRoot, page);
       assertUnitFiles(pagePath);
@@ -126,6 +149,7 @@ describe('WeChat mini program structure', () => {
       'pages/profile/index',
     ]);
     expect(app.pages).toContain('pages/library/index');
+    expect(app.pages).toContain('pages/chapter-detail/index');
     for (const item of app.tabBar?.list ?? []) {
       expect(app.pages).toContain(item.pagePath);
     }
@@ -157,6 +181,7 @@ describe('WeChat mini program structure', () => {
   it('registers the shared topbar locally on every current secondary page', () => {
     const secondaryPages = [
       'library',
+      'chapter-detail',
       'practice',
       'answer-sheet',
       'report',

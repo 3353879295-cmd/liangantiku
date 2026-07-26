@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { KNOWLEDGE_CATALOG } from '../miniprogram/data/knowledge-catalog';
 import { QUESTION_RECORDS } from '../miniprogram/data/question-bank';
-import { presentCatalogParts } from '../miniprogram/presenters/catalog-presenter';
+import * as catalogPresenter from '../miniprogram/presenters/catalog-presenter';
 import { LocalQuestionRepository } from '../miniprogram/repositories/local-question-repository';
 import type { CertificateLevel, OccupationCode } from '../miniprogram/types/domain';
 import type { RuntimeKnowledgeCatalog } from '../miniprogram/types/knowledge-catalog';
 import { makeQuestion } from './factories';
+
+const { presentCatalogParts } = catalogPresenter;
 
 const catalog: RuntimeKnowledgeCatalog = {
   occupations: {
@@ -87,6 +89,38 @@ const noProgress = () => ({
 });
 
 describe('presentCatalogParts', () => {
+  it('uses plain chapter and section numbers with real catalog counts and progress', () => {
+    const questions = ['Q1', 'Q2', 'Q3', 'Q4'].map((id) =>
+      makeQuestion({
+        id,
+        chapterId: 'warehouse-basic-c01',
+        sectionId: 'warehouse-basic-c01-s01',
+      }),
+    );
+
+    const parts = presentCatalogParts({
+      catalog: KNOWLEDGE_CATALOG,
+      occupation: '4-02-06-01',
+      level: 5,
+      questions,
+      getProgress: () => ({
+        completed: 1,
+        attempts: 4,
+        correctAttempts: 3,
+        wrongQuestions: 1,
+      }),
+    });
+
+    expect(parts[0]?.chapters[0]?.numberText).toBe('1');
+    expect(parts[0]?.chapters[0]?.sections[0]?.numberText).toBe('1');
+    expect(parts[0]?.chapters[0]).toMatchObject({
+      sectionCountText: '2 小节',
+      questionCountText: '4 题',
+      progressText: '25%',
+      canStart: true,
+    });
+  });
+
   it('retains empty catalog sections and counts questions by stable section ID', () => {
     const requestedProgressIds: string[][] = [];
     const view = presentCatalogParts({
@@ -128,7 +162,8 @@ describe('presentCatalogParts', () => {
     expect(view[1]?.chapters[0]).toMatchObject({
       id: 'warehouse-l5-c03',
       questionCount: 1,
-      metaText: '1 题',
+      sectionCountText: '2 小节',
+      questionCountText: '1 题',
       progressText: '100%',
       accuracyText: '50%',
       wrongText: '1',
@@ -212,7 +247,7 @@ describe('presentCatalogParts', () => {
 
     expect(view[1]?.chapters[0]).toMatchObject({
       questionCount: 0,
-      metaText: '待补充',
+      questionCountText: '题目待补充',
       progressText: '0%',
       accuracyText: '0%',
       wrongText: '0',
@@ -270,5 +305,140 @@ describe('presentCatalogParts', () => {
         );
       }),
     ).toBe(true);
+  });
+});
+
+type ParseChapterRoute = (
+  catalog: RuntimeKnowledgeCatalog,
+  options: Record<string, string | undefined>,
+) => { occupation: OccupationCode; level: CertificateLevel; chapterId: string } | null;
+
+type BuildChapterDetailRoute = (input: {
+  loading: boolean;
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  chapterId: string;
+  chapterIds: readonly string[];
+}) => string | null;
+
+type BuildChapterPracticeRoute = (input: {
+  loading: boolean;
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  chapter: ReturnType<typeof presentCatalogParts>[number]['chapters'][number];
+  chapterId?: string;
+  sectionId?: string;
+}) => string | null;
+
+const routeFunctions = catalogPresenter as typeof catalogPresenter & {
+  parseChapterRoute?: ParseChapterRoute;
+  buildChapterDetailRoute?: BuildChapterDetailRoute;
+  buildChapterPracticeRoute?: BuildChapterPracticeRoute;
+};
+
+describe('catalog chapter routes', () => {
+  it('parses only a known chapter belonging to the requested occupation and level', () => {
+    expect(routeFunctions.parseChapterRoute).toBeTypeOf('function');
+    expect(
+      routeFunctions.parseChapterRoute?.(KNOWLEDGE_CATALOG, {
+        occupation: '4-02-06-01',
+        level: '5',
+        chapterId: 'warehouse-l5-c03',
+      }),
+    ).toEqual({
+      occupation: '4-02-06-01',
+      level: 5,
+      chapterId: 'warehouse-l5-c03',
+    });
+
+    for (const options of [
+      { occupation: 'unknown', level: '5', chapterId: 'warehouse-l5-c03' },
+      { occupation: '4-02-06-01', level: '9', chapterId: 'warehouse-l5-c03' },
+      { occupation: '4-02-06-01', level: '4', chapterId: 'warehouse-l5-c03' },
+      { occupation: '4-08-05-01', level: '5', chapterId: 'warehouse-l5-c03' },
+      { occupation: '4-02-06-01', level: '5', chapterId: 'missing-chapter' },
+      { occupation: '4-02-06-01', level: '5', chapterId: '%' },
+    ]) {
+      expect(routeFunctions.parseChapterRoute?.(KNOWLEDGE_CATALOG, options)).toBeNull();
+    }
+  });
+
+  it('encodes validated chapter detail and practice routes', () => {
+    expect(routeFunctions.buildChapterDetailRoute).toBeTypeOf('function');
+    expect(
+      routeFunctions.buildChapterDetailRoute?.({
+        loading: false,
+        occupation: '4-02-06-01',
+        level: 5,
+        chapterId: 'chapter/id',
+        chapterIds: ['chapter/id'],
+      }),
+    ).toBe('/pages/chapter-detail/index?occupation=4-02-06-01&level=5&chapterId=chapter%2Fid');
+    expect(
+      routeFunctions.buildChapterDetailRoute?.({
+        loading: false,
+        occupation: '4-02-06-01',
+        level: 5,
+        chapterId: 'stale-id',
+        chapterIds: ['chapter/id'],
+      }),
+    ).toBeNull();
+
+    const chapter = {
+      id: 'chapter/id',
+      numberText: '1',
+      title: '示例章节',
+      questionCount: 1,
+      metaText: '1 题',
+      sectionCountText: '1 小节',
+      questionCountText: '1 题',
+      progressText: '0%',
+      accuracyText: '0%',
+      wrongText: '0',
+      canStart: true,
+      sections: [
+        {
+          id: 'section/id',
+          numberText: '1',
+          title: '示例小节',
+          questionCount: 1,
+          countText: '1 题',
+          statusText: '未开始',
+          canStart: true,
+        },
+      ],
+    };
+    expect(routeFunctions.buildChapterPracticeRoute).toBeTypeOf('function');
+    expect(
+      routeFunctions.buildChapterPracticeRoute?.({
+        loading: false,
+        occupation: '4-02-06-01',
+        level: 5,
+        chapter,
+        sectionId: 'section/id',
+      }),
+    ).toBe(
+      '/pages/practice/index?occupation=4-02-06-01&level=5&mode=chapter&sectionId=section%2Fid',
+    );
+    expect(
+      routeFunctions.buildChapterPracticeRoute?.({
+        loading: false,
+        occupation: '4-02-06-01',
+        level: 5,
+        chapter,
+        chapterId: 'chapter/id',
+      }),
+    ).toBe(
+      '/pages/practice/index?occupation=4-02-06-01&level=5&mode=chapter&chapterId=chapter%2Fid',
+    );
+    expect(
+      routeFunctions.buildChapterPracticeRoute?.({
+        loading: false,
+        occupation: '4-02-06-01',
+        level: 5,
+        chapter,
+        sectionId: 'stale-id',
+      }),
+    ).toBeNull();
   });
 });

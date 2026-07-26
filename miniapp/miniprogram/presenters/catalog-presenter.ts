@@ -18,6 +18,8 @@ export interface CatalogChapterViewModel {
   title: string;
   questionCount: number;
   metaText: string;
+  sectionCountText: string;
+  questionCountText: string;
   progressText: string;
   accuracyText: string;
   wrongText: string;
@@ -40,6 +42,31 @@ interface PresentCatalogPartsInput {
   getProgress: (questionIds: readonly string[]) => QuestionProgressSummary;
 }
 
+interface BuildChapterDetailRouteInput {
+  loading: boolean;
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  chapterId: string;
+  chapterIds: readonly string[];
+}
+
+interface BuildChapterPracticeRouteInput {
+  loading: boolean;
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  chapter: CatalogChapterViewModel;
+  chapterId?: string;
+  sectionId?: string;
+}
+
+export interface ChapterRoute {
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  chapterId: string;
+}
+
+const CERTIFICATE_LEVELS = new Set<CertificateLevel>([5, 4, 3, 2, 1]);
+
 const percentage = (numerator: number, denominator: number): number =>
   denominator === 0 ? 0 : Math.round((numerator / denominator) * 100);
 
@@ -55,6 +82,51 @@ const findCatalogChapter = (catalog: RuntimeKnowledgeCatalog, chapterId: string)
     .flatMap((occupation) => occupation.parts)
     .flatMap((part) => part.chapters)
     .find((chapter) => chapter.id === chapterId);
+
+export const parseChapterRoute = (
+  catalog: RuntimeKnowledgeCatalog,
+  options: Record<string, string | undefined>,
+): ChapterRoute | null => {
+  const occupation = options['occupation'] as OccupationCode;
+  const level = Number(options['level']) as CertificateLevel;
+  if (!Object.hasOwn(catalog.occupations, occupation) || !CERTIFICATE_LEVELS.has(level))
+    return null;
+
+  let chapterId = '';
+  try {
+    chapterId = decodeURIComponent(options['chapterId'] ?? '');
+  } catch {
+    return null;
+  }
+  if (!chapterId) return null;
+
+  const occupationCatalog = catalog.occupations[occupation];
+  const chapterBelongsToCertificate = occupationCatalog.parts
+    .filter((part) => part.levels.includes(level))
+    .some((part) => part.chapters.some((chapter) => chapter.id === chapterId));
+  return chapterBelongsToCertificate ? { occupation, level, chapterId } : null;
+};
+
+export const buildChapterDetailRoute = (input: BuildChapterDetailRouteInput): string | null => {
+  if (input.loading || !input.chapterIds.includes(input.chapterId)) return null;
+  return `/pages/chapter-detail/index?occupation=${input.occupation}&level=${input.level}&chapterId=${encodeURIComponent(input.chapterId)}`;
+};
+
+export const buildChapterPracticeRoute = (input: BuildChapterPracticeRouteInput): string | null => {
+  if (input.loading) return null;
+  const hasChapter = Boolean(input.chapterId);
+  const hasSection = Boolean(input.sectionId);
+  if (hasChapter === hasSection) return null;
+
+  if (input.chapterId) {
+    if (!input.chapter.canStart || input.chapter.id !== input.chapterId) return null;
+    return `/pages/practice/index?occupation=${input.occupation}&level=${input.level}&mode=chapter&chapterId=${encodeURIComponent(input.chapterId)}`;
+  }
+
+  const section = input.chapter.sections.find(({ id }) => id === input.sectionId);
+  if (!section?.canStart) return null;
+  return `/pages/practice/index?occupation=${input.occupation}&level=${input.level}&mode=chapter&sectionId=${encodeURIComponent(section.id)}`;
+};
 
 export const findCatalogChapterTitle = (
   catalog: RuntimeKnowledgeCatalog,
@@ -89,10 +161,12 @@ export const presentCatalogParts = (input: PresentCatalogPartsInput): CatalogPar
 
         return {
           id: chapter.id,
-          numberText: `第 ${chapter.number} 章`,
+          numberText: String(chapter.number),
           title: chapter.title,
           questionCount,
           metaText: questionCount === 0 ? '待补充' : `${questionCount} 题`,
+          sectionCountText: `${chapter.sections.length} 小节`,
+          questionCountText: questionCount ? `${questionCount} 题` : '题目待补充',
           progressText: `${percentage(progress.completed, questionCount)}%`,
           accuracyText: `${percentage(progress.correctAttempts, progress.attempts)}%`,
           wrongText: `${progress.wrongQuestions}`,
@@ -106,7 +180,7 @@ export const presentCatalogParts = (input: PresentCatalogPartsInput): CatalogPar
               sectionQuestionCount > 0 ? input.getProgress(sectionQuestionIds).completed : 0;
             return {
               id: section.id,
-              numberText: `第 ${section.number} 节`,
+              numberText: String(section.number),
               title: section.title,
               questionCount: sectionQuestionCount,
               countText: `${sectionQuestionCount} 题`,

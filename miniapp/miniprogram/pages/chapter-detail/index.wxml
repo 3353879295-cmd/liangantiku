@@ -1,0 +1,66 @@
+<view class="page-shell page-shell--secondary chapter-page">
+  <app-topbar title="章节详情" subtitle="{{certificateTitle}}" fallback-tab="home" />
+
+  <view wx:if="{{loading}}" class="state-card">正在读取章节详情…</view>
+
+  <view wx:elif="{{errorTitle}}" class="state-card">
+    <view class="state-card__title">{{errorTitle}}</view>
+    <text class="state-card__body">{{errorDescription}}</text>
+  </view>
+
+  <block wx:elif="{{chapter}}">
+    <view class="chapter-hero">
+      <view class="chapter-hero__number">{{chapter.numberText}}</view>
+      <text class="chapter-hero__eyebrow">教材章节</text>
+      <view class="chapter-hero__title">{{chapter.title}}</view>
+      <view class="chapter-hero__stats">
+        <view class="hero-stat">
+          <text class="hero-stat__value">{{chapter.questionCountText}}</text>
+          <text class="hero-stat__label">总题量</text>
+        </view>
+        <view class="hero-stat">
+          <text class="hero-stat__value">{{chapter.progressText}}</text>
+          <text class="hero-stat__label">完成度</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-heading">
+      <view>
+        <view class="section-heading__title">本章小节</view>
+        <text class="section-heading__note">{{chapter.sectionCountText}}</text>
+      </view>
+      <text class="section-heading__progress">正确率 {{chapter.accuracyText}}</text>
+    </view>
+
+    <view class="section-list">
+      <view
+        wx:for="{{chapter.sections}}"
+        wx:for-item="section"
+        wx:key="id"
+        class="section-card {{section.canStart ? '' : 'section-card--disabled'}}"
+        data-section-id="{{section.id}}"
+        bind:tap="onSectionPractice"
+      >
+        <view class="section-card__number">{{section.numberText}}</view>
+        <view class="section-card__content">
+          <view class="section-card__title">{{section.title}}</view>
+          <view class="section-card__meta">
+            <text>{{section.countText}}</text>
+            <text class="section-card__status">{{section.statusText}}</text>
+          </view>
+        </view>
+        <view class="section-card__action">
+          <text>{{section.canStart ? '开始' : '待补充'}}</text>
+          <t-icon wx:if="{{section.canStart}}" name="chevron-right" size="28rpx" />
+        </view>
+      </view>
+    </view>
+
+    <button
+      wx:if="{{chapter.canStart}}"
+      class="chapter-practice"
+      bind:tap="onChapterPractice"
+    >练习本章</button>
+  </block>
+</view>

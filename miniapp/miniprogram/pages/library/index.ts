@@ -1,16 +1,14 @@
 import { CERTIFICATES } from '../../data/certificates';
 import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
-import { groupCertificates, presentCatalogParts } from '../../presenters/library-presenter';
-import { appServices } from '../../services/app-services';
+import { buildChapterDetailRoute, presentCatalogParts } from '../../presenters/catalog-presenter';
 import type { CatalogPartViewModel } from '../../presenters/catalog-presenter';
+import { appServices } from '../../services/app-services';
 import type {
   CertificateKey,
   CertificateLevel,
   OccupationCode,
   PracticeMode,
 } from '../../types/domain';
-
-const STARTABLE_MODES = new Set<PracticeMode>(['sequential', 'random', 'mock']);
 
 const getCertificate = (key: CertificateKey) =>
   CERTIFICATES.find((certificate) => certificate.key === key) ?? CERTIFICATES[0];
@@ -27,6 +25,28 @@ interface TextbookPracticeRouteInput {
   sectionIds: readonly string[];
 }
 
+interface LibraryPageData {
+  selectedKey: CertificateKey;
+  selectedTitle: string;
+  occupationTitle: string;
+  levelName: string;
+  questionCount: number;
+  parts: CatalogPartViewModel[];
+  comingSoon: boolean;
+  loading: boolean;
+}
+
+const initialData: LibraryPageData = {
+  selectedKey: '4-02-06-01:5',
+  selectedTitle: '',
+  occupationTitle: '',
+  levelName: '',
+  questionCount: 0,
+  parts: [],
+  comingSoon: false,
+  loading: true,
+};
+
 export const buildTextbookPracticeRoute = (input: TextbookPracticeRouteInput): string | null => {
   if (input.loading || !input.questionCount) return null;
   if (input.chapterId && !input.chapterIds.includes(input.chapterId)) return null;
@@ -37,21 +57,7 @@ export const buildTextbookPracticeRoute = (input: TextbookPracticeRouteInput): s
 };
 
 Page({
-  data: {
-    groups: groupCertificates(CERTIFICATES),
-    selectedKey: '4-02-06-01:5',
-    selectedTitle: '',
-    questionCount: 0,
-    parts: [] as CatalogPartViewModel[],
-    expandedChapterId: '',
-    loading: true,
-    modes: [
-      { mode: 'chapter', title: '章节练习', note: '按教材目录逐章逐节练习', icon: 'layers' },
-      { mode: 'sequential', title: '顺序练习', note: '从第一题开始', icon: 'view-list' },
-      { mode: 'random', title: '随机练习', note: '每次随机抽取', icon: 'swap' },
-      { mode: 'mock', title: '模拟考试', note: '交卷后统一解析', icon: 'assignment' },
-    ],
-  },
+  data: initialData,
 
   onShow() {
     const key = appServices.progress.getPreferences().selectedCertificateKey;
@@ -61,24 +67,24 @@ Page({
   async loadCertificate(key: CertificateKey) {
     const certificate = getCertificate(key);
     if (!certificate) return;
-    const certificateChanged = this.data.selectedKey !== certificate.key;
     this.setData({
       selectedKey: certificate.key,
       selectedTitle: certificate.title,
-      loading: true,
-      ...(certificateChanged
-        ? {
-            questionCount: 0,
-            parts: [] as CatalogPartViewModel[],
-            expandedChapterId: '',
-          }
-        : {}),
+      occupationTitle: KNOWLEDGE_CATALOG.occupations[certificate.occupation].title,
+      levelName: certificate.levelName,
+      questionCount: 0,
+      parts: [] as CatalogPartViewModel[],
+      comingSoon: certificate.availability === 'coming-soon',
+      loading: certificate.availability === 'available',
     });
+
+    if (certificate.availability === 'coming-soon') return;
+
     const questions = await appServices.questions.list({
       occupation: certificate.occupation,
       level: certificate.level,
     });
-    if (this.data.selectedKey !== key) return;
+    if (this.data.selectedKey !== certificate.key) return;
     const parts = presentCatalogParts({
       catalog: KNOWLEDGE_CATALOG,
       occupation: certificate.occupation,
@@ -93,63 +99,16 @@ Page({
     });
   },
 
-  onSelectCertificate(event: WechatMiniprogram.TouchEvent) {
-    const key = String(event.currentTarget.dataset['key']) as CertificateKey;
-    if (!CERTIFICATES.some((certificate) => certificate.key === key)) return;
-    appServices.progress.updatePreferences({ selectedCertificateKey: key });
-    getApp<IAppOption>().globalData.selectedCertificateKey = key;
-    void this.loadCertificate(key);
-  },
-
-  onModeTap(event: WechatMiniprogram.TouchEvent) {
-    if (this.data.loading) return;
-    const mode = String(event.currentTarget.dataset['mode']) as PracticeMode;
-    if (mode === 'chapter') {
-      if (!this.data.parts.length) return;
-      void wx.pageScrollTo({ selector: '#catalog-list', duration: 250 });
-      return;
-    }
-    if (STARTABLE_MODES.has(mode)) this.start(mode);
-  },
-
-  onToggleChapter(event: WechatMiniprogram.TouchEvent) {
-    if (this.data.loading) return;
+  onChapterTap(event: WechatMiniprogram.TouchEvent) {
     const chapterId = String(event.currentTarget.dataset['chapterId'] ?? '');
-    if (!chapterId) return;
-    this.setData({
-      expandedChapterId: this.data.expandedChapterId === chapterId ? '' : chapterId,
-    });
-  },
-
-  onChapterPractice(event: WechatMiniprogram.TouchEvent) {
-    if (this.data.loading) return;
-    const chapterId = String(event.currentTarget.dataset['chapterId'] ?? '');
-    if (chapterId) this.start('chapter', { chapterId });
-  },
-
-  onSectionPractice(event: WechatMiniprogram.TouchEvent) {
-    if (this.data.loading) return;
-    const sectionId = String(event.currentTarget.dataset['sectionId'] ?? '');
-    if (sectionId) this.start('chapter', { sectionId });
-  },
-
-  start(mode: PracticeMode, scope: { chapterId?: string; sectionId?: string } = {}) {
-    if (this.data.loading) return;
-    const certificate = getCertificate(this.data.selectedKey as CertificateKey);
-    if (!certificate) return;
-    const chapters = this.data.parts.flatMap((part) => part.chapters);
-    const url = buildTextbookPracticeRoute({
+    const certificate = getCertificate(this.data.selectedKey);
+    if (!certificate || !chapterId) return;
+    const url = buildChapterDetailRoute({
       loading: this.data.loading,
-      questionCount: this.data.questionCount,
       occupation: certificate.occupation,
       level: certificate.level,
-      mode,
-      chapterIds: chapters.filter((chapter) => chapter.canStart).map((chapter) => chapter.id),
-      sectionIds: chapters.flatMap((chapter) =>
-        chapter.sections.filter((section) => section.canStart).map((section) => section.id),
-      ),
-      ...(scope.chapterId ? { chapterId: scope.chapterId } : {}),
-      ...(scope.sectionId ? { sectionId: scope.sectionId } : {}),
+      chapterId,
+      chapterIds: this.data.parts.flatMap((part) => part.chapters.map((chapter) => chapter.id)),
     });
     if (url) void wx.navigateTo({ url });
   },
