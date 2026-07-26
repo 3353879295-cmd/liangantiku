@@ -282,6 +282,22 @@ describe('WeChat mini program structure', () => {
     );
   });
 
+  it('renders mutually exclusive expanded and collapsed certificate selector views', () => {
+    const markup = readFileSync(
+      join(miniappRoot, 'components', 'certificate-selector', 'index.wxml'),
+      'utf8',
+    );
+
+    expect(markup).toContain('wx:if="{{collapsed}}"');
+    expect(markup).toContain('wx:else');
+    expect(markup).toContain('{{summaryText}}');
+    expect(markup).toContain('重新选择');
+    expect(markup).toContain('bind:tap="onExpand"');
+    expect(markup).toContain('class="selector-panel selector-panel--expanded"');
+    expect(markup).toContain('class="role-options"');
+    expect(markup).toContain('class="level-options"');
+  });
+
   it('keeps literal WXML image sources local and resolvable', () => {
     const referenceCount = collectSourceFiles(miniappRoot)
       .filter((sourcePath) => extname(sourcePath) === '.wxml')
