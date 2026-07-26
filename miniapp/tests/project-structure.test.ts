@@ -74,7 +74,32 @@ const collectSourceFiles = (directory: string): string[] =>
     return ['.json', '.ts', '.wxml', '.wxss'].includes(extname(path)) ? [path] : [];
   });
 
-const localAssetPattern = /(https?:\/\/|data:|\/|\.\.?\/)[^"'`\s)]+?\.(?:png|jpe?g|svg|webp|gif)/g;
+const wxmlImageSourcePattern = /<image\b[^>]*?\ssrc\s*=\s*(["'])(.*?)\1[^>]*>/gs;
+const nonLocalImageSourcePattern = /^(?:\/\/|[a-z][a-z\d+.-]*:)/i;
+
+const assertLocalImagePath = (sourcePath: string, assetPath: string): void => {
+  const trimmedAssetPath = assetPath.trim();
+  expect(trimmedAssetPath, `${sourcePath} has an empty literal image source`).not.toBe('');
+  expect(
+    trimmedAssetPath,
+    `${sourcePath} uses a remote or embedded image: ${trimmedAssetPath}`,
+  ).not.toMatch(nonLocalImageSourcePattern);
+  const localAssetPath = trimmedAssetPath.split(/[?#]/u, 1)[0] ?? '';
+  const resolvedAsset = localAssetPath.startsWith('/')
+    ? join(miniappRoot, localAssetPath.slice(1))
+    : resolve(dirname(sourcePath), localAssetPath);
+  expect(existsSync(resolvedAsset), `${sourcePath} references missing ${assetPath}`).toBe(true);
+  expect(statSync(resolvedAsset).isFile(), `${resolvedAsset} is not a file`).toBe(true);
+};
+
+const assertWxmlImageSourcesAreLocal = (sourcePath: string, source: string): number => {
+  const assetPaths = [...source.matchAll(wxmlImageSourcePattern)]
+    .map((match) => match[2] ?? '')
+    .filter((assetPath) => !assetPath.includes('{{') && !assetPath.includes('}}'));
+
+  for (const assetPath of assetPaths) assertLocalImagePath(sourcePath, assetPath);
+  return assetPaths.length;
+};
 
 const readPngSize = (path: string) => {
   const bytes = readFileSync(path);
@@ -245,25 +270,61 @@ describe('WeChat mini program structure', () => {
     );
   });
 
-  it('keeps every image asset reference local and resolvable', () => {
-    const references = collectSourceFiles(miniappRoot).flatMap((sourcePath) => {
-      const source = readFileSync(sourcePath, 'utf8');
-      return [...source.matchAll(localAssetPattern)].map((match) => ({
-        sourcePath,
-        assetPath: match[0],
-      }));
-    });
-
-    expect(references.length).toBeGreaterThan(0);
-    for (const { sourcePath, assetPath } of references) {
-      expect(assetPath, `${sourcePath} uses a remote or embedded image`).not.toMatch(
-        /^(?:https?:\/\/|data:)/,
+  it('keeps literal WXML image sources local and resolvable', () => {
+    const referenceCount = collectSourceFiles(miniappRoot)
+      .filter((sourcePath) => extname(sourcePath) === '.wxml')
+      .reduce(
+        (count, sourcePath) =>
+          count + assertWxmlImageSourcesAreLocal(sourcePath, readFileSync(sourcePath, 'utf8')),
+        0,
       );
-      const resolvedAsset = assetPath.startsWith('/')
-        ? join(miniappRoot, assetPath.slice(1))
-        : resolve(dirname(sourcePath), assetPath);
-      expect(existsSync(resolvedAsset), `${sourcePath} references missing ${assetPath}`).toBe(true);
-      expect(statSync(resolvedAsset).isFile(), `${resolvedAsset} is not a file`).toBe(true);
+
+    expect(referenceCount).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ['data URI', 'data:image/svg+xml;base64,PHN2Zy8+'],
+    ['extensionless remote URL', 'https://example.com/avatar'],
+    ['protocol-relative remote URL', '//cdn.example.com/avatar'],
+    ['blob URL', 'blob:https://example.com/avatar-id'],
+    ['other non-local scheme', 'ftp://example.com/avatar'],
+  ])('rejects a literal WXML image source using a %s', (_label, assetPath) => {
+    expect(() =>
+      assertWxmlImageSourcesAreLocal(
+        join(miniappRoot, 'contract-fixture.wxml'),
+        `<image src="${assetPath}" />`,
+      ),
+    ).toThrow(/remote or embedded image/);
+  });
+
+  it('does not treat similarly named WXML data attributes as image sources', () => {
+    expect(
+      assertWxmlImageSourcesAreLocal(
+        join(miniappRoot, 'contract-fixture.wxml'),
+        '<image data-src="https://example.com/lazy-image" />',
+      ),
+    ).toBe(0);
+  });
+
+  it('keeps the current practical icon and selectable avatar collections local', () => {
+    const practicalSourcePath = join(miniappRoot, 'data', 'practical-skills.ts');
+    const practicalSource = readFileSync(practicalSourcePath, 'utf8');
+    const practicalAssets = [...practicalSource.matchAll(/\biconAsset:\s*'([^']+)'/g)].map(
+      (match) => match[1] ?? '',
+    );
+    expect(practicalAssets).toHaveLength(12);
+    for (const assetPath of practicalAssets) {
+      assertLocalImagePath(practicalSourcePath, assetPath);
+    }
+
+    const avatarSourcePath = join(miniappRoot, 'pages', 'edit-profile', 'index.ts');
+    const avatarSource = readFileSync(avatarSourcePath, 'utf8');
+    const avatarAssets = [...avatarSource.matchAll(/\burl:\s*'([^']+)'/g)].map(
+      (match) => match[1] ?? '',
+    );
+    expect(avatarAssets).toHaveLength(4);
+    for (const assetPath of avatarAssets) {
+      assertLocalImagePath(avatarSourcePath, assetPath);
     }
   });
 
@@ -291,6 +352,21 @@ describe('WeChat mini program structure', () => {
       'utf8',
     );
     expect(favoriteMarkup.match(/<view\s+class="favorite-button__ripple /g)).toHaveLength(1);
+  });
+
+  it('pins the approved option readability and touch geometry values', () => {
+    const styles = readFileSync(
+      join(miniappRoot, 'components', 'question-option', 'index.wxss'),
+      'utf8',
+    );
+    const optionRule = styles.match(/\.option\s*\{([^}]*)\}/s)?.[1] ?? '';
+    const textRule = styles.match(/\.option__text\s*\{([^}]*)\}/s)?.[1] ?? '';
+
+    expect(optionRule).toMatch(/\bmin-height:\s*96rpx;/);
+    expect(optionRule).toMatch(/\bborder-radius:\s*34rpx;/);
+    expect(textRule).toMatch(/\bfont-size:\s*28rpx;/);
+    expect(textRule).toMatch(/\bfont-weight:\s*600;/);
+    expect(textRule).toMatch(/\bline-height:\s*1\.5;/);
   });
 
   it('wires the shared review pages to the persistent theme controls and topbar', () => {
