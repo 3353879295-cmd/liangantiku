@@ -6,7 +6,6 @@ interface TabItem {
 
 const TABS: TabItem[] = [
   { text: '首页', value: '/pages/home/index', icon: 'home' },
-  { text: '题库', value: '/pages/library/index', icon: 'book' },
   { text: '实操', value: '/pages/practical/index', icon: 'tools' },
   { text: '我的', value: '/pages/profile/index', icon: 'user' },
 ];

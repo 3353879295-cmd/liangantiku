@@ -1,11 +1,14 @@
 :host {
-  --td-brand-color: #2f6b4f;
-  --td-tab-bar-active-color: #2f6b4f;
-  --td-tab-bar-color: #86868b;
-  --td-tab-bar-bg-color: rgb(255 255 255 / 96%);
-  --td-tab-bar-border-color: #eeeef0;
+  --td-brand-color: #b8ec32;
+  --td-tab-bar-active-color: #b8ec32;
+  --td-tab-bar-color: #272d23;
+  --td-tab-bar-bg-color: #fff;
+  --td-tab-bar-border-color: transparent;
+  --td-tab-bar-round-shadow: none;
 }
 
 .app-tab-bar {
+  border: 1rpx solid rgb(17 18 15 / 7%);
+  box-shadow: none;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
 }

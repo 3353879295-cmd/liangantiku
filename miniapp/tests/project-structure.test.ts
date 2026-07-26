@@ -122,16 +122,18 @@ describe('WeChat mini program structure', () => {
     expect(app.tabBar?.custom).toBe(true);
     expect(app.tabBar?.list?.map(({ pagePath }) => pagePath)).toEqual([
       'pages/home/index',
-      'pages/library/index',
       'pages/practical/index',
       'pages/profile/index',
     ]);
+    expect(app.pages).toContain('pages/library/index');
     for (const item of app.tabBar?.list ?? []) {
       expect(app.pages).toContain(item.pagePath);
     }
 
     assertUnitFiles(join(miniappRoot, 'custom-tab-bar', 'index'));
     assertComponentsResolve(join(miniappRoot, 'custom-tab-bar', 'index.json'));
+    const customTabBar = readFileSync(join(miniappRoot, 'custom-tab-bar', 'index.ts'), 'utf8');
+    expect(customTabBar).not.toContain('pages/library/index');
 
     for (const component of [
       'analysis-panel',

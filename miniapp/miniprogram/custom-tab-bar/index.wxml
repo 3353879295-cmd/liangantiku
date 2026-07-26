@@ -4,6 +4,7 @@
   placeholder
   safe-area-inset-bottom
   bordered="{{false}}"
+  shape="round"
   bind:change="onChange"
   t-class="app-tab-bar"
 >
