@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "随机练习设置",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-topbar": "/components/app-topbar/index"
+  }
+}

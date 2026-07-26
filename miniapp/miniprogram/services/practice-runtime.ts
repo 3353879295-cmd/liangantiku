@@ -8,12 +8,21 @@ import {
 } from './practice-session';
 import { appServices, localDateKey } from './app-services';
 import type { PracticeSession } from './practice-session';
-import type { CertificateLevel, OccupationCode, PracticeMode, Question } from '../types/domain';
+import type {
+  CertificateLevel,
+  OccupationCode,
+  PracticeMode,
+  PracticeQuestionLimit,
+  Question,
+  QuestionType,
+} from '../types/domain';
 
 export interface StartPracticeInput {
   occupation: OccupationCode;
   level: CertificateLevel;
   mode: PracticeMode;
+  limit?: PracticeQuestionLimit;
+  questionTypes?: QuestionType[];
   module?: string;
   chapterId?: string;
   sectionId?: string;
@@ -58,11 +67,13 @@ export const startPractice = async (input: StartPracticeInput): Promise<Practice
   if (!candidates.length) return null;
   const paper = buildPaper(candidates, {
     mode: input.mode,
-    limit: input.mode === 'mock' ? 50 : 20,
+    limit: input.limit ?? (input.mode === 'mock' ? 50 : 20),
+    ...(input.questionTypes ? { questionTypes: input.questionTypes } : {}),
     ...(input.module ? { module: input.module } : {}),
     ...(input.chapterId ? { chapterId: input.chapterId } : {}),
     ...(input.sectionId ? { sectionId: input.sectionId } : {}),
   });
+  if (!paper.length) return null;
   activeSession = createPracticeSession(paper, { mode: input.mode, now: Date.now() });
   appServices.progress.saveSession(serializePracticeSession(activeSession));
   return activeSession;

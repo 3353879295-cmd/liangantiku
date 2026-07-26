@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "模拟考试说明",
+  "usingComponents": {
+    "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-topbar": "/components/app-topbar/index"
+  }
+}

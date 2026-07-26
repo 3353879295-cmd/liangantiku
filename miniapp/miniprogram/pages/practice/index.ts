@@ -7,7 +7,15 @@ import {
   startPractice,
 } from '../../services/practice-runtime';
 import { appServices } from '../../services/app-services';
-import type { CertificateLevel, OccupationCode, PracticeMode, Question } from '../../types/domain';
+import { PRACTICE_QUESTION_LIMITS, QUESTION_TYPES } from '../../types/domain';
+import type {
+  CertificateLevel,
+  OccupationCode,
+  PracticeMode,
+  PracticeQuestionLimit,
+  Question,
+  QuestionType,
+} from '../../types/domain';
 
 const OCCUPATIONS = new Set<OccupationCode>(['4-02-06-01', '4-08-05-01']);
 const LEVELS = new Set<CertificateLevel>([5, 4, 3]);
@@ -19,6 +27,9 @@ const MODES = new Set<PracticeMode>([
   'wrong',
   'favorite',
 ]);
+const PRACTICE_LIMITS = new Set<string>(PRACTICE_QUESTION_LIMITS.map((limit) => String(limit)));
+const RANDOM_LIMITS = new Set<PracticeQuestionLimit>([10, 20, 30]);
+const QUESTION_TYPE_WHITELIST = new Set<string>(QUESTION_TYPES);
 
 const MODE_LABELS: Record<PracticeMode, string> = {
   chapter: '章节练习',
@@ -43,12 +54,37 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
   const mode = options['mode'] as PracticeMode;
   if (!OCCUPATIONS.has(occupation) || !LEVELS.has(level) || !MODES.has(mode)) return null;
   try {
+    let limit: PracticeQuestionLimit | undefined;
+    const rawLimit = options['limit'];
+    if (rawLimit !== undefined) {
+      if (!PRACTICE_LIMITS.has(rawLimit)) return null;
+      limit = Number(rawLimit) as PracticeQuestionLimit;
+      if (mode === 'random' && !RANDOM_LIMITS.has(limit)) return null;
+    }
+
+    let questionTypes: QuestionType[] | undefined;
+    const rawTypes = options['types'];
+    if (rawTypes !== undefined) {
+      const decodedTypes = decodeURIComponent(rawTypes).split(',');
+      if (
+        !decodedTypes.length ||
+        decodedTypes.some(
+          (questionType) => !questionType || !QUESTION_TYPE_WHITELIST.has(questionType),
+        )
+      ) {
+        return null;
+      }
+      questionTypes = [...new Set(decodedTypes)] as QuestionType[];
+    }
+
     return {
       resume: false,
       input: {
         occupation,
         level,
         mode,
+        ...(limit !== undefined ? { limit } : {}),
+        ...(questionTypes ? { questionTypes } : {}),
         ...(options['module'] ? { module: decodeURIComponent(options['module']) } : {}),
         ...(options['chapterId'] ? { chapterId: decodeURIComponent(options['chapterId']) } : {}),
         ...(options['sectionId'] ? { sectionId: decodeURIComponent(options['sectionId']) } : {}),

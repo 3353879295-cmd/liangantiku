@@ -1,0 +1,68 @@
+<view class="page-shell page-shell--secondary setup-page">
+  <app-topbar title="随机练习设置" subtitle="{{bankTitle}}" fallback-tab="home" />
+
+  <view class="setup-hero matte-card">
+    <view class="setup-hero__mark"><t-icon name="swap" size="38rpx" /></view>
+    <view class="setup-hero__copy">
+      <view class="setup-hero__title">按你的节奏抽题</view>
+      <text class="setup-hero__meta">
+        {{loading ? '正在读取当前题库' : '当前题库共 ' + bankQuestionCount + ' 题'}}
+      </text>
+    </view>
+  </view>
+
+  <view class="setup-section">
+    <view class="section-heading">
+      <view class="section-title">选择题量</view>
+      <text class="section-note">超出可用题量时不可选</text>
+    </view>
+    <view class="count-grid">
+      <view
+        wx:for="{{countOptions}}"
+        wx:key="value"
+        class="count-option {{item.selected ? 'count-option--selected' : ''}} {{item.disabled ? 'count-option--disabled' : ''}}"
+        data-limit="{{item.value}}"
+        aria-disabled="{{item.disabled}}"
+        bindtap="onCountTap"
+      >
+        <view class="count-option__value">{{item.value}}</view>
+        <text class="count-option__unit">题</text>
+        <text wx:if="{{item.disabled}}" class="count-option__note">题量不足</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="setup-section">
+    <view class="section-heading">
+      <view class="section-title">选择题型</view>
+      <text class="section-note">可多选</text>
+    </view>
+    <view class="type-grid">
+      <view
+        wx:for="{{typeOptions}}"
+        wx:key="value"
+        class="type-option {{item.selected ? 'type-option--selected' : ''}} {{item.disabled ? 'type-option--disabled' : ''}}"
+        data-type="{{item.value}}"
+        aria-disabled="{{item.disabled}}"
+        bindtap="onTypeTap"
+      >
+        <view class="type-option__name">{{item.label}}</view>
+        <text class="type-option__count">{{item.count}} 题</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="setup-summary matte-card">
+    <view class="setup-summary__icon"><t-icon name="check-circle" size="36rpx" /></view>
+    <view class="setup-summary__copy">
+      <view class="setup-summary__title">{{summaryText}}</view>
+      <text class="setup-summary__meta">{{statusText}}</text>
+    </view>
+  </view>
+
+  <button
+    class="start-button"
+    disabled="{{loading || !canStart}}"
+    bindtap="onStart"
+  >开始随机练习</button>
+</view>

@@ -1,0 +1,134 @@
+.mock-page {
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.exam-card {
+  padding: 42rpx 34rpx;
+  border-radius: var(--radius-xl);
+  background: var(--color-text);
+  color: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+}
+
+.exam-card__eyebrow {
+  color: rgb(255 255 255 / 62%);
+  font-size: 22rpx;
+}
+
+.exam-card__count {
+  display: inline-block;
+  margin-top: 16rpx;
+  font-size: 82rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.exam-card__unit {
+  margin-left: 8rpx;
+  color: var(--color-primary);
+  font-size: 25rpx;
+  font-weight: 650;
+}
+
+.exam-card__meta {
+  display: block;
+  margin-top: 18rpx;
+  color: rgb(255 255 255 / 70%);
+  font-size: 22rpx;
+}
+
+.rule-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin: 44rpx 4rpx 18rpx;
+}
+
+.rule-heading__title {
+  font-size: 32rpx;
+  font-weight: 680;
+}
+
+.rule-heading__note {
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+}
+
+.rule-list {
+  overflow: hidden;
+}
+
+.rule-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  margin-left: 26rpx;
+  padding: 25rpx 26rpx 25rpx 0;
+}
+
+.rule-row + .rule-row {
+  border-top: 1rpx solid var(--color-border);
+}
+
+.rule-row__icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 54rpx;
+  height: 54rpx;
+  border-radius: 18rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.rule-row__copy {
+  min-width: 0;
+}
+
+.rule-row__title {
+  font-size: 26rpx;
+  font-weight: 650;
+}
+
+.rule-row__description {
+  display: block;
+  margin-top: 7rpx;
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+  line-height: 1.55;
+}
+
+.exam-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-top: 24rpx;
+  padding: 22rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-option-text);
+  font-size: 21rpx;
+  line-height: 1.55;
+}
+
+.start-button {
+  margin-top: 28rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 28rpx;
+  font-weight: 680;
+  line-height: 96rpx;
+}
+
+.start-button::after {
+  display: none;
+}
+
+.start-button[disabled] {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+}

@@ -135,7 +135,7 @@ describe('WeChat mini program structure', () => {
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 
-    expect(app.pages).toHaveLength(10);
+    expect(app.pages).toHaveLength(12);
     for (const page of app.pages) {
       const pagePath = join(miniappRoot, page);
       assertUnitFiles(pagePath);
@@ -150,6 +150,8 @@ describe('WeChat mini program structure', () => {
     ]);
     expect(app.pages).toContain('pages/library/index');
     expect(app.pages).toContain('pages/chapter-detail/index');
+    expect(app.pages).toContain('pages/random-settings/index');
+    expect(app.pages).toContain('pages/mock-info/index');
     for (const item of app.tabBar?.list ?? []) {
       expect(app.pages).toContain(item.pagePath);
     }
@@ -182,6 +184,8 @@ describe('WeChat mini program structure', () => {
     const secondaryPages = [
       'library',
       'chapter-detail',
+      'random-settings',
+      'mock-info',
       'practice',
       'answer-sheet',
       'report',

@@ -4,7 +4,10 @@ export type AvailableQuestionLevel = 5 | 4 | 3;
 export type CertificateAvailability = 'available' | 'coming-soon';
 export type AnswerTheme = 'light' | 'night';
 export type CertificateKey = `${OccupationCode}:${CertificateLevel}`;
-export type QuestionType = 'single' | 'multiple' | 'judge' | 'case';
+export const QUESTION_TYPES = ['single', 'multiple', 'judge', 'case'] as const;
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+export const PRACTICE_QUESTION_LIMITS = [10, 20, 30, 50] as const;
+export type PracticeQuestionLimit = (typeof PRACTICE_QUESTION_LIMITS)[number];
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type PracticeMode = 'chapter' | 'sequential' | 'random' | 'mock' | 'wrong' | 'favorite';
 

@@ -1,13 +1,18 @@
-import type { PracticeMode, Question } from '../types/domain';
+import { PRACTICE_QUESTION_LIMITS, QUESTION_TYPES } from '../types/domain';
+import type { PracticeMode, PracticeQuestionLimit, Question, QuestionType } from '../types/domain';
 
 export interface BuildPaperOptions {
   mode: PracticeMode;
-  limit: number;
+  limit?: PracticeQuestionLimit;
+  questionTypes?: QuestionType[];
   module?: string;
   chapterId?: string;
   sectionId?: string;
   random?: () => number;
 }
+
+const practiceQuestionLimits = new Set<number>(PRACTICE_QUESTION_LIMITS);
+const questionTypes = new Set<string>(QUESTION_TYPES);
 
 const shuffle = (questions: Question[], random: () => number): Question[] => {
   const shuffled = [...questions];
@@ -29,18 +34,24 @@ export const buildPaper = (
   questions: readonly Question[],
   options: BuildPaperOptions,
 ): Question[] => {
-  if (!Number.isInteger(options.limit) || options.limit <= 0) {
-    throw new Error('paper limit must be a positive integer');
+  const limit = options.limit ?? (options.mode === 'mock' ? 50 : 20);
+  if (!practiceQuestionLimits.has(limit)) {
+    throw new Error('paper limit must be 10, 20, 30, or 50');
+  }
+  if (options.questionTypes?.some((questionType) => !questionTypes.has(questionType))) {
+    throw new Error('paper contains an unsupported question type filter');
   }
 
+  const selectedTypes = options.questionTypes ? new Set(options.questionTypes) : null;
   const candidates = questions.filter((question) => {
     if (options.chapterId && question.chapterId !== options.chapterId) return false;
     if (options.sectionId && question.sectionId !== options.sectionId) return false;
     if (options.module && question.module !== options.module) return false;
+    if (selectedTypes && !selectedTypes.has(question.type)) return false;
     return true;
   });
   const shouldShuffle = options.mode === 'random' || options.mode === 'mock';
   const ordered = shouldShuffle ? shuffle(candidates, options.random ?? Math.random) : candidates;
 
-  return ordered.slice(0, Math.min(options.limit, ordered.length));
+  return ordered.slice(0, Math.min(limit, ordered.length));
 };
