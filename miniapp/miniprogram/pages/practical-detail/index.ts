@@ -11,6 +11,7 @@ Page({
     sourceText: '',
     relatedQuestions: [] as Question[],
     relatedReady: false,
+    relatedLoadError: false,
   },
 
   async onLoad(options: Record<string, string | undefined>) {
@@ -22,16 +23,35 @@ Page({
       roleText: skill.occupation === '4-02-06-01' ? '储粮保管' : '粮油质检',
       sourceText: skill.sourceIds.join(' · '),
     });
+    await this.loadRelatedQuestions();
+  },
+
+  async loadRelatedQuestions() {
+    const skill = this.data.skill;
+    if (!skill) return;
+    this.setData({
+      relatedQuestions: [],
+      relatedReady: false,
+      relatedLoadError: false,
+    });
     try {
       const relatedQuestions = await appServices.questions.getByIds(skill.relatedQuestionIds);
-      this.setData({ relatedQuestions, relatedReady: true });
+      this.setData({ relatedQuestions, relatedReady: true, relatedLoadError: false });
     } catch {
-      this.setData({ relatedQuestions: [], relatedReady: true });
+      this.setData({ relatedQuestions: [], relatedReady: true, relatedLoadError: true });
     }
   },
 
+  async onRetryRelatedQuestions() {
+    await this.loadRelatedQuestions();
+  },
+
   onStartRelatedPractice() {
-    if (!this.data.relatedReady || !this.data.relatedQuestions.length) {
+    if (
+      !this.data.relatedReady ||
+      this.data.relatedLoadError ||
+      !this.data.relatedQuestions.length
+    ) {
       void wx.showToast({ title: '相关题目尚未同步', icon: 'none' });
       return;
     }

@@ -73,9 +73,14 @@
 
     <view class="detail-section">
       <view class="detail-section__title">关联练习</view>
-      <view wx:if="{{!relatedReady}}" class="related-state">
+      <view wx:if="{{!relatedReady}}" class="related-state related-state--loading">
         <t-icon name="loading" size="30rpx" />
         <text>正在读取关联题目…</text>
+      </view>
+      <view wx:elif="{{relatedLoadError}}" class="related-state related-state--error">
+        <view class="related-state__title">关联题目加载失败</view>
+        <text>请检查后重试，本次不会创建练习记录。</text>
+        <button class="related-retry" bindtap="onRetryRelatedQuestions">重新加载</button>
       </view>
       <button
         wx:elif="{{relatedQuestions.length}}"
