@@ -8,7 +8,11 @@ import {
   presentCatalogParts as presentCatalogPartsDirect,
 } from '../miniprogram/presenters/catalog-presenter';
 import type { RuntimeKnowledgeCatalog } from '../miniprogram/types/knowledge-catalog';
-import { presentDashboard } from '../miniprogram/presenters/home-presenter';
+import {
+  HOME_ACTIONS,
+  presentDashboard,
+  presentHomeCertificate,
+} from '../miniprogram/presenters/home-presenter';
 import {
   groupCertificates,
   presentCatalogParts,
@@ -62,6 +66,48 @@ describe('presentDashboard', () => {
       goalPercent: 100,
       resumeText: '继续第 7 题 · 共 20 题',
     });
+  });
+});
+
+describe('home question bank presentation', () => {
+  it('keeps a selectable technician certificate visible but prevents an empty practice', () => {
+    expect(presentHomeCertificate(CERTIFICATES, '4-02-06-01:2', 0)).toMatchObject({
+      roleTitle: '粮油仓储管理员',
+      levelName: '技师',
+      bankTitle: '粮油仓储管理员 · 技师',
+      availabilityText: '待补充',
+      canStart: false,
+      questionCountText: '题库待补充',
+    });
+  });
+
+  it('presents an available question bank with its formal role and question count', () => {
+    expect(presentHomeCertificate(CERTIFICATES, '4-08-05-01:4', 12)).toMatchObject({
+      certificateKey: '4-08-05-01:4',
+      roleTitle: '粮油质量检验员',
+      levelName: '中级',
+      availabilityText: '可练习',
+      canStart: true,
+      questionCountText: '12 题',
+    });
+  });
+
+  it('exposes exactly the five home learning routes with independent saved-question pages', () => {
+    expect(HOME_ACTIONS).toEqual([
+      { id: 'chapter', title: '章节刷题', route: '/pages/library/index' },
+      { id: 'random', title: '随机练习', route: '/pages/random-settings/index' },
+      { id: 'mock', title: '模拟考试', route: '/pages/mock-info/index' },
+      {
+        id: 'wrong',
+        title: '错题本',
+        route: '/pages/question-list/index?kind=wrong',
+      },
+      {
+        id: 'favorite',
+        title: '收藏试题',
+        route: '/pages/question-list/index?kind=favorite',
+      },
+    ]);
   });
 });
 

@@ -1,56 +1,99 @@
 <view class="page-shell home-page">
-  <view class="home-header">
-    <view>
-      <view class="eyebrow">粮安题库</view>
-      <view class="page-title">今天练什么？</view>
+  <view class="user-bar">
+    <view class="user-profile">
+      <image wx:if="{{avatarUrl}}" class="user-avatar" src="{{avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="user-avatar user-avatar--fallback">粮</view>
+      <view class="user-copy">
+        <text class="user-copy__meta">备考第 {{preparationDays}} 天</text>
+        <view class="user-copy__name">{{nickname}}</view>
+      </view>
     </view>
-    <view class="certificate-pill" bind:tap="onChooseCertificate">
-      <text>{{certificateTitle}}</text>
-      <t-icon name="chevron-right" size="28rpx" />
-    </view>
+    <view class="member-entry" bind:tap="onOpenMember">会员权益</view>
   </view>
 
-  <view wx:if="{{hasResume}}" class="resume-card" bind:tap="onResume">
-    <view>
-      <view class="resume-card__label">上次练习</view>
-      <view class="resume-card__title">{{dashboard.resumeText}}</view>
+  <view class="home-title">粮安题库</view>
+
+  <view class="resume-card" bind:tap="onResume">
+    <view class="resume-card__copy">
+      <text class="resume-card__label">{{hasResume ? '继续上次练习' : '准备开始'}}</text>
+      <view class="resume-card__title">{{resumeText}}</view>
     </view>
-    <view class="resume-card__action">继续</view>
+    <view class="resume-card__action">{{resumeActionText}}</view>
   </view>
 
   <view class="section-heading">
-    <view class="section-title">学习概览</view>
-    <text class="section-note">累计数据</text>
+    <view class="section-title">选择题库</view>
+    <text class="section-note">先职业，再等级</text>
   </view>
-  <view class="stat-grid">
-    <stat-card label="已练" value="{{dashboard.answeredText}}" note="题" />
-    <stat-card label="正确率" value="{{dashboard.accuracyText}}" note="累计" />
-    <stat-card label="学习时长" value="{{dashboard.durationText}}" note="累计" />
-  </view>
+  <certificate-selector
+    certificates="{{certificates}}"
+    selected-key="{{selectedKey}}"
+    bind:change="onCertificateChange"
+  />
 
-  <view class="goal-card">
-    <view class="goal-card__top">
-      <view>
-        <view class="goal-card__title">今日目标</view>
-        <text class="goal-card__streak">{{dashboard.streakText}}</text>
-      </view>
-      <text class="goal-card__count">{{dashboard.goalText}}</text>
-    </view>
-    <t-progress percentage="{{dashboard.goalPercent}}" track-color="#e5e5e7" color="#2f6b4f" />
+  <view class="section-heading">
+    <view class="section-title">开始学习</view>
+    <text class="section-note">{{certificate.questionCountText}}</text>
   </view>
-
-  <view class="section-heading shortcuts-heading"><view class="section-title">快速开始</view></view>
-  <view class="shortcut-grid">
+  <view class="action-grid">
     <view
-      wx:for="{{shortcuts}}"
-      wx:key="mode"
-      class="shortcut-card"
-      data-mode="{{item.mode}}"
-      bind:tap="onShortcut"
+      wx:for="{{actions}}"
+      wx:key="id"
+      class="action-card {{item.emphasized ? 'action-card--emphasized' : ''}}"
+      data-id="{{item.id}}"
+      bind:tap="onAction"
     >
-      <view class="shortcut-card__icon"><t-icon name="{{item.icon}}" size="40rpx" /></view>
-      <view class="shortcut-card__label">{{item.label}}</view>
-      <text class="shortcut-card__note">{{item.note}}</text>
+      <view class="action-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
+      <view class="action-card__copy">
+        <view class="action-card__title">{{item.title}}</view>
+        <text class="action-card__note">
+          {{certificate.canStart ? item.note : '待补充 · 暂不可开始'}}
+        </text>
+      </view>
+      <t-icon wx:if="{{item.emphasized}}" name="chevron-right" size="34rpx" />
+    </view>
+  </view>
+
+  <view class="section-heading">
+    <view>
+      <view class="section-title">当前目录</view>
+      <text class="catalog-context">{{certificate.bankTitle}}</text>
+    </view>
+    <view class="section-link" bind:tap="onOpenCatalog">完整目录</view>
+  </view>
+  <view class="catalog-card" bind:tap="onOpenCatalog">
+    <view wx:if="{{catalogChapters.length}}">
+      <view wx:for="{{catalogChapters}}" wx:key="id" class="catalog-row">
+        <view class="catalog-row__number">{{item.numberText}}</view>
+        <view class="catalog-row__copy">
+          <view class="catalog-row__title">{{item.title}}</view>
+          <text class="catalog-row__meta">{{item.metaText}} · 完成 {{item.progressText}}</text>
+        </view>
+        <t-icon name="chevron-right" size="30rpx" />
+      </view>
+    </view>
+    <view wx:else class="catalog-empty">
+      <view class="catalog-empty__mark"><t-icon name="info-circle" size="28rpx" /></view>
+      <text>{{loading ? '正在加载当前目录' : '当前等级目录待补充'}}</text>
+    </view>
+  </view>
+
+  <view class="section-heading">
+    <view class="section-title">最近刷题</view>
+    <text class="section-note">当前题库</text>
+  </view>
+  <view class="recent-card">
+    <view wx:if="{{recentQuestions.length}}">
+      <view wx:for="{{recentQuestions}}" wx:key="id" class="recent-row">
+        <view class="recent-row__marker"><t-icon name="history" size="30rpx" /></view>
+        <view class="recent-row__copy">
+          <view class="recent-row__title">{{item.title}}</view>
+          <text class="recent-row__meta">{{item.metaText}}</text>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="recent-empty">
+      {{loading ? '正在读取练习记录' : '还没有当前题库的刷题记录'}}
     </view>
   </view>
 </view>

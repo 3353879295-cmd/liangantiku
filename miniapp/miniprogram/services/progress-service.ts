@@ -219,6 +219,31 @@ export class ProgressService {
       .map(([questionId]) => questionId);
   }
 
+  listRecentQuestionIds(limit: number): string[] {
+    if (limit <= 0) return [];
+    const recentIds: string[] = [];
+    const seen = new Set<string>();
+    for (let index = this.data.answers.length - 1; index >= 0; index -= 1) {
+      const questionId = this.data.answers[index]?.questionId;
+      if (!questionId || seen.has(questionId)) continue;
+      seen.add(questionId);
+      recentIds.push(questionId);
+      if (recentIds.length >= limit) break;
+    }
+    return recentIds;
+  }
+
+  getPreparationDays(today: string): number {
+    const firstAnswerDate = this.data.answers
+      .map(({ at }) => at)
+      .filter((date) => date <= today)
+      .sort()[0];
+    if (!firstAnswerDate) return 1;
+    const firstTime = new Date(`${firstAnswerDate}T00:00:00Z`).getTime();
+    const todayTime = new Date(`${today}T00:00:00Z`).getTime();
+    return Math.max(1, Math.floor((todayTime - firstTime) / 86_400_000) + 1);
+  }
+
   getDashboard(today: string): DashboardStats {
     const answered = this.data.answers.length;
     const correct = this.data.answers.filter((answer) => answer.correct).length;

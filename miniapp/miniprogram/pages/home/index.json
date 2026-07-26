@@ -2,7 +2,6 @@
   "navigationBarTitleText": "粮安题库",
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-progress": "tdesign-miniprogram/progress/progress",
-    "stat-card": "/components/stat-card/index"
+    "certificate-selector": "/components/certificate-selector/index"
   }
 }

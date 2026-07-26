@@ -138,6 +138,7 @@ describe('WeChat mini program structure', () => {
     for (const component of [
       'analysis-panel',
       'app-topbar',
+      'certificate-selector',
       'empty-state',
       'question-option',
       'stat-card',
@@ -146,6 +147,11 @@ describe('WeChat mini program structure', () => {
       assertUnitFiles(componentPath);
       assertComponentsResolve(`${componentPath}.json`);
     }
+
+    const home = readJson<ComponentConfig>(join(miniappRoot, 'pages', 'home', 'index.json'));
+    expect(home.usingComponents?.['certificate-selector']).toBe(
+      '/components/certificate-selector/index',
+    );
   });
 
   it('registers the shared topbar locally on every current secondary page', () => {

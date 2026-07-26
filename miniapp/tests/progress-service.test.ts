@@ -79,6 +79,33 @@ describe('ProgressService', () => {
     });
   });
 
+  it('lists the most recently answered question IDs without duplicate positions', () => {
+    const { service } = createService();
+    service.recordAnswer({ questionId: 'Q1', correct: true, durationMs: 10, at: '2026-07-20' });
+    service.recordAnswer({ questionId: 'Q2', correct: false, durationMs: 10, at: '2026-07-21' });
+    service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 10, at: '2026-07-22' });
+    service.recordAnswer({ questionId: 'Q3', correct: true, durationMs: 10, at: '2026-07-23' });
+
+    expect(service.listRecentQuestionIds(3)).toEqual(['Q3', 'Q1', 'Q2']);
+  });
+
+  it('returns no recent question IDs when the requested limit is zero', () => {
+    const { service } = createService();
+    service.recordAnswer({ questionId: 'Q1', correct: true, durationMs: 10, at: '2026-07-20' });
+
+    expect(service.listRecentQuestionIds(0)).toEqual([]);
+  });
+
+  it('derives preparation days from answer history and starts untouched users at day one', () => {
+    const { service } = createService();
+    expect(service.getPreparationDays('2026-07-22')).toBe(1);
+
+    service.recordAnswer({ questionId: 'Q1', correct: true, durationMs: 10, at: '2026-07-20' });
+    service.recordAnswer({ questionId: 'Q2', correct: true, durationMs: 10, at: '2026-07-22' });
+
+    expect(service.getPreparationDays('2026-07-22')).toBe(3);
+  });
+
   it('summarizes unique completion, attempt accuracy and active wrong questions by ID', () => {
     const { repository } = createService();
     const service = new ProgressService(repository);
