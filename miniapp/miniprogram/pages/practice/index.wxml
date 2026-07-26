@@ -49,9 +49,11 @@
     <view class="footer-spacer"></view>
     <view class="practice-footer">
       <button
-        wx:if="{{isMultiple && (!hasAnswer || draftDirty)}}"
-        class="primary-button"
-        bindtap="onConfirmMultiple"
+        wx:if="{{showConfirm}}"
+        class="primary-button primary-button--confirm"
+        disabled="{{!canConfirm}}"
+        aria-label="确认当前答案"
+        bindtap="onConfirmAnswer"
       >确认答案</button>
       <button wx:else class="primary-button" bindtap="onNext">{{isLast ? '查看结果' : '下一题'}}</button>
     </view>

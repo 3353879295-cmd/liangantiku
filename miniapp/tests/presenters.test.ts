@@ -18,7 +18,11 @@ import {
   presentCatalogParts,
   presentLibraryModules,
 } from '../miniprogram/presenters/library-presenter';
-import { presentQuestionOption } from '../miniprogram/presenters/question-option-presenter';
+import {
+  getQuestionSelectionMode,
+  presentQuestionOption,
+  selectDraftOption,
+} from '../miniprogram/presenters/question-option-presenter';
 import { presentQuestionList } from '../miniprogram/presenters/question-list-presenter';
 import { presentReport } from '../miniprogram/presenters/report-presenter';
 import { makeQuestion } from './factories';
@@ -411,27 +415,75 @@ describe('presentQuestionList', () => {
 });
 
 describe('presentQuestionOption', () => {
-  it('shows a selected option before submission', () => {
+  it('shows a selected option without revealing correctness before confirmation', () => {
     expect(
-      presentQuestionOption({ key: 'A', selected: true, submitted: false, correctKeys: [] }),
+      presentQuestionOption({
+        key: 'A',
+        selected: true,
+        revealAnswer: false,
+        correctKeys: ['B'],
+      }),
     ).toEqual({ selected: true, state: 'selected', disabled: false });
   });
 
-  it('marks a selected wrong option after submission', () => {
+  it('keeps an unselected option idle before confirmation', () => {
     expect(
-      presentQuestionOption({ key: 'A', selected: true, submitted: true, correctKeys: ['B'] }),
+      presentQuestionOption({
+        key: 'B',
+        selected: false,
+        revealAnswer: false,
+        correctKeys: ['B'],
+      }),
+    ).toEqual({ selected: false, state: 'idle', disabled: false });
+  });
+
+  it('marks only a selected wrong option wrong after revealing the answer', () => {
+    expect(
+      presentQuestionOption({
+        key: 'A',
+        selected: true,
+        revealAnswer: true,
+        correctKeys: ['B'],
+      }),
     ).toEqual({ selected: true, state: 'wrong', disabled: true });
   });
 
-  it('reveals the correct option after submission', () => {
+  it('reveals the correct option after confirmation', () => {
     expect(
-      presentQuestionOption({ key: 'B', selected: false, submitted: true, correctKeys: ['B'] }),
+      presentQuestionOption({
+        key: 'B',
+        selected: false,
+        revealAnswer: true,
+        correctKeys: ['B'],
+      }),
     ).toEqual({ selected: false, state: 'correct', disabled: true });
   });
 
-  it('keeps unrelated options neutral after submission', () => {
+  it('keeps unrelated options idle after revealing the answer', () => {
     expect(
-      presentQuestionOption({ key: 'C', selected: false, submitted: true, correctKeys: ['B'] }),
-    ).toEqual({ selected: false, state: 'neutral', disabled: true });
+      presentQuestionOption({
+        key: 'C',
+        selected: false,
+        revealAnswer: true,
+        correctKeys: ['B'],
+      }),
+    ).toEqual({ selected: false, state: 'idle', disabled: true });
+  });
+});
+
+describe('question draft selection', () => {
+  it('replaces a previous draft for single-answer questions', () => {
+    expect(selectDraftOption(['A'], 'B', 'single')).toEqual(['B']);
+  });
+
+  it('toggles multiple-answer drafts and immediately restores the previous option', () => {
+    expect(selectDraftOption(['A'], 'B', 'multiple')).toEqual(['A', 'B']);
+    expect(selectDraftOption(['A', 'B'], 'A', 'multiple')).toEqual(['B']);
+  });
+
+  it('uses answer cardinality for case-question selection mode', () => {
+    expect(getQuestionSelectionMode('case', ['A'])).toBe('single');
+    expect(getQuestionSelectionMode('case', ['A', 'C'])).toBe('multiple');
+    expect(getQuestionSelectionMode('multiple', ['A'])).toBe('multiple');
   });
 });

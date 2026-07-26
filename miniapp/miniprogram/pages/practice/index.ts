@@ -1,4 +1,8 @@
-import { presentQuestionOption } from '../../presenters/question-option-presenter';
+import {
+  getQuestionSelectionMode,
+  presentQuestionOption,
+  selectDraftOption,
+} from '../../presenters/question-option-presenter';
 import { answerQuestion, navigateToQuestion } from '../../services/practice-session';
 import {
   getActivePractice,
@@ -108,8 +112,8 @@ Page({
     questionTypeLabel: '',
     options: [] as Array<Question['options'][number] & ReturnType<typeof presentQuestionOption>>,
     draftSelection: [] as string[],
-    draftDirty: false,
-    hasAnswer: false,
+    showConfirm: true,
+    canConfirm: false,
     isMultiple: false,
     isLast: false,
     analysisVisible: false,
@@ -161,9 +165,10 @@ Page({
     if (!question) return;
     const selected = draft ?? session.answers[question.id] ?? [];
     const feedback = session.feedback[question.id];
-    const submitted = Boolean(feedback);
-    const analysisVisible =
-      submitted && (session.mode !== 'mock' || session.status === 'submitted');
+    const revealAnswer =
+      session.mode === 'mock' ? session.status === 'submitted' : Boolean(feedback);
+    const hasAnswer = Boolean(session.answers[question.id]);
+    const selectionMode = getQuestionSelectionMode(question.type, question.answer);
     this.setData({
       loading: false,
       sessionReady: true,
@@ -178,16 +183,17 @@ Page({
         ...presentQuestionOption({
           key: option.key,
           selected: selected.includes(option.key),
-          submitted,
+          revealAnswer,
           correctKeys: question.answer,
         }),
       })),
       draftSelection: selected,
-      draftDirty: false,
-      hasAnswer: Boolean(session.answers[question.id]),
-      isMultiple: question.type === 'multiple',
+      showConfirm:
+        session.status === 'active' && (session.mode === 'mock' ? !hasAnswer : !revealAnswer),
+      canConfirm: selected.length > 0,
+      isMultiple: selectionMode === 'multiple',
       isLast: session.currentIndex === session.questions.length - 1,
-      analysisVisible,
+      analysisVisible: revealAnswer && Boolean(feedback),
       analysisCorrect: feedback?.correct ?? false,
       expectedText: question.answer.join('、'),
       favorite: appServices.progress.isFavorite(question.id),
@@ -198,33 +204,30 @@ Page({
     const session = getActivePractice();
     const question = session?.questions[session.currentIndex];
     if (!session || !question || session.status === 'submitted') return;
-    if (question.type === 'multiple') {
-      const key = event.detail.key;
-      const selected = this.data.draftSelection.includes(key)
-        ? this.data.draftSelection.filter((item) => item !== key)
-        : [...this.data.draftSelection, key];
-      const options = question.options.map((option) => ({
-        ...option,
-        ...presentQuestionOption({
-          key: option.key,
-          selected: selected.includes(option.key),
-          submitted: false,
-          correctKeys: question.answer,
-        }),
-      }));
-      this.setData({ draftSelection: selected, draftDirty: true, options });
-      return;
-    }
-    if (session.feedback[question.id]) return;
-    const next = answerQuestion(session, question.id, [event.detail.key], Date.now());
-    saveActivePractice(next);
-    this.renderSession(next);
+    if (session.mode !== 'mock' && session.feedback[question.id]) return;
+    const selectionMode = getQuestionSelectionMode(question.type, question.answer);
+    const selected = selectDraftOption(this.data.draftSelection, event.detail.key, selectionMode);
+    const options = question.options.map((option) => ({
+      ...option,
+      ...presentQuestionOption({
+        key: option.key,
+        selected: selected.includes(option.key),
+        revealAnswer: false,
+        correctKeys: question.answer,
+      }),
+    }));
+    this.setData({
+      draftSelection: selected,
+      showConfirm: true,
+      canConfirm: selected.length > 0,
+      options,
+    });
   },
 
-  onConfirmMultiple() {
+  onConfirmAnswer() {
     const session = getActivePractice();
     const question = session?.questions[session.currentIndex];
-    if (!session || !question || question.type !== 'multiple') return;
+    if (!session || !question || session.status === 'submitted') return;
     if (!this.data.draftSelection.length) {
       void wx.showToast({ title: '请至少选择一项', icon: 'none' });
       return;

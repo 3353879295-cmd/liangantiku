@@ -3,16 +3,20 @@
   box-sizing: border-box;
   align-items: center;
   width: 100%;
-  min-height: 104rpx;
+  min-height: 96rpx;
   margin: 0;
-  padding: 22rpx 24rpx;
-  border: 2rpx solid var(--color-border);
-  border-radius: 24rpx;
-  background: var(--color-surface);
-  color: var(--color-text);
+  padding: 20rpx 24rpx;
+  border: 1rpx solid transparent;
+  border-radius: 34rpx;
+  background: #fff;
+  color: var(--color-option-text);
   font: inherit;
   line-height: 1.5;
   text-align: left;
+  transition:
+    transform 100ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease;
 }
 
 .option::after {
@@ -23,19 +27,23 @@
   opacity: 1;
 }
 
+.option--pressed {
+  transform: scale(0.982);
+}
+
 .option--selected {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  border-color: rgb(114 145 36 / 16%);
+  background: #dff58f;
 }
 
 .option--correct {
-  border-color: var(--color-primary);
-  background: var(--color-primary-soft);
+  border-color: rgb(47 107 79 / 16%);
+  background: #e4f4df;
 }
 
 .option--wrong {
-  border-color: var(--color-danger);
-  background: var(--color-danger-soft);
+  border-color: rgb(196 71 71 / 16%);
+  background: #fde9e6;
 }
 
 .option__key {
@@ -43,16 +51,53 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 52rpx;
-  height: 52rpx;
+  width: 56rpx;
+  height: 56rpx;
   margin-right: 20rpx;
-  border: 2rpx solid currentcolor;
   border-radius: 50%;
+  background: #eef6d8;
+  color: #3f5d18;
   font-size: 26rpx;
   font-weight: 600;
 }
 
+.option--selected .option__key {
+  background: var(--color-primary);
+  color: #11120f;
+}
+
+.option--correct .option__key {
+  background: #cdecc4;
+  color: #2f6b4f;
+}
+
+.option--wrong .option__key {
+  background: #f6d0cc;
+  color: #a43d3d;
+}
+
+.option__key--pop {
+  animation: option-key-pop 300ms ease;
+}
+
 .option__text {
   flex: 1;
-  font-size: 30rpx;
+  color: var(--color-option-text);
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@keyframes option-key-pop {
+  0% {
+    transform: scale(0.92);
+  }
+
+  60% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }

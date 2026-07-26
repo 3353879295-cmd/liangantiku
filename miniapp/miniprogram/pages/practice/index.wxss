@@ -136,6 +136,20 @@
   line-height: 92rpx;
 }
 
+.primary-button--confirm {
+  background: #11120f;
+  color: #fff;
+  transition:
+    transform 100ms ease,
+    background-color 200ms ease;
+}
+
+.primary-button--confirm[disabled] {
+  background: #e7e9e1;
+  color: #979d90;
+  opacity: 1;
+}
+
 .primary-button::after {
   display: none;
 }

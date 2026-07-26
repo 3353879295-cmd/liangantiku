@@ -10,6 +10,7 @@ import {
   serializePracticeSession,
   submitSession,
 } from '../miniprogram/services/practice-session';
+import { presentQuestionOption } from '../miniprogram/presenters/question-option-presenter';
 import { makeQuestion } from './factories';
 
 describe('practice session', () => {
@@ -28,13 +29,31 @@ describe('practice session', () => {
     const session = createPracticeSession([question], { mode: 'mock', now: 1000 });
 
     const answered = answerQuestion(session, question.id, ['A'], 1500);
+    const revealBeforeSubmit = answered.status === 'submitted';
 
     expect(answered.feedback[question.id]).toBeUndefined();
     expect(getAnswerSheet(answered)[0]).toEqual({ questionId: question.id, status: 'answered' });
+    expect(
+      presentQuestionOption({
+        key: 'A',
+        selected: true,
+        revealAnswer: revealBeforeSubmit,
+        correctKeys: question.answer,
+      }),
+    ).toEqual({ selected: true, state: 'selected', disabled: false });
 
     const submitted = submitSession(answered, 2500);
+    const revealAfterSubmit = submitted.status === 'submitted';
     expect(submitted.status).toBe('submitted');
     expect(submitted.feedback[question.id]).toMatchObject({ correct: true });
+    expect(
+      presentQuestionOption({
+        key: 'A',
+        selected: true,
+        revealAnswer: revealAfterSubmit,
+        correctKeys: question.answer,
+      }),
+    ).toEqual({ selected: true, state: 'correct', disabled: true });
     expect(submitted.report).toMatchObject({
       total: 1,
       correct: 1,

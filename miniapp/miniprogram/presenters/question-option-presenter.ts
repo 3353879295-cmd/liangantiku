@@ -1,9 +1,12 @@
-export type QuestionOptionState = 'neutral' | 'selected' | 'correct' | 'wrong';
+import type { QuestionType } from '../types/domain';
+
+export type QuestionOptionState = 'idle' | 'selected' | 'correct' | 'wrong';
+export type QuestionSelectionMode = 'single' | 'multiple';
 
 export interface QuestionOptionPresentationInput {
   key: string;
   selected: boolean;
-  submitted: boolean;
+  revealAnswer: boolean;
   correctKeys: string[];
 }
 
@@ -16,10 +19,10 @@ export interface QuestionOptionPresentation {
 export const presentQuestionOption = (
   input: QuestionOptionPresentationInput,
 ): QuestionOptionPresentation => {
-  if (!input.submitted) {
+  if (!input.revealAnswer) {
     return {
       selected: input.selected,
-      state: input.selected ? 'selected' : 'neutral',
+      state: input.selected ? 'selected' : 'idle',
       disabled: false,
     };
   }
@@ -29,5 +32,24 @@ export const presentQuestionOption = (
   if (input.selected) {
     return { selected: true, state: 'wrong', disabled: true };
   }
-  return { selected: false, state: 'neutral', disabled: true };
+  return { selected: false, state: 'idle', disabled: true };
+};
+
+export const getQuestionSelectionMode = (
+  questionType: QuestionType,
+  correctKeys: readonly string[],
+): QuestionSelectionMode =>
+  questionType === 'multiple' || (questionType === 'case' && correctKeys.length > 1)
+    ? 'multiple'
+    : 'single';
+
+export const selectDraftOption = (
+  selectedKeys: readonly string[],
+  key: string,
+  mode: QuestionSelectionMode,
+): string[] => {
+  if (mode === 'single') return [key];
+  return selectedKeys.includes(key)
+    ? selectedKeys.filter((selectedKey) => selectedKey !== key)
+    : [...selectedKeys, key];
 };
