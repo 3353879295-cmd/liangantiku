@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { CERTIFICATES } from '../miniprogram/data/certificates';
 import {
+  buildRandomPracticeRoute,
   presentMockPracticeInfo,
   presentRandomPracticeSetup,
 } from '../miniprogram/presenters/practice-setup-presenter';
@@ -49,6 +50,61 @@ describe('random practice setup presenter', () => {
     ]);
     expect(view.countOptions.some(({ value }) => value === (50 as number))).toBe(false);
     expect(view.canStart).toBe(true);
+  });
+
+  it('uses an adaptive all option for an eight-question bank without an arbitrary route limit', () => {
+    const view = presentRandomPracticeSetup({
+      certificate: availableCertificate,
+      questions: questions.slice(0, 8),
+      limit: 10,
+      questionTypes: [],
+    });
+
+    expect(view.countOptions).toEqual([
+      { value: 'all', label: '全部 8 题', selected: true, disabled: false },
+      { value: 10, label: '10 题', selected: false, disabled: true },
+      { value: 20, label: '20 题', selected: false, disabled: true },
+      { value: 30, label: '30 题', selected: false, disabled: true },
+    ]);
+    expect(view.selection).toBe('all');
+    expect(view.summaryText).toBe('抽取全部 8 题 · 全部题型');
+    expect(view.canStart).toBe(true);
+    expect(
+      buildRandomPracticeRoute({
+        occupation: '4-02-06-01',
+        level: 5,
+        selection: 'all',
+        questionTypes: [],
+      }),
+    ).toBe('/pages/practice/index?occupation=4-02-06-01&level=5&mode=random');
+  });
+
+  it('recomputes the adaptive count from the selected type filter', () => {
+    const view = presentRandomPracticeSetup({
+      certificate: availableCertificate,
+      questions,
+      limit: 10,
+      questionTypes: ['multiple'],
+    });
+
+    expect(view.availableQuestionCount).toBe(2);
+    expect(view.countOptions[0]).toEqual({
+      value: 'all',
+      label: '全部 2 题',
+      selected: true,
+      disabled: false,
+    });
+    expect(view.selection).toBe('all');
+    expect(view.summaryText).toBe('抽取全部 2 题 · 多选题');
+    expect(view.canStart).toBe(true);
+    expect(
+      buildRandomPracticeRoute({
+        occupation: '4-02-06-01',
+        level: 5,
+        selection: 'all',
+        questionTypes: ['multiple'],
+      }),
+    ).toBe('/pages/practice/index?occupation=4-02-06-01&level=5&mode=random&types=multiple');
   });
 
   it('counts selected whitelisted types and refuses a type absent from the current bank', () => {

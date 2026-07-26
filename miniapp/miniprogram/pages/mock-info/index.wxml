@@ -1,38 +1,47 @@
 <view class="page-shell page-shell--secondary mock-page">
-  <app-topbar title="模拟考试" subtitle="{{bankTitle}}" fallback-tab="home" />
+  <app-topbar
+    title="模拟考试"
+    subtitle="{{loading ? '正在读取当前题库' : bankTitle}}"
+    fallback-tab="home"
+  />
 
-  <view class="exam-card">
-    <view class="exam-card__eyebrow">本次试卷</view>
-    <view class="exam-card__count">{{loading ? '—' : questionCount}}</view>
-    <text class="exam-card__unit">题</text>
-    <text class="exam-card__meta">
-      {{loading ? '正在读取当前题库' : statusText}}
-    </text>
+  <view wx:if="{{loading}}" class="mock-loading matte-card">
+    <t-icon name="loading" size="36rpx" />
+    <text>正在准备考试说明</text>
   </view>
 
-  <view class="rule-heading">
-    <view class="rule-heading__title">答题规则</view>
-    <text class="rule-heading__note">{{questionCountText}}</text>
-  </view>
+  <block wx:else>
+    <view class="exam-card">
+      <view class="exam-card__eyebrow">本次试卷</view>
+      <view class="exam-card__count">{{questionCount}}</view>
+      <text class="exam-card__unit">题</text>
+      <text class="exam-card__meta">{{statusText}}</text>
+    </view>
 
-  <view class="rule-list matte-card">
-    <view wx:for="{{rules}}" wx:key="id" class="rule-row">
-      <view class="rule-row__icon"><t-icon name="check-circle" size="32rpx" /></view>
-      <view class="rule-row__copy">
-        <view class="rule-row__title">{{item.title}}</view>
-        <text class="rule-row__description">{{item.description}}</text>
+    <view class="rule-heading">
+      <view class="rule-heading__title">答题规则</view>
+      <text class="rule-heading__note">{{questionCountText}}</text>
+    </view>
+
+    <view class="rule-list matte-card">
+      <view wx:for="{{rules}}" wx:key="id" class="rule-row">
+        <view class="rule-row__icon"><t-icon name="check-circle" size="32rpx" /></view>
+        <view class="rule-row__copy">
+          <view class="rule-row__title">{{item.title}}</view>
+          <text class="rule-row__description">{{item.description}}</text>
+        </view>
       </view>
     </view>
-  </view>
 
-  <view class="exam-notice">
-    <t-icon name="info-circle" size="30rpx" />
-    <text>请确认完成作答后再交卷；未答题会按错题计入结果。</text>
-  </view>
+    <view class="exam-notice">
+      <t-icon name="info-circle" size="30rpx" />
+      <text>请确认完成作答后再交卷；未答题会按错题计入结果。</text>
+    </view>
 
-  <button
-    class="start-button"
-    disabled="{{loading || !canStart}}"
-    bindtap="onStart"
-  >{{canStart ? '开始考试' : '该等级题库待补充'}}</button>
+    <button
+      class="start-button"
+      disabled="{{!canStart}}"
+      bindtap="onStart"
+    >{{canStart ? '开始考试' : '该等级题库待补充'}}</button>
+  </block>
 </view>

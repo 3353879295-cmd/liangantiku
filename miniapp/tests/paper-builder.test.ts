@@ -75,6 +75,18 @@ describe('buildPaper', () => {
     expect(questions.map((item) => item.id)).toEqual(originalOrder);
   });
 
+  it('returns every real candidate once when the omitted random limit exceeds a small bank', () => {
+    const smallBank = Array.from({ length: 8 }, (_, index) =>
+      makeQuestion({ id: `SMALL-${index + 1}` }),
+    );
+
+    const paper = buildPaper(smallBank, { mode: 'random', random: () => 0.4 });
+
+    expect(paper).toHaveLength(8);
+    expect(new Set(paper.map(({ id }) => id)).size).toBe(8);
+    expect(paper.map(({ id }) => id).sort()).toEqual(smallBank.map(({ id }) => id).sort());
+  });
+
   it('filters selected question types before randomizing and clipping', () => {
     const paper = buildPaper(questions, {
       mode: 'random',

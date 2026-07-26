@@ -2,6 +2,16 @@
   padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
 }
 
+.setup-loading {
+  display: flex;
+  min-height: 180rpx;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+}
+
 .setup-hero,
 .setup-summary {
   display: flex;
@@ -96,14 +106,13 @@
   opacity: 0.5;
 }
 
-.count-option__value {
-  font-size: 42rpx;
-  font-weight: 700;
+.count-option--adaptive {
+  grid-column: 1 / -1;
 }
 
-.count-option__unit {
-  margin-left: 5rpx;
-  font-size: 21rpx;
+.count-option__label {
+  font-size: 31rpx;
+  font-weight: 700;
 }
 
 .count-option__note {

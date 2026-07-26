@@ -1,19 +1,22 @@
 import { CERTIFICATES } from '../../data/certificates';
 import {
+  buildRandomPracticeRoute,
   presentRandomPracticeSetup,
   RANDOM_QUESTION_LIMITS,
 } from '../../presenters/practice-setup-presenter';
 import type {
+  RandomCountSelection,
   RandomPracticeSetupViewModel,
-  RandomQuestionLimit,
 } from '../../presenters/practice-setup-presenter';
 import { appServices } from '../../services/app-services';
 import { QUESTION_TYPES } from '../../types/domain';
 import type { CertificateKey, Question, QuestionType } from '../../types/domain';
 
 const questionTypeWhitelist = new Set<string>(QUESTION_TYPES);
-const parseRandomQuestionLimit = (value: unknown): RandomQuestionLimit | null =>
-  RANDOM_QUESTION_LIMITS.find((limit) => limit === Number(value)) ?? null;
+const parseRandomCountSelection = (value: unknown): RandomCountSelection | null => {
+  if (value === 'all') return 'all';
+  return RANDOM_QUESTION_LIMITS.find((limit) => limit === Number(value)) ?? null;
+};
 
 const getCertificate = (key: CertificateKey) =>
   CERTIFICATES.find((certificate) => certificate.key === key) ?? CERTIFICATES[0];
@@ -33,7 +36,6 @@ Page({
     loading: true,
     certificate: defaultCertificate,
     questions: [] as Array<Pick<Question, 'type'>>,
-    limit: 10,
     selectedQuestionTypes: [] as QuestionType[],
     ...initialView,
   },
@@ -52,7 +54,6 @@ Page({
       certificate,
       questions: [] as Array<Pick<Question, 'type'>>,
       selectedQuestionTypes: [] as QuestionType[],
-      limit: 10,
       ...presentRandomPracticeSetup({
         certificate,
         questions: [],
@@ -74,29 +75,28 @@ Page({
 
   applySetup(
     questions: Array<Pick<Question, 'type'>>,
-    limit: RandomQuestionLimit,
+    selection: RandomCountSelection,
     questionTypes: QuestionType[],
   ) {
     const view: RandomPracticeSetupViewModel = presentRandomPracticeSetup({
       certificate: this.data.certificate,
       questions,
-      limit,
+      selection,
       questionTypes,
     });
     this.setData({
       questions,
-      limit,
       selectedQuestionTypes: questionTypes,
       ...view,
     });
   },
 
   onCountTap(event: WechatMiniprogram.TouchEvent) {
-    const limit = parseRandomQuestionLimit(event.currentTarget.dataset['limit']);
-    if (!limit) return;
-    const option = this.data.countOptions.find((item) => item.value === limit);
+    const selection = parseRandomCountSelection(event.currentTarget.dataset['selection']);
+    if (!selection) return;
+    const option = this.data.countOptions.find((item) => item.value === selection);
     if (!option || option.disabled) return;
-    this.applySetup(this.data.questions, limit, this.data.selectedQuestionTypes);
+    this.applySetup(this.data.questions, selection, this.data.selectedQuestionTypes);
   },
 
   onTypeTap(event: WechatMiniprogram.TouchEvent) {
@@ -104,11 +104,9 @@ Page({
     if (value !== 'all' && !questionTypeWhitelist.has(value)) return;
     const option = this.data.typeOptions.find((item) => item.value === value);
     if (!option || option.disabled) return;
-    const limit = parseRandomQuestionLimit(this.data.limit);
-    if (!limit) return;
 
     if (value === 'all') {
-      this.applySetup(this.data.questions, limit, []);
+      this.applySetup(this.data.questions, this.data.selection, []);
       return;
     }
 
@@ -116,7 +114,7 @@ Page({
     const selectedQuestionTypes = this.data.selectedQuestionTypes.includes(questionType)
       ? this.data.selectedQuestionTypes.filter((item) => item !== questionType)
       : [...this.data.selectedQuestionTypes, questionType];
-    this.applySetup(this.data.questions, limit, selectedQuestionTypes);
+    this.applySetup(this.data.questions, this.data.selection, selectedQuestionTypes);
   },
 
   onStart() {
@@ -124,18 +122,13 @@ Page({
       void wx.showToast({ title: this.data.statusText, icon: 'none' });
       return;
     }
-    const { certificate, selectedQuestionTypes } = this.data;
-    const limit = parseRandomQuestionLimit(this.data.limit);
-    if (!limit) return;
-    const query = [
-      `occupation=${certificate.occupation}`,
-      `level=${certificate.level}`,
-      'mode=random',
-      `limit=${limit}`,
-    ];
-    if (selectedQuestionTypes.length) {
-      query.push(`types=${encodeURIComponent(selectedQuestionTypes.join(','))}`);
-    }
-    void wx.navigateTo({ url: `/pages/practice/index?${query.join('&')}` });
+    const { certificate, selectedQuestionTypes, selection } = this.data;
+    const url = buildRandomPracticeRoute({
+      occupation: certificate.occupation,
+      level: certificate.level,
+      selection,
+      questionTypes: selectedQuestionTypes,
+    });
+    if (url) void wx.navigateTo({ url });
   },
 });

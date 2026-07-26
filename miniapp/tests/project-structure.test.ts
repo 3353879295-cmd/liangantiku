@@ -122,6 +122,33 @@ describe('WeChat mini program structure', () => {
     }
   });
 
+  it('guards real practice setup counts and actions until repository loading finishes', () => {
+    for (const page of ['random-settings', 'mock-info']) {
+      const markup = readFileSync(join(miniappRoot, 'pages', page, 'index.wxml'), 'utf8');
+      const loadingGuardIndex = markup.indexOf('wx:if="{{loading}}"');
+      const loadedContentIndex = markup.indexOf('<block wx:else>');
+
+      expect(loadingGuardIndex, `${page} needs a neutral loading branch`).toBeGreaterThan(-1);
+      expect(loadedContentIndex, `${page} needs a loaded-content branch`).toBeGreaterThan(
+        loadingGuardIndex,
+      );
+      expect(markup).toContain('subtitle="{{loading ? \'正在读取当前题库\' : bankTitle}}"');
+    }
+
+    const randomMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'random-settings', 'index.wxml'),
+      'utf8',
+    );
+    const randomLoadedContent = randomMarkup.indexOf('<block wx:else>');
+    expect(randomMarkup.indexOf('{{bankQuestionCount}}')).toBeGreaterThan(randomLoadedContent);
+    expect(randomMarkup.indexOf('{{summaryText}}')).toBeGreaterThan(randomLoadedContent);
+
+    const mockMarkup = readFileSync(join(miniappRoot, 'pages', 'mock-info', 'index.wxml'), 'utf8');
+    const mockLoadedContent = mockMarkup.indexOf('<block wx:else>');
+    expect(mockMarkup.indexOf('{{questionCount}}')).toBeGreaterThan(mockLoadedContent);
+    expect(mockMarkup.indexOf('{{questionCountText}}')).toBeGreaterThan(mockLoadedContent);
+  });
+
   it('clears a selected saved-question chapter when occupation or level changes', () => {
     const questionListPage = readFileSync(
       join(miniappRoot, 'pages', 'question-list', 'index.ts'),

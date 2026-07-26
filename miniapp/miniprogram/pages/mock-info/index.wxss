@@ -2,6 +2,16 @@
   padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
 }
 
+.mock-loading {
+  display: flex;
+  min-height: 180rpx;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  color: var(--color-text-secondary);
+  font-size: 23rpx;
+}
+
 .exam-card {
   padding: 42rpx 34rpx;
   border-radius: var(--radius-xl);
