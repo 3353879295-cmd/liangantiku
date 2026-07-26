@@ -24,7 +24,7 @@ export interface DailyTotal {
   durationMs: number;
 }
 
-export interface PersistedPracticeSession {
+export interface LegacyPersistedPracticeSession {
   id: string;
   mode: PracticeMode;
   questionIds: string[];
@@ -35,10 +35,11 @@ export interface PersistedPracticeSession {
   updatedAt: number;
   submittedAt?: number;
   progressRecorded?: boolean;
-  answerRevealMode?: AnswerRevealMode;
 }
 
-export type PersistedPracticeSessionV2 = Omit<PersistedPracticeSession, 'answerRevealMode'>;
+export interface PersistedPracticeSession extends LegacyPersistedPracticeSession {
+  answerRevealMode: AnswerRevealMode;
+}
 
 export interface ProgressPreferencesV2 {
   selectedCertificateKey: CertificateKey;
@@ -57,7 +58,7 @@ export interface ProgressDataV1 {
   answers: AnswerHistoryRecord[];
   wrongQuestions: Record<string, WrongQuestionRecord>;
   favorites: Record<string, number>;
-  session: PersistedPracticeSessionV2 | null;
+  session: LegacyPersistedPracticeSession | null;
   dailyTotals: Record<string, DailyTotal>;
   recordedSessionIds?: string[];
   preferences: Pick<ProgressPreferences, 'selectedCertificateKey' | 'dailyGoal'>;
@@ -68,7 +69,7 @@ export interface ProgressDataV2 {
   answers: AnswerHistoryRecord[];
   wrongQuestions: Record<string, WrongQuestionRecord>;
   favorites: Record<string, number>;
-  session: PersistedPracticeSessionV2 | null;
+  session: LegacyPersistedPracticeSession | null;
   dailyTotals: Record<string, DailyTotal>;
   recordedSessionIds: string[];
   preferences: ProgressPreferencesV2;
@@ -182,7 +183,7 @@ const isVersionTwoPreferences = (value: unknown): value is ProgressPreferencesV2
 const isVersionThreePreferences = (value: unknown): value is ProgressPreferences =>
   isVersionTwoPreferences(value) && isRecord(value) && isAnswerRevealMode(value.answerRevealMode);
 
-const isVersionTwoPersistedSession = (value: unknown): value is PersistedPracticeSessionV2 => {
+const isLegacyPersistedSession = (value: unknown): value is LegacyPersistedPracticeSession => {
   if (!isRecord(value)) return false;
   if (!isNonBlankString(value.id) || !PRACTICE_MODES.has(value.mode as PracticeMode)) return false;
   if (
@@ -222,7 +223,7 @@ const isVersionTwoPersistedSession = (value: unknown): value is PersistedPractic
 
 const isPersistedSession = (value: unknown): value is PersistedPracticeSession => {
   const answerRevealMode = isRecord(value) ? value.answerRevealMode : undefined;
-  return isVersionTwoPersistedSession(value) && isAnswerRevealMode(answerRevealMode);
+  return isLegacyPersistedSession(value) && isAnswerRevealMode(answerRevealMode);
 };
 
 const hasValidLearningData = (
@@ -253,7 +254,7 @@ const hasValidLearningData = (
 export const isProgressDataV1 = (value: unknown): value is ProgressDataV1 => {
   if (!isRecord(value) || value.schemaVersion !== 1) return false;
   return (
-    hasValidLearningData(value, true, isVersionTwoPersistedSession) &&
+    hasValidLearningData(value, true, isLegacyPersistedSession) &&
     isVersionOnePreferences(value.preferences)
   );
 };
@@ -261,7 +262,7 @@ export const isProgressDataV1 = (value: unknown): value is ProgressDataV1 => {
 export const isProgressDataV2 = (value: unknown): value is ProgressDataV2 => {
   if (!isRecord(value) || value.schemaVersion !== 2) return false;
   return (
-    hasValidLearningData(value, false, isVersionTwoPersistedSession) &&
+    hasValidLearningData(value, false, isLegacyPersistedSession) &&
     isVersionTwoPreferences(value.preferences)
   );
 };

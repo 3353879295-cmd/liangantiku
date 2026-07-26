@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { ProgressService } from '../miniprogram/services/progress-service';
 import {
+  createPracticeSession,
+  serializePracticeSession,
+} from '../miniprogram/services/practice-session';
+import {
   RECOVERY_BACKUP_KEY,
   ProgressRepository,
   STORAGE_KEY,
@@ -9,6 +13,7 @@ import {
 import { createEmptyProgress } from '../miniprogram/storage/migrations';
 import type { StorageAdapter } from '../miniprogram/types/domain';
 import type { PersistedPracticeSession } from '../miniprogram/storage/migrations';
+import { makeQuestion } from './factories';
 
 class MemoryStorageAdapter implements StorageAdapter {
   private readonly values = new Map<string, unknown>();
@@ -184,6 +189,55 @@ describe('ProgressService', () => {
     service.saveSession(session);
 
     expect(new ProgressService(repository).restoreSession()).toEqual(session);
+  });
+
+  it('forces persisted mock sessions to deferred reveal at the service write boundary', () => {
+    const { repository, service } = createService();
+    const session: PersistedPracticeSession = {
+      id: 'session-mock',
+      mode: 'mock',
+      answerRevealMode: 'immediate',
+      questionIds: ['Q1'],
+      currentIndex: 0,
+      answers: {},
+      status: 'active',
+      startedAt: 1000,
+      updatedAt: 1200,
+    };
+
+    service.saveSession(session);
+
+    expect(new ProgressService(repository).restoreSession()?.answerRevealMode).toBe('deferred');
+  });
+
+  it('reloads a serialized current session without recovering or losing learning data', () => {
+    const storage = new MemoryStorageAdapter();
+    const repository = new ProgressRepository(storage);
+    const service = new ProgressService(repository);
+    service.recordAnswer({
+      questionId: 'Q1',
+      correct: true,
+      durationMs: 500,
+      at: '2026-07-25',
+    });
+    service.toggleFavorite('Q1', 1000);
+    const session = createPracticeSession([makeQuestion({ id: 'Q1' })], {
+      mode: 'mock',
+      now: 1200,
+    });
+    service.saveSession(serializePracticeSession(session));
+
+    const reloaded = new ProgressService(repository);
+
+    expect(reloaded.consumeRecoveryNotice()).toBeNull();
+    expect(reloaded.getDashboard('2026-07-25').answered).toBe(1);
+    expect(reloaded.isFavorite('Q1')).toBe(true);
+    expect(reloaded.restoreSession()).toMatchObject({
+      id: session.id,
+      status: 'active',
+      answerRevealMode: 'deferred',
+    });
+    expect(storage.get(RECOVERY_BACKUP_KEY)).toBeNull();
   });
 
   it('persists profile and study preference updates across service instances', () => {

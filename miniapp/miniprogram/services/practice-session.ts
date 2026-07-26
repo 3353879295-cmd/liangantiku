@@ -1,6 +1,6 @@
 import { gradeQuestion } from './grading';
 import type { PersistedPracticeSession } from '../storage/migrations';
-import type { GradeResult, PracticeMode, Question } from '../types/domain';
+import type { AnswerRevealMode, GradeResult, PracticeMode, Question } from '../types/domain';
 
 export type SessionStatus = 'active' | 'submitted';
 export type AnswerSheetStatus = 'unanswered' | 'answered' | 'correct' | 'wrong';
@@ -22,6 +22,7 @@ export interface PracticeReport {
 export interface PracticeSession {
   id: string;
   mode: PracticeMode;
+  answerRevealMode: AnswerRevealMode;
   questions: Question[];
   questionIds: string[];
   currentIndex: number;
@@ -37,9 +38,15 @@ export interface PracticeSession {
 
 export interface CreateSessionOptions {
   mode: PracticeMode;
+  answerRevealMode?: AnswerRevealMode;
   now: number;
   id?: string;
 }
+
+const resolveAnswerRevealMode = (
+  mode: PracticeMode,
+  requestedMode?: AnswerRevealMode,
+): AnswerRevealMode => (mode === 'mock' ? 'deferred' : (requestedMode ?? 'immediate'));
 
 const requireActive = (session: PracticeSession): void => {
   if (session.status === 'submitted') {
@@ -63,6 +70,7 @@ export const createPracticeSession = (
   return {
     id: options.id ?? `session-${options.now}-${firstQuestion.id}`,
     mode: options.mode,
+    answerRevealMode: resolveAnswerRevealMode(options.mode, options.answerRevealMode),
     questions: [...questions],
     questionIds: questions.map((question) => question.id),
     currentIndex: 0,
@@ -176,6 +184,7 @@ export const serializePracticeSession = (session: PracticeSession): PersistedPra
   const persisted: PersistedPracticeSession = {
     id: session.id,
     mode: session.mode,
+    answerRevealMode: resolveAnswerRevealMode(session.mode, session.answerRevealMode),
     questionIds: [...session.questionIds],
     currentIndex: session.currentIndex,
     answers: Object.fromEntries(
@@ -226,6 +235,7 @@ export const rehydratePracticeSession = (
   const base: PracticeSession = {
     id: persisted.id,
     mode: persisted.mode,
+    answerRevealMode: resolveAnswerRevealMode(persisted.mode, persisted.answerRevealMode),
     questions: orderedQuestions,
     questionIds: [...persisted.questionIds],
     currentIndex: persisted.currentIndex,

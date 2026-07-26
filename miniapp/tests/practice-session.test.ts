@@ -15,6 +15,42 @@ import { presentQuestionOption } from '../miniprogram/presenters/question-option
 import { makeQuestion } from './factories';
 
 describe('practice session', () => {
+  it('defaults current non-mock sessions to immediate reveal', () => {
+    const session = createPracticeSession([makeQuestion()], {
+      mode: 'sequential',
+      now: 1000,
+    });
+
+    expect(session.answerRevealMode).toBe('immediate');
+    expect(serializePracticeSession(session).answerRevealMode).toBe('immediate');
+  });
+
+  it('forces mock sessions to deferred reveal even when immediate is requested', () => {
+    const question = makeQuestion();
+    const session = createPracticeSession([question], {
+      mode: 'mock',
+      now: 1000,
+      answerRevealMode: 'immediate',
+    });
+    const persisted = serializePracticeSession(session);
+    const restored = rehydratePracticeSession(persisted, [question]);
+
+    expect(session.answerRevealMode).toBe('deferred');
+    expect(persisted.answerRevealMode).toBe('deferred');
+    expect(restored.answerRevealMode).toBe('deferred');
+  });
+
+  it('keeps a requested deferred reveal mode for current non-mock sessions', () => {
+    const session = createPracticeSession([makeQuestion()], {
+      mode: 'random',
+      now: 1000,
+      answerRevealMode: 'deferred',
+    });
+
+    expect(session.answerRevealMode).toBe('deferred');
+    expect(serializePracticeSession(session).answerRevealMode).toBe('deferred');
+  });
+
   it('shows immediate feedback in normal practice', () => {
     const question = makeQuestion({ id: 'Q1' });
     const questions = [question, makeQuestion({ id: 'Q2' })];
@@ -198,6 +234,7 @@ describe('practice session', () => {
       questionIds: ['Q1'],
       currentIndex: 0,
       answers: {},
+      answerRevealMode: 'immediate',
     });
     expect(prunePersistedPracticeSession(persisted, [])).toBeNull();
   });

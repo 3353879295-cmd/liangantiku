@@ -277,7 +277,9 @@ export class ProgressService {
   }
 
   saveSession(session: PersistedPracticeSession | null): void {
-    this.data = { ...this.data, session };
+    const finalizedSession: PersistedPracticeSession | null =
+      session?.mode === 'mock' ? { ...session, answerRevealMode: 'deferred' } : session;
+    this.data = { ...this.data, session: finalizedSession };
     this.persist();
   }
 
