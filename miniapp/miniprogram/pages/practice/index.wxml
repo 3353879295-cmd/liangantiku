@@ -1,4 +1,5 @@
 <view class="practice-page {{themeClass}}">
+  <app-topbar title="答题练习" subtitle="{{modeLabel}}" fallback-tab="home" />
   <view wx:if="{{!loading && question}}">
     <view class="practice-topbar">
       <view>

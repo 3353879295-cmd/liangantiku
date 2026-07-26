@@ -13,7 +13,7 @@
     "useCompilerPlugins": ["typescript"],
     "compileWorklet": false,
     "uglifyFileName": false,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "packNpmRelationList": [
       {
         "packageJsonPath": "./package.json",
@@ -35,7 +35,12 @@
   },
   "simulatorPluginLibVersion": {},
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "file",
+        "value": "miniprogram_npm/tdesign-miniprogram/.wechatide.ib.json"
+      }
+    ],
     "include": []
   },
   "editorSetting": {}

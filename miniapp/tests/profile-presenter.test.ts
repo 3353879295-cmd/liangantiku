@@ -123,4 +123,35 @@ describe('profile presenter', () => {
       ],
     });
   });
+
+  it('orders equal-metric chapter numbers numerically instead of lexicographically', () => {
+    const report = presentLearningReport({
+      dashboard: {
+        answered: 2,
+        correct: 0,
+        accuracy: 0,
+        durationMs: 1000,
+        streakDays: 1,
+        todayAnswered: 2,
+        dailyGoal: 20,
+      },
+      activity: [],
+      chapters: [
+        {
+          id: 'chapter-10',
+          numberText: '10',
+          title: '第十章',
+          progress: { completed: 1, attempts: 1, correctAttempts: 0, wrongQuestions: 1 },
+        },
+        {
+          id: 'chapter-2',
+          numberText: '2',
+          title: '第二章',
+          progress: { completed: 1, attempts: 1, correctAttempts: 0, wrongQuestions: 1 },
+        },
+      ],
+    });
+
+    expect(report.weakChapters.map(({ id }) => id)).toEqual(['chapter-2', 'chapter-10']);
+  });
 });

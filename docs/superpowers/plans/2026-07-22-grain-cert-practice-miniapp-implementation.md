@@ -146,7 +146,7 @@ Use this exact `package.json`:
 
 Set TypeScript to `target: ES2022`, `module: ESNext`, `moduleResolution: Bundler`, `strict: true`, `resolveJsonModule: true`, and include `miniprogram/**/*.ts` plus `tests/**/*.ts`. Configure ESLint flat config for TypeScript; configure Stylelint standard rules with `rpx` accepted; configure Prettier with single quotes, semicolons and width 100.
 
-Run: `cd miniapp; npm install`  
+Run: `cd miniapp; npm install`
 Expected: installation exits 0 and creates the lock file.
 
 - [ ] **Step 2: Write the failing catalog test**
@@ -168,7 +168,7 @@ describe('certificate catalog', () => {
 
 - [ ] **Step 3: Verify RED**
 
-Run: `cd miniapp; npm test -- tests/catalog.test.ts`  
+Run: `cd miniapp; npm test -- tests/catalog.test.ts`
 Expected: FAIL because `data/certificates.ts` does not exist.
 
 - [ ] **Step 4: Implement the domain and catalog**
@@ -207,7 +207,7 @@ Register all routes in `app.json`, enable required-component lazy loading and a 
 
 - [ ] **Step 5: Verify GREEN and commit**
 
-Run: `cd miniapp; npm test -- tests/catalog.test.ts; npm run typecheck`  
+Run: `cd miniapp; npm test -- tests/catalog.test.ts; npm run typecheck`
 Expected: 1 test passes and TypeScript exits 0.
 
 ```powershell
@@ -254,7 +254,7 @@ it('copies six verified shards and rejects unpublished records', () => {
 
 - [ ] **Step 2: Verify RED, then implement sync**
 
-Run: `cd miniapp; npm test -- tests/sync-question-bank.test.ts`  
+Run: `cd miniapp; npm test -- tests/sync-question-bank.test.ts`
 Expected: FAIL because the module does not exist.
 
 Implementation:
@@ -286,7 +286,7 @@ Only these six known files may be overwritten; never delete the target directory
 
 Create complete runtime fixtures and assert that `list({ occupation, level, module })` filters correctly, `getById` returns null when absent, and `getByIds` preserves requested ID order.
 
-Run: `cd miniapp; npm test -- tests/local-question-repository.test.ts`  
+Run: `cd miniapp; npm test -- tests/local-question-repository.test.ts`
 Expected: FAIL because the repository does not exist.
 
 - [ ] **Step 4: Implement repository and field adapter**
@@ -318,7 +318,7 @@ Expected: release gate has zero errors and all six target files contain at least
 
 - [ ] **Step 6: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/sync-question-bank.test.ts tests/local-question-repository.test.ts; npm run typecheck`  
+Run: `cd miniapp; npm test -- tests/sync-question-bank.test.ts tests/local-question-repository.test.ts; npm run typecheck`
 Expected: all tests pass.
 
 ```powershell
@@ -348,7 +348,7 @@ it.each([
 });
 ```
 
-Run: `cd miniapp; npm test -- tests/grading.test.ts`  
+Run: `cd miniapp; npm test -- tests/grading.test.ts`
 Expected: FAIL because `gradeQuestion` is missing.
 
 - [ ] **Step 2: Implement minimal grading and verify GREEN**
@@ -389,7 +389,7 @@ Also cover immediate normal-practice feedback, pre-submit mock edits, navigation
 
 - [ ] **Step 5: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/grading.test.ts tests/paper-builder.test.ts tests/practice-session.test.ts; npm run typecheck`  
+Run: `cd miniapp; npm test -- tests/grading.test.ts tests/paper-builder.test.ts tests/practice-session.test.ts; npm run typecheck`
 Expected: all tests pass.
 
 ```powershell
@@ -412,7 +412,7 @@ git commit -m "feat: add tested practice engine"
 
 Define schema v1 with answers, wrong questions, favorites, sessions, daily totals and preferences. Test null initialization, a v1 round trip, future-version rejection and damaged-value recovery with a diagnostic flag.
 
-Run: `cd miniapp; npm test -- tests/migrations.test.ts`  
+Run: `cd miniapp; npm test -- tests/migrations.test.ts`
 Expected: FAIL because migrations are missing.
 
 - [ ] **Step 2: Implement the storage boundary**
@@ -450,7 +450,7 @@ Use injected ISO local dates so aggregation is timezone-stable. Preserve wrong h
 
 - [ ] **Step 5: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/migrations.test.ts tests/progress-service.test.ts; npm run typecheck`  
+Run: `cd miniapp; npm test -- tests/migrations.test.ts tests/progress-service.test.ts; npm run typecheck`
 Expected: all tests pass.
 
 ```powershell
@@ -505,7 +505,7 @@ Use TDesign where it reduces boilerplate. Do not add gradients, glass effects, e
 
 - [ ] **Step 3: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/presenters.test.ts; npm run typecheck; npm run lint`  
+Run: `cd miniapp; npm test -- tests/presenters.test.ts; npm run typecheck; npm run lint`
 Expected: tests and checks pass.
 
 ```powershell
@@ -546,7 +546,7 @@ Provide certificate switching, 章节/顺序/随机/模拟 mode cards, module ro
 
 - [ ] **Step 4: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/presenters.test.ts; npm run verify`  
+Run: `cd miniapp; npm test -- tests/presenters.test.ts; npm run verify`
 Expected: all checks pass.
 
 ```powershell
@@ -593,7 +593,7 @@ Render score, accuracy, duration, correct/wrong counts, weak modules, “查看�
 
 - [ ] **Step 5: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/practice-session.test.ts tests/presenters.test.ts tests/progress-service.test.ts; npm run verify`  
+Run: `cd miniapp; npm test -- tests/practice-session.test.ts tests/presenters.test.ts tests/progress-service.test.ts; npm run verify`
 Expected: all checks pass.
 
 ```powershell
@@ -627,7 +627,7 @@ Render cumulative questions, accuracy, duration, streak, seven-day activity, cer
 
 - [ ] **Step 4: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/presenters.test.ts tests/progress-service.test.ts; npm run verify`  
+Run: `cd miniapp; npm test -- tests/presenters.test.ts tests/progress-service.test.ts; npm run verify`
 Expected: all checks pass.
 
 ```powershell
@@ -677,7 +677,7 @@ Group cards by 保管/质检 with line icons and text. Detail renders preparatio
 
 - [ ] **Step 4: Verify and commit**
 
-Run: `cd miniapp; npm test -- tests/practical-skills.test.ts; npm run verify`  
+Run: `cd miniapp; npm test -- tests/practical-skills.test.ts; npm run verify`
 Expected: 12 complete records and all checks pass.
 
 ```powershell

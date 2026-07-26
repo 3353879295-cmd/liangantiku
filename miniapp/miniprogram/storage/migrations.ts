@@ -248,7 +248,11 @@ export const migrateProgress = (value: unknown): MigrationResult => {
 
   if (isRecord(value) && typeof value.schemaVersion === 'number') {
     if (value.schemaVersion > CURRENT_SCHEMA_VERSION) {
-      throw new Error('learning data uses a newer schema version');
+      return {
+        data: createEmptyProgress(),
+        recovered: true,
+        reason: `unsupported learning data schema version ${value.schemaVersion}`,
+      };
     }
   }
 

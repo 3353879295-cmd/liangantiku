@@ -7,6 +7,24 @@ import { PRACTICAL_SKILLS, getPracticalSkill } from '../miniprogram/data/practic
 import { QUESTION_RECORDS } from '../miniprogram/data/question-bank';
 
 const miniprogramRoot = resolve(import.meta.dirname, '..', 'miniprogram');
+const sourceCatalog = new Map<
+  string,
+  {
+    id: string;
+    is_active: boolean;
+    usage: 'knowledge_basis' | 'public_sample' | 'bibliography_only';
+  }
+>(
+  (
+    JSON.parse(
+      readFileSync(resolve(miniprogramRoot, '..', '..', 'data', 'sources.json'), 'utf8'),
+    ) as Array<{
+      id: string;
+      is_active: boolean;
+      usage: 'knowledge_basis' | 'public_sample' | 'bibliography_only';
+    }>
+  ).map((source) => [source.id, source]),
+);
 
 describe('practical skill catalog', () => {
   it('contains twelve complete and uniquely addressable guides', () => {
@@ -64,6 +82,68 @@ describe('practical skill catalog', () => {
         Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
       );
     }
+  });
+
+  it('locks each guide ID to its intended semantic icon', () => {
+    expect(
+      Object.fromEntries(PRACTICAL_SKILLS.map(({ id, iconAsset }) => [id, iconAsset])),
+    ).toEqual({
+      'grain-condition-rounds': '/assets/practical/warehouse.png',
+      'warehouse-entry-check': '/assets/practical/warehouse.png',
+      'mechanical-ventilation': '/assets/practical/warehouse.png',
+      'fumigation-safety': '/assets/practical/grain-pest.png',
+      'stored-pest-check': '/assets/practical/grain-pest.png',
+      'abnormal-heating-response': '/assets/practical/thermometer.png',
+      sampling: '/assets/practical/sampler.png',
+      'sample-division': '/assets/practical/sampler.png',
+      'moisture-test': '/assets/practical/moisture-test.png',
+      'impurity-test': '/assets/practical/sampler.png',
+      'test-weight': '/assets/practical/sampler.png',
+      'laboratory-safety': '/assets/practical/moisture-test.png',
+    });
+  });
+
+  it('uses only active knowledge-basis sources as current practical guidance', () => {
+    for (const skill of PRACTICAL_SKILLS) {
+      for (const sourceId of skill.sourceIds) {
+        const source = sourceCatalog.get(sourceId);
+        expect(source, `${skill.id} references missing current source ${sourceId}`).toBeDefined();
+        expect(
+          source && { is_active: source.is_active, usage: source.usage },
+          `${skill.id} treats ${sourceId} as current guidance`,
+        ).toEqual({ is_active: true, usage: 'knowledge_basis' });
+      }
+
+      const nonCurrentSourceIds = skill.nonCurrentSourceIds ?? [];
+      for (const sourceId of nonCurrentSourceIds) {
+        const source = sourceCatalog.get(sourceId);
+        expect(
+          source,
+          `${skill.id} references missing non-current source ${sourceId}`,
+        ).toBeDefined();
+        expect(
+          source?.is_active === false || source?.usage !== 'knowledge_basis',
+          `${skill.id} mislabels current knowledge source ${sourceId} as non-current`,
+        ).toBe(true);
+      }
+    }
+
+    expect(
+      Object.fromEntries(
+        PRACTICAL_SKILLS.flatMap((skill) => {
+          const nonCurrentSourceIds = skill.nonCurrentSourceIds ?? [];
+          return nonCurrentSourceIds.length ? [[skill.id, nonCurrentSourceIds]] : [];
+        }),
+      ),
+    ).toEqual({
+      'grain-condition-rounds': ['SRC-0004'],
+      'mechanical-ventilation': ['SRC-0004'],
+      'stored-pest-check': ['SRC-0004'],
+      'abnormal-heating-response': ['SRC-0004'],
+      'moisture-test': ['SRC-0003'],
+      'impurity-test': ['SRC-0003'],
+      'test-weight': ['SRC-0003'],
+    });
   });
 
   it('links every skill only to published questions for the same occupation', () => {

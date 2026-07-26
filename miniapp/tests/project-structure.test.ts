@@ -110,6 +110,18 @@ const readPngSize = (path: string) => {
   };
 };
 
+const readLossyWebpSize = (path: string) => {
+  const bytes = readFileSync(path);
+  expect(bytes.subarray(0, 4).toString('ascii')).toBe('RIFF');
+  expect(bytes.subarray(8, 12).toString('ascii')).toBe('WEBP');
+  expect(bytes.subarray(12, 16).toString('ascii')).toBe('VP8 ');
+  expect(bytes.subarray(23, 26)).toEqual(Buffer.from([0x9d, 0x01, 0x2a]));
+  return {
+    width: bytes.readUInt16LE(26) & 0x3fff,
+    height: bytes.readUInt16LE(28) & 0x3fff,
+  };
+};
+
 describe('WeChat mini program structure', () => {
   it('maps npm dependencies into the configured miniprogram root', () => {
     const project = readJson<ProjectConfig>(join(projectRoot, 'project.config.json'));
@@ -343,6 +355,7 @@ describe('WeChat mini program structure', () => {
       'utf8',
     );
     expect(practiceMarkup).toContain('class="practice-page {{themeClass}}"');
+    expect(practiceMarkup).toContain('<app-topbar');
     expect(practiceMarkup).toContain('<theme-toggle');
     expect(practiceMarkup).toContain('<favorite-button');
     expect(practiceMarkup).toContain('<app-toast');
@@ -515,10 +528,11 @@ describe('WeChat mini program structure', () => {
       'moisture-test.png',
     ];
 
-    const heroPath = join(practicalAssetRoot, 'rice-ear-hero.png');
+    const heroPath = join(practicalAssetRoot, 'rice-ear-hero.webp');
     expect(existsSync(heroPath)).toBe(true);
-    expect(readFileSync(heroPath).byteLength).toBeGreaterThan(50_000);
-    const heroSize = readPngSize(heroPath);
+    expect(readFileSync(heroPath).byteLength).toBeGreaterThan(40_000);
+    expect(readFileSync(heroPath).byteLength).toBeLessThan(100_000);
+    const heroSize = readLossyWebpSize(heroPath);
     expect(heroSize.width).toBeGreaterThan(heroSize.height);
     expect(heroSize.width / heroSize.height).toBeGreaterThanOrEqual(1.5);
 
@@ -544,8 +558,10 @@ describe('WeChat mini program structure', () => {
       'utf8',
     );
     expect(detailMarkup).toContain('<app-topbar');
-    expect(detailMarkup).toContain('/assets/practical/rice-ear-hero.png');
+    expect(detailMarkup).toContain('/assets/practical/rice-ear-hero.webp');
     expect(detailMarkup).not.toMatch(/https?:\/\//);
+    expect(detailMarkup).toContain('现行知识依据');
+    expect(detailMarkup).toContain('历史/书目参考（非现行依据）');
 
     const sectionPositions = [
       '作业目的',

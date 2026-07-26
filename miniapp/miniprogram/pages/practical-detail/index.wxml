@@ -9,7 +9,7 @@
     <view class="detail-hero">
       <image
         class="detail-hero__image"
-        src="/assets/practical/rice-ear-hero.png"
+        src="/assets/practical/rice-ear-hero.webp"
         mode="aspectFill"
         aria-label="成熟稻穗近景"
       />
@@ -94,9 +94,15 @@
     </view>
 
     <view class="source-card">
-      <view class="source-card__label">参考依据</view>
+      <view class="source-card__label">现行知识依据</view>
       <text class="source-card__body">{{skill.standardReference}}</text>
-      <text class="source-card__ids">来源编号：{{sourceText}}</text>
+      <text class="source-card__ids">现行来源编号：{{sourceText}}</text>
+    </view>
+
+    <view wx:if="{{skill.nonCurrentReference}}" class="source-card source-card--historical">
+      <view class="source-card__label">历史/书目参考（非现行依据）</view>
+      <text class="source-card__body">{{skill.nonCurrentReference}}</text>
+      <text class="source-card__ids">参考来源编号：{{nonCurrentSourceText}}</text>
     </view>
 
     <view class="detail-disclaimer">

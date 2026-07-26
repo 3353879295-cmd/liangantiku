@@ -33,6 +33,15 @@ interface LearningReportInput {
   chapters: readonly ChapterPerformanceInput[];
 }
 
+const compareChapterNumbers = (left: string, right: string): number => {
+  const leftNumber = Number(left);
+  const rightNumber = Number(right);
+  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber) && leftNumber !== rightNumber) {
+    return leftNumber - rightNumber;
+  }
+  return left.localeCompare(right);
+};
+
 export interface LearningReportViewModel {
   hasLearningData: boolean;
   answeredText: string;
@@ -82,7 +91,7 @@ export const presentLearningReport = (input: LearningReportInput): LearningRepor
         left.accuracy - right.accuracy ||
         right.progress.wrongQuestions - left.progress.wrongQuestions ||
         right.progress.attempts - left.progress.attempts ||
-        left.numberText.localeCompare(right.numberText),
+        compareChapterNumbers(left.numberText, right.numberText),
     )
     .slice(0, 3)
     .map(({ id, numberText, title, progress, accuracy }) => ({

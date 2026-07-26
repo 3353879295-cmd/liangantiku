@@ -9,6 +9,7 @@ Page({
     skill: null as PracticalSkill | null,
     roleText: '',
     sourceText: '',
+    nonCurrentSourceText: '',
     relatedQuestions: [] as Question[],
     relatedReady: false,
     relatedLoadError: false,
@@ -22,6 +23,7 @@ Page({
       skill,
       roleText: skill.occupation === '4-02-06-01' ? '储粮保管' : '粮油质检',
       sourceText: skill.sourceIds.join(' · '),
+      nonCurrentSourceText: skill.nonCurrentSourceIds?.join(' · ') ?? '',
     });
     await this.loadRelatedQuestions();
   },

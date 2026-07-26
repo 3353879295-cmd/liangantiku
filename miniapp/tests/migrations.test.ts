@@ -87,10 +87,14 @@ describe('progress migrations', () => {
     });
   });
 
-  it('rejects a future schema version', () => {
-    expect(() => migrateProgress({ ...createEmptyProgress(), schemaVersion: 3 })).toThrow(
-      /newer schema version/,
-    );
+  it('returns a safe recovery result for a future schema version', () => {
+    const result = migrateProgress({ ...createEmptyProgress(), schemaVersion: 3 });
+
+    expect(result).toEqual({
+      data: createEmptyProgress(),
+      recovered: true,
+      reason: 'unsupported learning data schema version 3',
+    });
   });
 
   it('recovers from damaged current-version data', () => {

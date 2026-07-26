@@ -5,7 +5,13 @@ from dataclasses import dataclass
 
 from grain_quiz.catalog import KnowledgeCatalog
 from grain_quiz.dedupe import find_duplicates
-from grain_quiz.models import Question, QuestionType, ReviewStatus, Source
+from grain_quiz.models import (
+    Question,
+    QuestionType,
+    ReviewStatus,
+    Source,
+    SourceUsage,
+)
 from grain_quiz.taxonomy import Taxonomy
 
 
@@ -153,6 +159,17 @@ def _validate_verified_question(
                     code="inactive_source",
                     question_id=question.id,
                     message=f"source {source_id} is inactive",
+                )
+            )
+        elif source.usage is not SourceUsage.KNOWLEDGE_BASIS:
+            errors.append(
+                ValidationIssue(
+                    code="invalid_source_usage",
+                    question_id=question.id,
+                    message=(
+                        f"source {source_id} has usage {source.usage.value}; "
+                        "verified questions require knowledge_basis"
+                    ),
                 )
             )
 

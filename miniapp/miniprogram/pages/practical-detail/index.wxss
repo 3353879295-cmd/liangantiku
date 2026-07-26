@@ -231,6 +231,12 @@
   margin-top: 42rpx;
 }
 
+.source-card--historical {
+  margin-top: 18rpx;
+  background: var(--color-surface-secondary);
+  box-shadow: none;
+}
+
 .source-card__label {
   margin-bottom: 12rpx;
   color: var(--color-text-secondary);

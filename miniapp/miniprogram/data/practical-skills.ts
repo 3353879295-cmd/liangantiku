@@ -19,6 +19,8 @@ export interface PracticalSkill {
   relatedQuestionIds: string[];
   sourceIds: string[];
   standardReference: string;
+  nonCurrentSourceIds?: string[];
+  nonCurrentReference?: string;
 }
 
 export const PRACTICAL_SKILLS: PracticalSkill[] = [
@@ -42,8 +44,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['进入限制区域前确认准入条件；发现缺氧、异味或结构风险时不得冒险进入。'],
     commonMistakes: ['只写“正常”而没有点位和数据', '把未经复核的迹象直接写成虫害或发热结论'],
     relatedQuestionIds: ['WH-L4-000001', 'WH-L3-000007'],
-    sourceIds: ['SRC-0001', 'SRC-0004', 'SRC-0008'],
-    standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）；政府储备粮食仓储管理办法',
+    sourceIds: ['SRC-0001', 'SRC-0008'],
+    standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）',
+    nonCurrentSourceIds: ['SRC-0004'],
+    nonCurrentReference: '政府储备粮食仓储管理办法（已失效，仅作历史/书目参考）',
   },
   {
     id: 'warehouse-entry-check',
@@ -89,8 +93,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['设备运转时不得拆卸防护装置或进入危险部位；电气异常由有资质人员处理。'],
     commonMistakes: ['未经方案确认直接启动', '只记开停时间，不记录运行异常和粮情变化'],
     relatedQuestionIds: ['WH-L4-000002', 'WH-L3-000008'],
-    sourceIds: ['SRC-0001', 'SRC-0004', 'SRC-0008'],
-    standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）；政府储备粮食仓储管理办法',
+    sourceIds: ['SRC-0001', 'SRC-0008'],
+    standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）',
+    nonCurrentSourceIds: ['SRC-0004'],
+    nonCurrentReference: '政府储备粮食仓储管理办法（已失效，仅作历史/书目参考）',
   },
   {
     id: 'fumigation-safety',
@@ -139,8 +145,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['使用筛具、攀登或进入仓内时同时遵守粉尘、机械和高处作业防护要求。'],
     commonMistakes: ['只检查一个显眼位置', '样品无仓号、点位和时间标识'],
     relatedQuestionIds: ['WH-L3-000002'],
-    sourceIds: ['SRC-0001', 'SRC-0004', 'SRC-0005'],
+    sourceIds: ['SRC-0001', 'SRC-0005'],
     standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）；粮食质量安全监管办法',
+    nonCurrentSourceIds: ['SRC-0004'],
+    nonCurrentReference: '政府储备粮食仓储管理办法（已失效，仅作历史/书目参考）',
   },
   {
     id: 'abnormal-heating-response',
@@ -162,8 +170,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['不得为寻找热源擅自钻粮、深挖粮堆或进入未经确认安全的区域。'],
     commonMistakes: ['单个异常读数未经复核就下结论', '只口头报告，不保留原始数据和点位信息'],
     relatedQuestionIds: ['WH-L3-000001', 'WH-L3-000003'],
-    sourceIds: ['SRC-0001', 'SRC-0004', 'SRC-0005'],
-    standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）；政府储备粮食仓储管理办法',
+    sourceIds: ['SRC-0001', 'SRC-0005'],
+    standardReference: '（粮油）仓储管理员国家职业技能标准（2019年版）',
+    nonCurrentSourceIds: ['SRC-0004'],
+    nonCurrentReference: '政府储备粮食仓储管理办法（已失效，仅作历史/书目参考）',
   },
   {
     id: 'sampling',
@@ -241,8 +251,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['涉及加热、研磨或电气设备时执行防烫、防尘和断电清洁要求。'],
     commonMistakes: ['样品敞口放置过久', '只抄最终结果，未保留称量或仪器原始数据'],
     relatedQuestionIds: ['QI-L4-000001', 'QI-L3-000008'],
-    sourceIds: ['SRC-0002', 'SRC-0003', 'SRC-0011'],
+    sourceIds: ['SRC-0002', 'SRC-0011'],
     standardReference: 'GB/T 5490-2010《粮油检验 一般规则》及样品对应的现行水分检验方法标准',
+    nonCurrentSourceIds: ['SRC-0003'],
+    nonCurrentReference: '现行粮油行业标准目录（仅作书目定位，不支撑具体步骤、参数或限值）',
   },
   {
     id: 'impurity-test',
@@ -268,8 +280,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['筛理和清扫时控制粉尘，不用手直接清理仍在运行的设备。'],
     commonMistakes: ['分类容器无标识导致组分混淆', '筛上、筛下物散失后仍继续计算'],
     relatedQuestionIds: ['QI-L3-000002', 'QI-L4-000001'],
-    sourceIds: ['SRC-0002', 'SRC-0003', 'SRC-0011'],
+    sourceIds: ['SRC-0002', 'SRC-0011'],
     standardReference: 'GB/T 5490-2010《粮油检验 一般规则》及样品对应的现行杂质检验方法标准',
+    nonCurrentSourceIds: ['SRC-0003'],
+    nonCurrentReference: '现行粮油行业标准目录（仅作书目定位，不支撑具体步骤、参数或限值）',
   },
   {
     id: 'test-weight',
@@ -292,8 +306,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     safetyNotes: ['搬放金属部件时防夹手、防跌落；清理前确认设备处于安全状态。'],
     commonMistakes: ['装样速度和方式前后不一致', '仪器未置稳或部件有残留样品就开始测定'],
     relatedQuestionIds: ['QI-L5-000003', 'QI-L4-000003'],
-    sourceIds: ['SRC-0002', 'SRC-0003', 'SRC-0011'],
+    sourceIds: ['SRC-0002', 'SRC-0011'],
     standardReference: 'GB/T 5490-2010《粮油检验 一般规则》及粮种对应的现行容重测定方法标准',
+    nonCurrentSourceIds: ['SRC-0003'],
+    nonCurrentReference: '现行粮油行业标准目录（仅作书目定位，不支撑具体步骤、参数或限值）',
   },
   {
     id: 'laboratory-safety',

@@ -247,6 +247,27 @@ describe('ProgressService', () => {
     expect(service.getPreferences()).toEqual(createEmptyProgress().preferences);
   });
 
+  it('backs up a future schema and starts with safe data instead of crashing', () => {
+    const storage = new MemoryStorageAdapter();
+    const futureData = {
+      ...createEmptyProgress(),
+      schemaVersion: 3,
+      futureOnlyField: { keep: 'verbatim' },
+    };
+    storage.set(STORAGE_KEY, futureData);
+
+    const service = new ProgressService(new ProgressRepository(storage, () => 5678));
+
+    expect(service.consumeRecoveryNotice()).toMatch(/备份/);
+    expect(storage.get(RECOVERY_BACKUP_KEY)).toEqual({
+      capturedAt: 5678,
+      reason: 'unsupported learning data schema version 3',
+      value: futureData,
+    });
+    expect(storage.get(STORAGE_KEY)).toEqual(createEmptyProgress());
+    expect(service.getPreferences()).toEqual(createEmptyProgress().preferences);
+  });
+
   it('persists a normal version-one migration without creating a recovery backup', () => {
     const storage = new MemoryStorageAdapter();
     storage.set(STORAGE_KEY, {

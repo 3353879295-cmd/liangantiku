@@ -1,6 +1,8 @@
 from datetime import date
 from pathlib import Path
 
+import pytest
+
 from grain_quiz.catalog import load_knowledge_catalog
 from grain_quiz.models import Question, Source
 from grain_quiz.taxonomy import load_taxonomy
@@ -81,6 +83,18 @@ def test_inactive_source_is_an_error():
 
     assert [(issue.code, issue.question_id) for issue in report.errors] == [
         ("inactive_source", question.id)
+    ]
+
+
+@pytest.mark.parametrize("usage", ["bibliography_only", "public_sample"])
+def test_verified_question_rejects_active_non_knowledge_source(usage: str):
+    question = Question.model_validate(valid_question_data())
+    source = Source.model_validate({**SOURCE, "usage": usage, "is_active": True})
+
+    report = validate_dataset([question], {source.id: source}, taxonomy(), catalog())
+
+    assert [(issue.code, issue.question_id) for issue in report.errors] == [
+        ("invalid_source_usage", question.id)
     ]
 
 

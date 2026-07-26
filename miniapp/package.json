@@ -7,8 +7,9 @@
     "lint": "eslint . && stylelint \"miniprogram/**/*.wxss\"",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check:package": "vitest run tests/main-package-budget.test.ts",
     "test": "vitest run",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:package && npm run test",
     "sync:questions": "node scripts/sync-question-bank.mjs"
   },
   "dependencies": {
