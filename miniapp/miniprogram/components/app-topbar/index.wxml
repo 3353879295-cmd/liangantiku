@@ -1,0 +1,15 @@
+<view class="app-topbar">
+  <button
+    wx:if="{{showBack}}"
+    class="app-topbar__back"
+    aria-label="返回"
+    hover-class="app-topbar__back--pressed"
+    bindtap="handleBack"
+  >
+    <t-icon name="chevron-left" size="40rpx" />
+  </button>
+  <view class="app-topbar__copy">
+    <text class="app-topbar__title">{{title}}</text>
+    <text wx:if="{{subtitle}}" class="app-topbar__subtitle">{{subtitle}}</text>
+  </view>
+</view>

@@ -2,6 +2,7 @@
   "navigationBarTitleText": "题库",
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
+    "app-topbar": "/components/app-topbar/index",
     "empty-state": "/components/empty-state/index"
   }
 }

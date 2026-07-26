@@ -133,11 +133,36 @@ describe('WeChat mini program structure', () => {
     assertUnitFiles(join(miniappRoot, 'custom-tab-bar', 'index'));
     assertComponentsResolve(join(miniappRoot, 'custom-tab-bar', 'index.json'));
 
-    for (const component of ['analysis-panel', 'empty-state', 'question-option', 'stat-card']) {
+    for (const component of [
+      'analysis-panel',
+      'app-topbar',
+      'empty-state',
+      'question-option',
+      'stat-card',
+    ]) {
       const componentPath = join(miniappRoot, 'components', component, 'index');
       assertUnitFiles(componentPath);
       assertComponentsResolve(`${componentPath}.json`);
     }
+  });
+
+  it('registers the shared topbar locally on every current secondary page', () => {
+    const secondaryPages = [
+      'library',
+      'practice',
+      'answer-sheet',
+      'report',
+      'question-list',
+      'practical-detail',
+    ];
+
+    for (const page of secondaryPages) {
+      const config = readJson<ComponentConfig>(join(miniappRoot, 'pages', page, 'index.json'));
+      expect(config.usingComponents?.['app-topbar']).toBe('/components/app-topbar/index');
+    }
+
+    const app = readJson<ComponentConfig>(join(miniappRoot, 'app.json'));
+    expect(app.usingComponents?.['app-topbar']).toBeUndefined();
   });
 
   it('ships six non-placeholder verified question shards', () => {

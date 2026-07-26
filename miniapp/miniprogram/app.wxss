@@ -6,6 +6,27 @@
   padding: 48rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 
+.page-shell--secondary {
+  padding-top: 24rpx;
+}
+
+.matte-card {
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24rpx;
+}
+
+.safe-bottom {
+  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+}
+
 .page-title {
   margin: 0;
   font-size: 52rpx;

@@ -11,9 +11,9 @@
     "pages/profile/index"
   ],
   "window": {
-    "backgroundColor": "#f5f5f7",
+    "backgroundColor": "#F4F6EE",
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#f5f5f7",
+    "navigationBarBackgroundColor": "#F4F6EE",
     "navigationBarTextStyle": "black"
   },
   "tabBar": {

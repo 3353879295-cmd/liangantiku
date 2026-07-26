@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "答题卡",
   "usingComponents": {
+    "app-topbar": "/components/app-topbar/index",
     "empty-state": "/components/empty-state/index"
   }
 }
