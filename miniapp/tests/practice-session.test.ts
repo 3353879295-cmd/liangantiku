@@ -25,7 +25,7 @@ describe('practice session', () => {
     expect(answered.currentIndex).toBe(0);
     expect(answered.feedback[question.id]).toMatchObject({ correct: true });
     expect(getAnswerSheet(answered)).toEqual([
-      { questionId: 'Q1', status: 'correct' },
+      { questionId: 'Q1', status: 'answered' },
       { questionId: 'Q2', status: 'unanswered' },
     ]);
   });
@@ -67,6 +67,7 @@ describe('practice session', () => {
       durationMs: 1500,
       wrongQuestionIds: [],
     });
+    expect(getAnswerSheet(submitted)).toEqual([{ questionId: question.id, status: 'correct' }]);
   });
 
   it('allows mock answers to change before submission', () => {

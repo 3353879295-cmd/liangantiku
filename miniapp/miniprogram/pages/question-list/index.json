@@ -3,6 +3,8 @@
   "usingComponents": {
     "t-icon": "tdesign-miniprogram/icon/icon",
     "app-topbar": "/components/app-topbar/index",
-    "empty-state": "/components/empty-state/index"
+    "analysis-panel": "/components/analysis-panel/index",
+    "empty-state": "/components/empty-state/index",
+    "theme-toggle": "/components/theme-toggle/index"
   }
 }

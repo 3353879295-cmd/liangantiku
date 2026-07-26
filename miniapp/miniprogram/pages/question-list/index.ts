@@ -1,4 +1,5 @@
 import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
+import { CERTIFICATES } from '../../data/certificates';
 import {
   findCatalogChapterLabel,
   findCatalogChapterTitle,
@@ -24,18 +25,24 @@ const emptyView = presentQuestionList({ kind: 'wrong', questions: [], ids: [] })
 Page({
   data: {
     loading: true,
+    loaded: false,
+    loadError: false,
     kind: 'wrong',
     ids: [] as string[],
     rawQuestions: [] as Question[],
     wrongRecords: [] as WrongQuestionRecord[],
+    selectedAnswers: {},
     view: emptyView,
     occupation: '',
     level: 0,
     chapterId: '',
+    preferenceKey: '',
+    certificateTitle: '',
     includeMastered: false,
     expandedId: '',
+    theme: 'light',
+    themeClass: '',
     levelFilters: [
-      { label: '全部等级', value: 0 },
       { label: '初级', value: 5 },
       { label: '中级', value: 4 },
       { label: '高级', value: 3 },
@@ -45,35 +52,89 @@ Page({
   async onLoad(options: Record<string, string | undefined>) {
     const kind = String(options['kind']) as QuestionListKind;
     if (!KINDS.has(kind)) {
-      this.setData({ loading: false });
+      this.setData({ loading: false, loaded: true, loadError: true });
       return;
     }
     void wx.setNavigationBarTitle({
       title: kind === 'wrong' ? '错题本' : kind === 'favorite' ? '我的收藏' : '本次错题',
     });
     this.setData({ kind });
+    this.syncTheme();
+    if (kind !== 'session') this.syncCertificateScope();
     await this.loadSource();
   },
 
+  onShow() {
+    this.syncTheme();
+    if (this.data.kind === 'session') return;
+    const scopeChanged = this.syncCertificateScope();
+    if (scopeChanged && this.data.loaded && !this.data.loadError) this.applyView();
+  },
+
+  syncTheme() {
+    const theme = appServices.theme.get();
+    this.setData({
+      theme,
+      themeClass: theme === 'night' ? 'theme-night' : '',
+    });
+  },
+
+  syncCertificateScope() {
+    const selectedKey = appServices.progress.getPreferences().selectedCertificateKey;
+    if (this.data.preferenceKey === selectedKey) return false;
+    const certificate = CERTIFICATES.find(({ key }) => key === selectedKey) ?? CERTIFICATES[0];
+    if (!certificate) return false;
+    this.setData({
+      occupation: certificate.occupation,
+      level: certificate.level,
+      chapterId: '',
+      preferenceKey: selectedKey,
+      certificateTitle: certificate.shortTitle,
+    });
+    return true;
+  },
+
   async loadSource() {
+    this.setData({ loading: true, loadError: false });
     const kind = this.data.kind;
     let ids: string[] = [];
     let wrongRecords: WrongQuestionRecord[] = [];
-    if (kind === 'wrong') {
-      wrongRecords = appServices.progress.listWrongQuestions(true);
-      ids = wrongRecords.map((record) => record.questionId);
-    } else if (kind === 'favorite') {
-      ids = appServices.progress.listFavoriteIds();
-    } else {
-      await restorePractice();
-      ids = [...(getActivePractice()?.report?.wrongQuestionIds ?? [])];
-      wrongRecords = appServices.progress
-        .listWrongQuestions(true)
-        .filter((record) => ids.includes(record.questionId));
+    let selectedAnswers: Record<string, string[]> = {};
+    try {
+      if (kind === 'wrong') {
+        wrongRecords = appServices.progress.listWrongQuestions(true);
+        ids = wrongRecords.map((record) => record.questionId);
+      } else if (kind === 'favorite') {
+        ids = appServices.progress.listFavoriteIds();
+      } else {
+        await restorePractice();
+        const session = getActivePractice();
+        ids = [...(session?.report?.wrongQuestionIds ?? [])];
+        selectedAnswers = Object.fromEntries(
+          ids.map((id) => [id, [...(session?.answers[id] ?? [])]]),
+        );
+        wrongRecords = appServices.progress
+          .listWrongQuestions(true)
+          .filter((record) => ids.includes(record.questionId));
+      }
+      const rawQuestions = await appServices.questions.getByIds(ids);
+      this.setData({
+        ids,
+        rawQuestions,
+        wrongRecords,
+        selectedAnswers,
+        loading: false,
+        loaded: true,
+        loadError: false,
+      });
+      this.applyView();
+    } catch {
+      this.setData({
+        loading: false,
+        loaded: true,
+        loadError: true,
+      });
     }
-    const rawQuestions = await appServices.questions.getByIds(ids);
-    this.setData({ ids, rawQuestions, wrongRecords, loading: false });
-    this.applyView();
   },
 
   applyView() {
@@ -89,6 +150,7 @@ Page({
         questions: this.data.rawQuestions,
         ids: this.data.ids,
         wrongRecords: this.data.wrongRecords,
+        selectedAnswers: this.data.selectedAnswers,
         filter,
         resolveChapterTitle: (chapterId) => findCatalogChapterTitle(KNOWLEDGE_CATALOG, chapterId),
         resolveChapterLabel: (chapterId) => findCatalogChapterLabel(KNOWLEDGE_CATALOG, chapterId),
@@ -131,5 +193,17 @@ Page({
     const mode = this.data.kind === 'favorite' ? 'favorite' : 'wrong';
     if (!startPracticeFromQuestions(questions, mode)) return;
     void wx.navigateTo({ url: '/pages/practice/index?resume=1' });
+  },
+
+  onReload() {
+    void this.loadSource();
+  },
+
+  onToggleTheme() {
+    const theme = appServices.theme.toggle();
+    this.setData({
+      theme,
+      themeClass: theme === 'night' ? 'theme-night' : '',
+    });
   },
 });

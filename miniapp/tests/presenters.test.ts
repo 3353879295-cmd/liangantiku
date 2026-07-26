@@ -405,12 +405,49 @@ describe('presentQuestionList', () => {
   });
 
   it('provides useful empty copy for each list kind', () => {
-    expect(presentQuestionList({ kind: 'wrong', questions: [], ids: [] }).emptyTitle).toBe(
-      '还没有错题',
-    );
-    expect(presentQuestionList({ kind: 'favorite', questions: [], ids: [] }).emptyTitle).toBe(
-      '还没有收藏',
-    );
+    expect(presentQuestionList({ kind: 'wrong', questions: [], ids: [] })).toMatchObject({
+      emptyTitle: '还没有错题',
+      emptyDescription: '答错的题会自动收录到这里。',
+    });
+    expect(presentQuestionList({ kind: 'favorite', questions: [], ids: [] })).toMatchObject({
+      emptyTitle: '还没有收藏',
+      emptyDescription: '在答题页点击星标即可收藏。',
+    });
+  });
+
+  it('presents the selected and expected answers independently for session analysis', () => {
+    const view = presentQuestionList({
+      kind: 'session',
+      questions: [questions[0]!],
+      ids: ['Q1'],
+      selectedAnswers: { Q1: ['C'] },
+    });
+
+    expect(view.items[0]).toMatchObject({
+      selectedText: 'C',
+      answerText: 'A',
+    });
+  });
+
+  it('keeps every session wrong answer visible even if it was previously marked mastered', () => {
+    const view = presentQuestionList({
+      kind: 'session',
+      questions: [questions[0]!],
+      ids: ['Q1'],
+      wrongRecords: [
+        {
+          questionId: 'Q1',
+          errorCount: 2,
+          firstWrongAt: '2026-07-20',
+          lastWrongAt: '2026-07-26',
+          mastered: true,
+          lastRetryCorrect: true,
+        },
+      ],
+      filter: { includeMastered: false },
+    });
+
+    expect(view.items.map((item) => item.id)).toEqual(['Q1']);
   });
 });
 

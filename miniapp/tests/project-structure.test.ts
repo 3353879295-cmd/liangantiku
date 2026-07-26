@@ -236,6 +236,49 @@ describe('WeChat mini program structure', () => {
     expect(favoriteMarkup.match(/<view\s+class="favorite-button__ripple /g)).toHaveLength(1);
   });
 
+  it('wires the shared review pages to the persistent theme controls and topbar', () => {
+    for (const page of ['answer-sheet', 'report', 'question-list']) {
+      const config = readJson<ComponentConfig>(join(miniappRoot, 'pages', page, 'index.json'));
+      expect(config.usingComponents).toMatchObject({
+        'app-topbar': '/components/app-topbar/index',
+        'theme-toggle': '/components/theme-toggle/index',
+      });
+
+      const markup = readFileSync(join(miniappRoot, 'pages', page, 'index.wxml'), 'utf8');
+      expect(markup, `${page} needs a themed root`).toContain('{{themeClass}}');
+      expect(markup, `${page} needs the shared topbar`).toContain('<app-topbar');
+      expect(markup, `${page} needs the theme toggle`).toContain('<theme-toggle');
+
+      const source = readFileSync(join(miniappRoot, 'pages', page, 'index.ts'), 'utf8');
+      expect(source, `${page} must use the persistent theme service`).toContain(
+        'appServices.theme',
+      );
+      expect(source).not.toContain('wx.getStorageSync');
+      expect(source).not.toContain('wx.setStorageSync');
+    }
+  });
+
+  it('keeps analysis details in the required reading order with a real correction entry', () => {
+    const analysisMarkup = readFileSync(
+      join(miniappRoot, 'components', 'analysis-panel', 'index.wxml'),
+      'utf8',
+    );
+    const labels = ['你的答案', '正确答案', '题目解析', '知识点', '易错原因', '标准依据'];
+
+    const positions = labels.map((label) => analysisMarkup.indexOf(label));
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    expect(analysisMarkup).toContain('open-type="feedback"');
+    expect(analysisMarkup).toContain('bindtap="handleCopyQuestionId"');
+
+    const practiceMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'practice', 'index.wxml'),
+      'utf8',
+    );
+    expect(practiceMarkup).toContain('selected-text="{{selectedText}}"');
+    expect(practiceMarkup).toContain('question-id="{{question.id}}"');
+  });
+
   it('registers the shared topbar locally on every current secondary page', () => {
     const secondaryPages = [
       'library',

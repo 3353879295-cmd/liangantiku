@@ -1,12 +1,28 @@
 .report-page {
-  padding-top: 30rpx;
+  min-height: 100vh;
   padding-bottom: calc(56rpx + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.review-topbar {
+  position: relative;
+}
+
+.review-topbar__theme {
+  position: absolute;
+  top: 6rpx;
+  right: 0;
+}
+
+.review-topbar__main {
+  padding-right: 92rpx;
 }
 
 .result-kicker {
-  color: var(--color-primary);
-  font-size: 24rpx;
-  font-weight: 600;
+  color: var(--color-primary-strong);
+  font-size: 23rpx;
+  font-weight: 650;
   letter-spacing: 2rpx;
   text-align: center;
 }
@@ -15,7 +31,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 32rpx 0 38rpx;
+  padding: 30rpx 0 38rpx;
 }
 
 .score-ring {
@@ -26,7 +42,7 @@
   height: 220rpx;
   border: 14rpx solid var(--color-primary-soft);
   border-radius: 50%;
-  color: var(--color-primary);
+  color: var(--color-text);
   line-height: 220rpx;
   box-shadow: inset 0 0 0 3rpx var(--color-primary);
 }
@@ -104,9 +120,13 @@
 }
 
 .module-result__accuracy {
-  color: var(--color-primary);
+  color: var(--color-primary-strong);
   font-size: 27rpx;
   font-weight: 650;
+}
+
+.theme-night .module-result__accuracy {
+  color: var(--color-primary);
 }
 
 .primary-button,
@@ -120,8 +140,13 @@
 }
 
 .primary-button {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.theme-night .primary-button {
   background: var(--color-primary);
-  color: #fff;
+  color: #11120f;
 }
 
 .primary-button--disabled {

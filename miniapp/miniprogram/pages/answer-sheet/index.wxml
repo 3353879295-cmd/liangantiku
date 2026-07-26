@@ -1,12 +1,30 @@
-<view class="page-shell sheet-page">
+<view class="page-shell page-shell--secondary sheet-page {{themeClass}}">
+  <view class="review-topbar">
+    <view class="review-topbar__main">
+      <app-topbar title="答题卡" subtitle="{{modeText}}" fallback-tab="home" />
+    </view>
+    <view class="review-topbar__theme">
+      <theme-toggle theme="{{theme}}" bind:change="onToggleTheme" />
+    </view>
+  </view>
+
   <view wx:if="{{ready}}">
-    <view class="page-title">{{modeText}}</view>
-    <text class="page-subtitle">{{answeredText}}</text>
+    <view class="sheet-summary">
+      <view>
+        <text class="sheet-summary__eyebrow">答题进度</text>
+        <view class="sheet-summary__title">{{answeredText}}</view>
+      </view>
+      <text class="sheet-summary__note">{{submitted ? '已交卷' : '交卷前可返回修改'}}</text>
+    </view>
 
     <view class="legend">
       <view class="legend__item"><text class="legend__dot legend__dot--answered"></text>已答</view>
       <view class="legend__item"><text class="legend__dot"></text>未答</view>
-      <view class="legend__item"><text class="legend__ring"></text>当前</view>
+      <view class="legend__item"><text class="legend__current"></text>当前</view>
+      <block wx:if="{{submitted}}">
+        <view class="legend__item"><text class="legend__dot legend__dot--correct"></text>正确</view>
+        <view class="legend__item"><text class="legend__dot legend__dot--wrong"></text>错误</view>
+      </block>
     </view>
 
     <view class="sheet-grid">
@@ -19,13 +37,14 @@
       >{{item.number}}</view>
     </view>
 
-    <view class="sheet-footer">
-      <button class="submit-button" bindtap="onSubmit">交卷并查看结果</button>
+    <view wx:if="{{!submitted}}" class="sheet-footer">
+      <button class="submit-button" bindtap="onSubmit">{{submitText}}</button>
     </view>
   </view>
 
   <empty-state
     wx:else
+    kind="empty"
     title="没有进行中的练习"
     description="请先从题库选择一种练习方式。"
   />

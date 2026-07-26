@@ -1,58 +1,99 @@
-<view class="page-shell list-page">
-  <view class="page-title">{{view.title}}</view>
-  <text class="page-subtitle">按职业、等级和章节筛选，逐题看清错误原因。</text>
-
-  <view class="filter-section">
-    <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
-      <view class="filter-row">
-        <view
-          class="filter-chip {{occupation === '' ? 'filter-chip--active' : ''}}"
-          data-group="occupation"
-          data-value=""
-          bind:tap="onFilter"
-        >全部职业</view>
-        <view
-          class="filter-chip {{occupation === '4-02-06-01' ? 'filter-chip--active' : ''}}"
-          data-group="occupation"
-          data-value="4-02-06-01"
-          bind:tap="onFilter"
-        >保管员</view>
-        <view
-          class="filter-chip {{occupation === '4-08-05-01' ? 'filter-chip--active' : ''}}"
-          data-group="occupation"
-          data-value="4-08-05-01"
-          bind:tap="onFilter"
-        >质检员</view>
-      </view>
-    </scroll-view>
-    <view class="filter-row filter-row--levels">
-      <view
-        wx:for="{{levelFilters}}"
-        wx:key="value"
-        class="filter-chip {{level === item.value ? 'filter-chip--active' : ''}}"
-        data-group="level"
-        data-value="{{item.value}}"
-        bind:tap="onFilter"
-      >{{item.label}}</view>
+<view class="page-shell page-shell--secondary list-page {{themeClass}}">
+  <view class="review-topbar">
+    <view class="review-topbar__main">
+      <app-topbar
+        title="{{kind === 'wrong' ? '错题本' : kind === 'favorite' ? '收藏试题' : '本次错题'}}"
+        subtitle="{{kind === 'session' ? '逐题看清本次错因' : certificateTitle}}"
+        fallback-tab="home"
+      />
     </view>
-    <scroll-view wx:if="{{view.chapters.length}}" scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
-      <view class="filter-row">
-        <view
-          class="filter-chip {{chapterId === '' ? 'filter-chip--active' : ''}}"
-          data-group="chapter"
-          data-value=""
-          bind:tap="onFilter"
-        >全部章节</view>
-        <view
-          wx:for="{{view.chapters}}"
-          wx:key="id"
-          class="filter-chip {{chapterId === item.id ? 'filter-chip--active' : ''}}"
-          data-group="chapter"
-          data-value="{{item.id}}"
-          bind:tap="onFilter"
-        >{{item.title}}</view>
+    <view class="review-topbar__theme">
+      <theme-toggle theme="{{theme}}" bind:change="onToggleTheme" />
+    </view>
+  </view>
+
+  <empty-state
+    wx:if="{{loading}}"
+    kind="loading"
+    title="正在加载题目"
+    description="正在整理当前题库，请稍候。"
+  />
+
+  <empty-state
+    wx:elif="{{loadError}}"
+    kind="network"
+    title="题库加载失败"
+    description="请检查网络或题库状态后重新加载。"
+    action-text="重新加载"
+    bind:action="onReload"
+  />
+
+  <block wx:else>
+    <view wx:if="{{kind !== 'session'}}" class="scope-card">
+      <view>
+        <text class="scope-card__label">首页题库</text>
+        <view class="scope-card__title">{{certificateTitle}}</view>
       </view>
-    </scroll-view>
+      <text class="scope-card__note">默认筛选</text>
+    </view>
+
+    <view wx:if="{{kind !== 'session'}}" class="filter-section">
+      <text class="filter-section__label">职业</text>
+      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
+        <view class="filter-row">
+          <view
+            class="filter-chip {{occupation === '4-02-06-01' ? 'filter-chip--active' : ''}}"
+            data-group="occupation"
+            data-value="4-02-06-01"
+            bind:tap="onFilter"
+          >保管员</view>
+          <view
+            class="filter-chip {{occupation === '4-08-05-01' ? 'filter-chip--active' : ''}}"
+            data-group="occupation"
+            data-value="4-08-05-01"
+            bind:tap="onFilter"
+          >质检员</view>
+        </view>
+      </scroll-view>
+
+      <text class="filter-section__label filter-section__label--spaced">等级</text>
+      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
+        <view class="filter-row">
+          <view
+            wx:for="{{levelFilters}}"
+            wx:key="value"
+            class="filter-chip {{level === item.value ? 'filter-chip--active' : ''}}"
+            data-group="level"
+            data-value="{{item.value}}"
+            bind:tap="onFilter"
+          >{{item.label}}</view>
+        </view>
+      </scroll-view>
+
+      <text
+        wx:if="{{view.chapters.length}}"
+        class="filter-section__label filter-section__label--spaced"
+      >章节</text>
+      <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="filter-scroll">
+        <view class="filter-row">
+          <view
+            class="filter-chip {{chapterId === '' ? 'filter-chip--active' : ''}}"
+            data-group="chapter"
+            data-value=""
+            bind:tap="onFilter"
+          >全部章节</view>
+          <view
+            wx:for="{{view.chapters}}"
+            wx:key="id"
+            class="filter-chip {{chapterId === item.id ? 'filter-chip--active' : ''}}"
+            data-group="chapter"
+            data-value="{{item.id}}"
+            bind:tap="onFilter"
+          >{{item.title}}</view>
+        </view>
+      </scroll-view>
+    </view>
+
     <view
       wx:if="{{kind === 'wrong'}}"
       class="mastered-toggle {{includeMastered ? 'mastered-toggle--active' : ''}}"
@@ -61,53 +102,63 @@
       <t-icon name="check-circle" size="30rpx" />
       <text>包含已掌握</text>
     </view>
-  </view>
 
-  <view wx:if="{{view.unresolvedIds.length}}" class="retired-note">
-    {{view.unresolvedIds.length}} 道旧题已调整或下架，不影响其他题目复习。
-  </view>
+    <view wx:if="{{view.unresolvedIds.length}}" class="retired-note">
+      {{view.unresolvedIds.length}} 道旧题已调整或下架，不影响其他题目复习。
+    </view>
 
-  <view wx:if="{{view.items.length}}" class="question-list">
-    <view wx:for="{{view.items}}" wx:key="id" class="question-item">
-      <view class="question-item__head">
-        <view class="question-item__tags">
-          <text class="tag">{{item.chapterTitle}}</text>
-          <text wx:if="{{item.errorCountText}}" class="wrong-count">{{item.errorCountText}}</text>
-          <text wx:if="{{item.mastered}}" class="mastered-label">已掌握</text>
+    <view wx:if="{{view.items.length}}" class="question-list">
+      <view wx:for="{{view.items}}" wx:key="id" class="question-item">
+        <view class="question-item__head">
+          <view class="question-item__tags">
+            <text class="tag">{{item.chapterTitle}}</text>
+            <text wx:if="{{item.errorCountText}}" class="wrong-count">{{item.errorCountText}}</text>
+            <text wx:if="{{item.mastered}}" class="mastered-label">已掌握</text>
+          </view>
+          <text class="latest">{{item.latestText}}</text>
         </view>
-        <text class="latest">{{item.latestText}}</text>
-      </view>
-      <view class="question-item__stem">{{item.question.stem}}</view>
-      <view class="question-item__actions">
-        <view class="analysis-toggle" data-id="{{item.question.id}}" bind:tap="onToggleAnalysis">
-          {{expandedId === item.question.id ? '收起解析' : '查看解析'}}
-          <t-icon name="chevron-{{expandedId === item.question.id ? 'up' : 'down'}}" size="28rpx" />
+        <view class="question-item__stem">{{item.question.stem}}</view>
+        <view class="question-item__actions">
+          <view class="analysis-toggle" data-id="{{item.question.id}}" bind:tap="onToggleAnalysis">
+            {{expandedId === item.question.id ? '收起解析' : '查看解析'}}
+            <t-icon
+              name="chevron-{{expandedId === item.question.id ? 'up' : 'down'}}"
+              size="28rpx"
+            />
+          </view>
+          <view
+            wx:if="{{kind === 'wrong' && !item.mastered}}"
+            class="mastered-action"
+            data-id="{{item.question.id}}"
+            catch:tap="onMarkMastered"
+          >标记掌握</view>
         </view>
-        <view
-          wx:if="{{kind === 'wrong' && !item.mastered}}"
-          class="mastered-action"
-          data-id="{{item.question.id}}"
-          catch:tap="onMarkMastered"
-        >标记掌握</view>
-      </view>
-      <view wx:if="{{expandedId === item.question.id}}" class="inline-analysis">
-        <view class="inline-analysis__answer">正确答案：{{item.answerText}}</view>
-        <text class="inline-analysis__body">{{item.question.explanation}}</text>
-        <view wx:if="{{item.question.commonMistake}}" class="inline-analysis__tip">
-          易错提示：{{item.question.commonMistake}}
+        <view wx:if="{{expandedId === item.question.id}}" class="inline-analysis">
+          <analysis-panel
+            visible="{{true}}"
+            show-result="{{kind !== 'favorite'}}"
+            correct="{{false}}"
+            selected-text="{{item.selectedText}}"
+            expected-text="{{item.answerText}}"
+            explanation="{{item.question.explanation}}"
+            knowledge-point="{{item.question.knowledgePoint}}"
+            common-mistake="{{item.question.commonMistake}}"
+            standard-reference="{{item.question.standardReference}}"
+            question-id="{{item.question.id}}"
+          />
         </view>
-        <view class="inline-analysis__source">依据：{{item.question.standardReference}}</view>
       </view>
     </view>
-  </view>
 
-  <empty-state
-    wx:elif="{{!loading}}"
-    title="{{view.emptyTitle}}"
-    description="{{view.emptyDescription}}"
-  />
+    <empty-state
+      wx:else
+      kind="empty"
+      title="{{view.emptyTitle}}"
+      description="{{view.emptyDescription}}"
+    />
 
-  <view wx:if="{{view.items.length}}" class="list-footer">
-    <button class="practice-button" bindtap="onStartPractice">{{view.actionText}}</button>
-  </view>
+    <view wx:if="{{view.items.length}}" class="list-footer">
+      <button class="practice-button" bindtap="onStartPractice">{{view.actionText}}</button>
+    </view>
+  </block>
 </view>

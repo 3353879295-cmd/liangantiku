@@ -118,6 +118,7 @@ Page({
     isLast: false,
     analysisVisible: false,
     analysisCorrect: false,
+    selectedText: '',
     expectedText: '',
     favorite: false,
     theme: 'light',
@@ -209,6 +210,7 @@ Page({
       isLast: session.currentIndex === session.questions.length - 1,
       analysisVisible: revealAnswer && Boolean(feedback),
       analysisCorrect: feedback?.correct ?? false,
+      selectedText: selected.join('、') || '未作答',
       expectedText: question.answer.join('、'),
       favorite: appServices.progress.isFavorite(question.id),
     });
@@ -232,6 +234,7 @@ Page({
     }));
     this.setData({
       draftSelection: selected,
+      selectedText: selected.join('、') || '未作答',
       showConfirm: true,
       canConfirm: selected.length > 0,
       options,

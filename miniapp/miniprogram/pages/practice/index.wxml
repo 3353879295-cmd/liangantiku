@@ -38,11 +38,13 @@
     <analysis-panel
       visible="{{analysisVisible}}"
       correct="{{analysisCorrect}}"
+      selected-text="{{selectedText}}"
       expected-text="{{expectedText}}"
       explanation="{{question.explanation}}"
       knowledge-point="{{question.knowledgePoint}}"
       common-mistake="{{question.commonMistake}}"
       standard-reference="{{question.standardReference}}"
+      question-id="{{question.id}}"
     />
 
     <view class="footer-spacer"></view>

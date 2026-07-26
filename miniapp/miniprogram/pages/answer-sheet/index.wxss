@@ -1,26 +1,82 @@
 .sheet-page {
-  padding-top: 30rpx;
+  min-height: 100vh;
+  padding-bottom: 170rpx;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.review-topbar {
+  position: relative;
+}
+
+.review-topbar__theme {
+  position: absolute;
+  top: 6rpx;
+  right: 0;
+}
+
+.review-topbar__main {
+  padding-right: 92rpx;
+}
+
+.sheet-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 30rpx 32rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.sheet-summary__eyebrow {
+  color: var(--color-primary);
+  font-size: 21rpx;
+  font-weight: 650;
+  letter-spacing: 2rpx;
+}
+
+.sheet-summary__title {
+  margin-top: 8rpx;
+  font-size: 32rpx;
+  font-weight: 650;
+}
+
+.sheet-summary__note {
+  color: rgb(255 255 255 / 62%);
+  font-size: 21rpx;
+}
+
+.theme-night .sheet-summary {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.theme-night .sheet-summary__note {
+  color: var(--color-text-secondary);
 }
 
 .legend {
   display: flex;
-  gap: 28rpx;
-  margin-top: 34rpx;
+  flex-wrap: wrap;
+  gap: 18rpx 26rpx;
+  margin-top: 30rpx;
   color: var(--color-text-secondary);
-  font-size: 23rpx;
+  font-size: 22rpx;
 }
 
 .legend__item {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+  gap: 9rpx;
 }
 
 .legend__dot,
-.legend__ring {
+.legend__current {
   box-sizing: border-box;
-  width: 22rpx;
-  height: 22rpx;
+  width: 20rpx;
+  height: 20rpx;
   border: 2rpx solid var(--color-border);
   border-radius: 50%;
   background: var(--color-surface);
@@ -31,18 +87,32 @@
   background: var(--color-primary);
 }
 
-.legend__ring {
-  border: 3rpx solid var(--color-text);
+.legend__dot--correct {
+  border-color: #8aaf92;
+  background: #dfece1;
+}
+
+.legend__dot--wrong {
+  border-color: #c28f8b;
+  background: #f1dfdc;
+}
+
+.legend__current {
+  width: 10rpx;
+  height: 10rpx;
+  border: 0;
+  background: var(--color-text);
 }
 
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 18rpx;
+  gap: 22rpx 18rpx;
   margin-top: 34rpx;
 }
 
 .sheet-cell {
+  position: relative;
   display: flex;
   aspect-ratio: 1;
   align-items: center;
@@ -55,43 +125,83 @@
   font-size: 26rpx;
 }
 
-.sheet-cell--answered,
-.sheet-cell--correct {
+.sheet-cell--answered {
   border-color: var(--color-primary);
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-weight: 600;
+  background: var(--color-primary);
+  color: #1b1d18;
+  font-weight: 650;
+}
+
+.sheet-cell--correct {
+  border-color: #a9c4af;
+  background: #dfece1;
+  color: #36583e;
+  font-weight: 650;
 }
 
 .sheet-cell--wrong {
-  border-color: var(--color-danger);
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
-  font-weight: 600;
+  border-color: #d6aaa6;
+  background: #f1dfdc;
+  color: #7f4945;
+  font-weight: 650;
 }
 
-.sheet-cell--current {
-  box-shadow: 0 0 0 4rpx var(--color-text);
+.sheet-cell--current::after {
+  position: absolute;
+  bottom: 8rpx;
+  left: 50%;
+  width: 9rpx;
+  height: 9rpx;
+  border-radius: 50%;
+  background: #11120f;
+  content: '';
+  transform: translateX(-50%);
+}
+
+.theme-night .sheet-cell--current::after {
+  background: var(--color-text);
+}
+
+.theme-night .sheet-cell--correct {
+  border-color: #55725b;
+  background: #293c2e;
+  color: #cfe1d2;
+}
+
+.theme-night .sheet-cell--wrong {
+  border-color: #76504d;
+  background: #402b29;
+  color: #eccdca;
 }
 
 .sheet-footer {
   position: fixed;
+  z-index: 10;
   right: 0;
   bottom: 0;
   left: 0;
   padding: 18rpx 32rpx calc(18rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid var(--color-border);
-  background: rgb(245 245 247 / 94%);
+  background: rgb(244 246 238 / 94%);
+}
+
+.theme-night .sheet-footer {
+  background: rgb(21 25 17 / 94%);
 }
 
 .submit-button {
   min-height: 92rpx;
   border-radius: 24rpx;
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-surface);
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 650;
   line-height: 92rpx;
+}
+
+.theme-night .submit-button {
+  background: var(--color-primary);
+  color: #11120f;
 }
 
 .submit-button::after {

@@ -8,6 +8,7 @@ import {
   startPracticeFromQuestions,
   submitActivePractice,
 } from '../../services/practice-runtime';
+import { appServices } from '../../services/app-services';
 
 Page({
   data: {
@@ -15,9 +16,12 @@ Page({
     view: null as ReturnType<typeof presentReport> | null,
     hasWrong: false,
     sessionMode: '',
+    theme: 'light',
+    themeClass: '',
   },
 
   async onLoad() {
+    this.syncTheme();
     await restorePractice();
     const session = submitActivePractice();
     recordActivePractice();
@@ -29,6 +33,18 @@ Page({
       ),
       hasWrong: Boolean(session.report.wrongQuestionIds.length),
       sessionMode: session.mode,
+    });
+  },
+
+  onShow() {
+    this.syncTheme();
+  },
+
+  syncTheme() {
+    const theme = appServices.theme.get();
+    this.setData({
+      theme,
+      themeClass: theme === 'night' ? 'theme-night' : '',
     });
   },
 
@@ -45,5 +61,13 @@ Page({
 
   onBackHome() {
     void wx.switchTab({ url: '/pages/home/index' });
+  },
+
+  onToggleTheme() {
+    const theme = appServices.theme.toggle();
+    this.setData({
+      theme,
+      themeClass: theme === 'night' ? 'theme-night' : '',
+    });
   },
 });

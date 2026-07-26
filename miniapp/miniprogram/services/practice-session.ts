@@ -128,6 +128,7 @@ export const getAnswerSheet = (
 ): Array<{ questionId: string; status: AnswerSheetStatus }> =>
   session.questionIds.map((questionId) => {
     if (!session.answers[questionId]) return { questionId, status: 'unanswered' };
+    if (session.status !== 'submitted') return { questionId, status: 'answered' };
     const result = session.feedback[questionId];
     if (!result) return { questionId, status: 'answered' };
     return { questionId, status: result.correct ? 'correct' : 'wrong' };

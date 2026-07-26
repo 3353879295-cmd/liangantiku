@@ -63,6 +63,16 @@ interface ThemeDefinition {
   };
 }
 
+interface AnalysisContext {
+  data: { questionId: string };
+}
+
+interface AnalysisDefinition {
+  methods: {
+    handleCopyQuestionId?(this: AnalysisContext): void;
+  };
+}
+
 const loadComponent = async <T>(path: string): Promise<T> => {
   let captured: T | undefined;
   vi.stubGlobal('Component', (definition: T) => {
@@ -276,5 +286,26 @@ describe('theme-toggle event contract', () => {
 
     expect(events).toEqual([{ name: 'change', detail: { theme: 'light' } }]);
     expect(context.data.theme).toBe('night');
+  });
+});
+
+describe('analysis correction fallback', () => {
+  it('copies the stable question ID without claiming a correction was submitted', async () => {
+    const setClipboardData = vi.fn();
+    const showToast = vi.fn();
+    vi.stubGlobal('wx', { setClipboardData, showToast });
+    const definition = await loadComponent<AnalysisDefinition>(
+      '../miniprogram/components/analysis-panel/index',
+    );
+    const context: AnalysisContext = { data: { questionId: 'WH-L5-000001' } };
+
+    expect(typeof definition.methods.handleCopyQuestionId).toBe('function');
+    definition.methods.handleCopyQuestionId?.call(context);
+
+    expect(setClipboardData).toHaveBeenCalledWith({ data: 'WH-L5-000001' });
+    expect(showToast).toHaveBeenCalledWith({ title: '题目 ID 已复制', icon: 'none' });
+    expect(showToast).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: expect.stringContaining('提交') }),
+    );
   });
 });

@@ -1,14 +1,52 @@
-<view wx:if="{{visible}}" class="analysis analysis--{{correct ? 'correct' : 'wrong'}}">
-  <view class="analysis__result">
+<view wx:if="{{visible}}" class="analysis">
+  <view
+    wx:if="{{showResult}}"
+    class="analysis__result analysis__result--{{correct ? 'correct' : 'wrong'}}"
+  >
     <t-icon name="{{correct ? 'check-circle-filled' : 'close-circle-filled'}}" size="40rpx" />
     <text>{{correct ? '回答正确' : '回答错误'}}</text>
   </view>
-  <view class="analysis__answer">正确答案：{{expectedText}}</view>
-  <view class="analysis__section">
-    <view class="analysis__label">题目解析</view>
-    <text class="analysis__body">{{explanation}}</text>
+
+  <view class="analysis__cards">
+    <view class="analysis__card">
+      <view class="analysis__label">你的答案</view>
+      <text class="analysis__answer analysis__answer--selected">{{selectedText || '未作答'}}</text>
+    </view>
+    <view class="analysis__card">
+      <view class="analysis__label">正确答案</view>
+      <text class="analysis__answer">{{expectedText}}</text>
+    </view>
+    <view class="analysis__card">
+      <view class="analysis__label">题目解析</view>
+      <text class="analysis__body">{{explanation}}</text>
+    </view>
+    <view wx:if="{{knowledgePoint}}" class="analysis__card">
+      <view class="analysis__label">知识点</view>
+      <text class="analysis__body">{{knowledgePoint}}</text>
+    </view>
+    <view wx:if="{{commonMistake}}" class="analysis__card">
+      <view class="analysis__label">易错原因</view>
+      <text class="analysis__body">{{commonMistake}}</text>
+    </view>
+    <view wx:if="{{standardReference}}" class="analysis__card">
+      <view class="analysis__label">标准依据</view>
+      <text class="analysis__body">{{standardReference}}</text>
+    </view>
   </view>
-  <view wx:if="{{knowledgePoint}}" class="analysis__meta">知识点 · {{knowledgePoint}}</view>
-  <view wx:if="{{commonMistake}}" class="analysis__tip">易错提示：{{commonMistake}}</view>
-  <view wx:if="{{standardReference}}" class="analysis__source">依据：{{standardReference}}</view>
+
+  <view wx:if="{{questionId}}" class="analysis__correction">
+    <button
+      wx:if="{{feedbackAvailable}}"
+      class="analysis__correction-button"
+      open-type="feedback"
+      aria-label="通过微信反馈题目纠错"
+    >题目纠错</button>
+    <button
+      wx:else
+      class="analysis__correction-button"
+      aria-label="复制题目 ID 以反馈题目纠错"
+      bindtap="handleCopyQuestionId"
+    >题目纠错 · 复制题目 ID</button>
+    <text wx:if="{{!feedbackAvailable}}" class="analysis__question-id">题目 ID：{{questionId}}</text>
+  </view>
 </view>

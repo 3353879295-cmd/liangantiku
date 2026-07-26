@@ -1,5 +1,8 @@
-<view class="empty">
-  <view class="empty__mark" aria-hidden="true"></view>
+<view class="empty empty--{{kind}}">
+  <view wx:if="{{kind === 'loading'}}" class="empty__spinner" aria-label="正在加载"></view>
+  <view wx:elif="{{kind === 'network'}}" class="empty__mark" aria-hidden="true">!</view>
+  <view wx:elif="{{kind === 'coming-soon'}}" class="empty__mark" aria-hidden="true">待</view>
+  <view wx:else class="empty__mark" aria-hidden="true"></view>
   <text class="empty__title">{{title}}</text>
   <text wx:if="{{description}}" class="empty__description">{{description}}</text>
   <button wx:if="{{actionText}}" class="empty__action" bindtap="handleAction">{{actionText}}</button>

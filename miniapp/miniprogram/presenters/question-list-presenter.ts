@@ -15,6 +15,7 @@ export interface QuestionListInput {
   questions: readonly Question[];
   ids: readonly string[];
   wrongRecords?: readonly WrongQuestionRecord[];
+  selectedAnswers?: Readonly<Record<string, readonly string[]>>;
   filter?: QuestionListFilter;
   resolveChapterTitle?: (chapterId: string) => string;
   resolveChapterLabel?: (chapterId: string) => string;
@@ -23,6 +24,7 @@ export interface QuestionListInput {
 export interface QuestionListItemViewModel {
   id: string;
   question: Question;
+  selectedText: string;
   answerText: string;
   chapterTitle: string;
   errorCount: number;
@@ -49,13 +51,13 @@ const COPY: Record<
     title: '错题本',
     actionText: '错题重练',
     emptyTitle: '还没有错题',
-    emptyDescription: '做错的题会自动收进这里，方便集中复习。',
+    emptyDescription: '答错的题会自动收录到这里。',
   },
   favorite: {
     title: '我的收藏',
     actionText: '收藏练习',
     emptyTitle: '还没有收藏',
-    emptyDescription: '答题时点亮星标，重点题目就会出现在这里。',
+    emptyDescription: '在答题页点击星标即可收藏。',
   },
   session: {
     title: '本次错题',
@@ -87,11 +89,12 @@ export const presentQuestionList = (input: QuestionListInput): QuestionListViewM
     if (!question) return [];
     const wrong = wrongById.get(id);
     if (!matchesFilter(question, filter)) return [];
-    if (wrong?.mastered && filter.includeMastered === false) return [];
+    if (input.kind === 'wrong' && wrong?.mastered && filter.includeMastered === false) return [];
     return [
       {
         id: question.id,
         question,
+        selectedText: input.selectedAnswers?.[question.id]?.join('、') || '未记录',
         answerText: question.answer.join('、'),
         chapterTitle: resolveChapterTitle(question.chapterId),
         errorCount: wrong?.errorCount ?? 0,

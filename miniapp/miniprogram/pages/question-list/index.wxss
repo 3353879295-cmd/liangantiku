@@ -1,26 +1,86 @@
 .list-page {
-  padding-top: 30rpx;
+  min-height: 100vh;
   padding-bottom: 160rpx;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.review-topbar {
+  position: relative;
+}
+
+.review-topbar__theme {
+  position: absolute;
+  top: 6rpx;
+  right: 0;
+}
+
+.review-topbar__main {
+  padding-right: 92rpx;
+}
+
+.scope-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22rpx;
+  padding: 28rpx 30rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.scope-card__label {
+  color: var(--color-primary);
+  font-size: 21rpx;
+  font-weight: 650;
+  letter-spacing: 2rpx;
+}
+
+.scope-card__title {
+  margin-top: 8rpx;
+  font-size: 31rpx;
+  font-weight: 650;
+}
+
+.scope-card__note {
+  color: rgb(255 255 255 / 62%);
+  font-size: 21rpx;
+}
+
+.theme-night .scope-card {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.theme-night .scope-card__note {
+  color: var(--color-text-secondary);
 }
 
 .filter-section {
   margin-top: 30rpx;
 }
 
+.filter-section__label {
+  display: block;
+  margin: 0 4rpx 14rpx;
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.filter-section__label--spaced {
+  margin-top: 22rpx;
+}
+
 .filter-scroll {
   width: 100%;
-  margin-bottom: 14rpx;
   white-space: nowrap;
 }
 
 .filter-row {
   display: inline-flex;
   gap: 12rpx;
-}
-
-.filter-row--levels {
-  display: flex;
-  margin-bottom: 14rpx;
 }
 
 .filter-chip {
@@ -36,28 +96,28 @@
 .filter-chip--active {
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
-  color: var(--color-primary);
-  font-weight: 600;
+  color: var(--color-text);
+  font-weight: 650;
 }
 
 .mastered-toggle {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  margin-top: 8rpx;
+  margin-top: 22rpx;
   color: var(--color-text-secondary);
   font-size: 23rpx;
 }
 
 .mastered-toggle--active {
-  color: var(--color-primary);
+  color: var(--color-primary-strong);
 }
 
 .retired-note {
   margin-top: 22rpx;
   padding: 18rpx 22rpx;
   border-radius: 20rpx;
-  background: #eeeef0;
+  background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
   font-size: 22rpx;
   line-height: 1.5;
@@ -101,7 +161,7 @@
   padding: 7rpx 12rpx;
   border-radius: 999rpx;
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--color-text);
   font-size: 21rpx;
 }
 
@@ -111,7 +171,7 @@
 }
 
 .mastered-label {
-  background: #eeeef0;
+  background: var(--color-surface-secondary);
   color: var(--color-text-secondary);
 }
 
@@ -132,9 +192,13 @@
   min-height: 78rpx;
   padding: 0 28rpx;
   border-top: 1rpx solid var(--color-border);
-  color: var(--color-primary);
+  color: var(--color-primary-strong);
   font-size: 24rpx;
-  font-weight: 600;
+  font-weight: 650;
+}
+
+.theme-night .question-item__actions {
+  color: var(--color-primary);
 }
 
 .analysis-toggle {
@@ -146,37 +210,9 @@
 }
 
 .inline-analysis {
-  padding: 26rpx 28rpx 30rpx;
+  padding: 2rpx 28rpx 30rpx;
   border-top: 1rpx solid var(--color-border);
-  background: #fafafa;
-}
-
-.inline-analysis__answer {
-  margin-bottom: 18rpx;
-  color: var(--color-primary);
-  font-size: 27rpx;
-  font-weight: 650;
-}
-
-.inline-analysis__body {
-  color: var(--color-text);
-  font-size: 26rpx;
-  line-height: 1.7;
-}
-
-.inline-analysis__tip,
-.inline-analysis__source {
-  margin-top: 18rpx;
-  color: var(--color-text-secondary);
-  font-size: 23rpx;
-  line-height: 1.6;
-}
-
-.inline-analysis__tip {
-  padding: 16rpx 18rpx;
-  border-radius: 18rpx;
-  background: var(--color-danger-soft);
-  color: var(--color-danger);
+  background: var(--color-bg);
 }
 
 .list-footer {
@@ -187,17 +223,26 @@
   left: 0;
   padding: 18rpx 32rpx calc(18rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid var(--color-border);
-  background: rgb(245 245 247 / 94%);
+  background: rgb(244 246 238 / 94%);
+}
+
+.theme-night .list-footer {
+  background: rgb(21 25 17 / 94%);
 }
 
 .practice-button {
   min-height: 92rpx;
   border-radius: 24rpx;
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-text);
+  color: var(--color-surface);
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 650;
   line-height: 92rpx;
+}
+
+.theme-night .practice-button {
+  background: var(--color-primary);
+  color: #11120f;
 }
 
 .practice-button::after {

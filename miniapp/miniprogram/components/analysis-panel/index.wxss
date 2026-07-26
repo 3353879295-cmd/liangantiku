@@ -1,64 +1,90 @@
 .analysis {
-  padding: 28rpx;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-soft);
-}
-
-.analysis--correct {
-  border-top: 4rpx solid var(--color-primary);
-}
-
-.analysis--wrong {
-  border-top: 4rpx solid var(--color-danger);
+  margin-top: 28rpx;
 }
 
 .analysis__result {
   display: flex;
   align-items: center;
   gap: 12rpx;
+  padding: 0 4rpx;
   color: var(--color-primary);
-  font-size: 32rpx;
+  font-size: 29rpx;
   font-weight: 650;
 }
 
-.analysis--wrong .analysis__result {
+.analysis__result--wrong {
   color: var(--color-danger);
 }
 
-.analysis__answer {
-  margin-top: 18rpx;
-  font-size: 28rpx;
-  font-weight: 600;
+.analysis__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  margin-top: 20rpx;
 }
 
-.analysis__section {
-  margin-top: 26rpx;
+.analysis__card {
+  padding: 24rpx 26rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: 24rpx;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .analysis__label {
-  margin-bottom: 10rpx;
+  margin-bottom: 12rpx;
   color: var(--color-text-secondary);
-  font-size: 24rpx;
+  font-size: 22rpx;
+  font-weight: 600;
 }
 
+.analysis__answer,
 .analysis__body {
-  font-size: 29rpx;
-  line-height: 1.75;
+  color: var(--color-text);
+  font-size: 27rpx;
+  line-height: 1.65;
 }
 
-.analysis__meta,
-.analysis__tip,
-.analysis__source {
-  margin-top: 18rpx;
+.analysis__answer {
+  font-weight: 650;
+}
+
+.analysis__answer--selected {
+  color: var(--color-option-text);
+}
+
+.analysis__correction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  margin-top: 22rpx;
+  padding: 20rpx 4rpx 0;
+  border-top: 1rpx solid var(--color-border);
+}
+
+.analysis__correction-button {
+  min-height: 68rpx;
+  margin: 0;
+  padding: 0 22rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: 999rpx;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  font-size: 25rpx;
-  line-height: 1.6;
+  font-size: 22rpx;
+  line-height: 68rpx;
 }
 
-.analysis__tip {
-  padding: 18rpx 20rpx;
-  border-radius: 18rpx;
-  background: #fff7e8;
-  color: #7b551b;
+.analysis__correction-button::after {
+  display: none;
+}
+
+.analysis__question-id {
+  overflow: hidden;
+  flex: 1;
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
