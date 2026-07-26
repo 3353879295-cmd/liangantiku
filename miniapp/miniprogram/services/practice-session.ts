@@ -111,6 +111,18 @@ export const navigateToQuestion = (
   return { ...session, currentIndex: index, updatedAt: now };
 };
 
+export const confirmQuestionAnswer = (
+  session: PracticeSession,
+  questionId: string,
+  selectedIds: string[],
+  now: number,
+): PracticeSession => {
+  const answered = answerQuestion(session, questionId, selectedIds, now);
+  const isFinalQuestion = answered.currentIndex === answered.questionIds.length - 1;
+  if (answered.mode !== 'mock' || isFinalQuestion) return answered;
+  return navigateToQuestion(answered, answered.currentIndex + 1, now);
+};
+
 export const getAnswerSheet = (
   session: PracticeSession,
 ): Array<{ questionId: string; status: AnswerSheetStatus }> =>

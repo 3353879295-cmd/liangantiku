@@ -3,7 +3,7 @@ import {
   presentQuestionOption,
   selectDraftOption,
 } from '../../presenters/question-option-presenter';
-import { answerQuestion, navigateToQuestion } from '../../services/practice-session';
+import { confirmQuestionAnswer, navigateToQuestion } from '../../services/practice-session';
 import {
   getActivePractice,
   restorePractice,
@@ -232,7 +232,7 @@ Page({
       void wx.showToast({ title: '请至少选择一项', icon: 'none' });
       return;
     }
-    const next = answerQuestion(session, question.id, this.data.draftSelection, Date.now());
+    const next = confirmQuestionAnswer(session, question.id, this.data.draftSelection, Date.now());
     saveActivePractice(next);
     this.renderSession(next);
   },

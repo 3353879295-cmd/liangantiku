@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   answerQuestion,
+  confirmQuestionAnswer,
   createPracticeSession,
   getAnswerSheet,
   navigateToQuestion,
@@ -15,13 +16,18 @@ import { makeQuestion } from './factories';
 
 describe('practice session', () => {
   it('shows immediate feedback in normal practice', () => {
-    const question = makeQuestion();
-    const session = createPracticeSession([question], { mode: 'sequential', now: 1000 });
+    const question = makeQuestion({ id: 'Q1' });
+    const questions = [question, makeQuestion({ id: 'Q2' })];
+    const session = createPracticeSession(questions, { mode: 'sequential', now: 1000 });
 
-    const answered = answerQuestion(session, question.id, ['A'], 1500);
+    const answered = confirmQuestionAnswer(session, question.id, ['A'], 1500);
 
+    expect(answered.currentIndex).toBe(0);
     expect(answered.feedback[question.id]).toMatchObject({ correct: true });
-    expect(getAnswerSheet(answered)).toEqual([{ questionId: question.id, status: 'correct' }]);
+    expect(getAnswerSheet(answered)).toEqual([
+      { questionId: 'Q1', status: 'correct' },
+      { questionId: 'Q2', status: 'unanswered' },
+    ]);
   });
 
   it('hides mock feedback until submission', () => {
@@ -73,6 +79,34 @@ describe('practice session', () => {
 
     expect(submitted.report?.correct).toBe(1);
     expect(submitted.answers[question.id]).toEqual(['B']);
+  });
+
+  it('confirms a non-final mock answer and advances in one operation', () => {
+    const questions = [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })];
+    const session = createPracticeSession(questions, { mode: 'mock', now: 1000 });
+
+    const confirmed = confirmQuestionAnswer(session, 'Q1', ['A'], 1200);
+
+    expect(confirmed.currentIndex).toBe(1);
+    expect(confirmed.answers['Q1']).toEqual(['A']);
+    expect(confirmed.feedback['Q1']).toBeUndefined();
+    expect(confirmed.status).toBe('active');
+  });
+
+  it('keeps the final mock answer on the last question without submitting', () => {
+    const questions = [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })];
+    const onFinalQuestion = navigateToQuestion(
+      createPracticeSession(questions, { mode: 'mock', now: 1000 }),
+      1,
+      1100,
+    );
+
+    const confirmed = confirmQuestionAnswer(onFinalQuestion, 'Q2', ['A'], 1200);
+
+    expect(confirmed.currentIndex).toBe(1);
+    expect(confirmed.answers['Q2']).toEqual(['A']);
+    expect(confirmed.status).toBe('active');
+    expect(confirmed.report).toBeUndefined();
   });
 
   it('aggregates report progress by stable chapter ID', () => {
