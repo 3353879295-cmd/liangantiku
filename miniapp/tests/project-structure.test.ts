@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, extname, join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -16,7 +16,7 @@ interface AppConfig extends ComponentConfig {
   pages: string[];
   tabBar?: {
     custom?: boolean;
-    list?: Array<{ pagePath: string }>;
+    list?: Array<{ pagePath: string; text: string }>;
   };
 }
 
@@ -36,11 +36,18 @@ const assertUnitFiles = (unitPath: string) => {
   }
 };
 
-const assertComponentsResolve = (configPath: string) => {
+const assertComponentsResolve = (configPath: string, visited = new Set<string>()) => {
+  if (visited.has(configPath)) return;
+  visited.add(configPath);
+
   const config = readJson<ComponentConfig>(configPath);
   for (const componentPath of Object.values(config.usingComponents ?? {})) {
-    if (componentPath.startsWith('/')) {
-      assertUnitFiles(join(miniappRoot, componentPath));
+    if (componentPath.startsWith('/') || componentPath.startsWith('.')) {
+      const localComponent = componentPath.startsWith('/')
+        ? join(miniappRoot, componentPath.slice(1))
+        : resolve(dirname(configPath), componentPath);
+      assertUnitFiles(localComponent);
+      assertComponentsResolve(`${localComponent}.json`, visited);
       continue;
     }
 
@@ -57,6 +64,17 @@ const assertComponentsResolve = (configPath: string) => {
     expect(existsSync(packageComponent), `${componentPath} is not installed`).toBe(true);
   }
 };
+
+const collectSourceFiles = (directory: string): string[] =>
+  readdirSync(directory).flatMap((entry) => {
+    const path = join(directory, entry);
+    if (statSync(path).isDirectory()) {
+      return entry === 'miniprogram_npm' ? [] : collectSourceFiles(path);
+    }
+    return ['.json', '.ts', '.wxml', '.wxss'].includes(extname(path)) ? [path] : [];
+  });
+
+const localAssetPattern = /(https?:\/\/|data:|\/|\.\.?\/)[^"'`\s)]+?\.(?:png|jpe?g|svg|webp|gif)/g;
 
 const readPngSize = (path: string) => {
   const bytes = readFileSync(path);
@@ -170,19 +188,20 @@ describe('WeChat mini program structure', () => {
 
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
+    const visitedComponents = new Set<string>();
 
     expect(app.pages).toHaveLength(16);
     for (const page of app.pages) {
       const pagePath = join(miniappRoot, page);
       assertUnitFiles(pagePath);
-      assertComponentsResolve(`${pagePath}.json`);
+      assertComponentsResolve(`${pagePath}.json`, visitedComponents);
     }
 
     expect(app.tabBar?.custom).toBe(true);
-    expect(app.tabBar?.list?.map(({ pagePath }) => pagePath)).toEqual([
-      'pages/home/index',
-      'pages/practical/index',
-      'pages/profile/index',
+    expect(app.tabBar?.list).toEqual([
+      { pagePath: 'pages/home/index', text: '首页' },
+      { pagePath: 'pages/practical/index', text: '实操' },
+      { pagePath: 'pages/profile/index', text: '我的' },
     ]);
     expect(app.pages).toContain('pages/library/index');
     expect(app.pages).toContain('pages/chapter-detail/index');
@@ -197,30 +216,55 @@ describe('WeChat mini program structure', () => {
     }
 
     assertUnitFiles(join(miniappRoot, 'custom-tab-bar', 'index'));
-    assertComponentsResolve(join(miniappRoot, 'custom-tab-bar', 'index.json'));
+    assertComponentsResolve(join(miniappRoot, 'custom-tab-bar', 'index.json'), visitedComponents);
+    assertComponentsResolve(join(miniappRoot, 'app.json'), visitedComponents);
     const customTabBar = readFileSync(join(miniappRoot, 'custom-tab-bar', 'index.ts'), 'utf8');
-    expect(customTabBar).not.toContain('pages/library/index');
+    expect([...customTabBar.matchAll(/value: '([^']+)'/g)].map((match) => match[1])).toEqual([
+      '/pages/home/index',
+      '/pages/practical/index',
+      '/pages/profile/index',
+    ]);
+    expect([...customTabBar.matchAll(/text: '([^']+)'/g)].map((match) => match[1])).toEqual([
+      '首页',
+      '实操',
+      '我的',
+    ]);
 
-    for (const component of [
-      'analysis-panel',
-      'app-toast',
-      'app-topbar',
-      'certificate-selector',
-      'empty-state',
-      'favorite-button',
-      'question-option',
-      'stat-card',
-      'theme-toggle',
-    ]) {
-      const componentPath = join(miniappRoot, 'components', component, 'index');
-      assertUnitFiles(componentPath);
-      assertComponentsResolve(`${componentPath}.json`);
-    }
+    const registeredLocalComponents = [...visitedComponents]
+      .filter((configPath) => configPath.startsWith(join(miniappRoot, 'components')))
+      .map((configPath) => configPath.slice(0, -'.json'.length))
+      .sort();
+    const shippedLocalComponents = readdirSync(join(miniappRoot, 'components'))
+      .map((component) => join(miniappRoot, 'components', component, 'index'))
+      .sort();
+    expect(registeredLocalComponents).toEqual(shippedLocalComponents);
 
     const home = readJson<ComponentConfig>(join(miniappRoot, 'pages', 'home', 'index.json'));
     expect(home.usingComponents?.['certificate-selector']).toBe(
       '/components/certificate-selector/index',
     );
+  });
+
+  it('keeps every image asset reference local and resolvable', () => {
+    const references = collectSourceFiles(miniappRoot).flatMap((sourcePath) => {
+      const source = readFileSync(sourcePath, 'utf8');
+      return [...source.matchAll(localAssetPattern)].map((match) => ({
+        sourcePath,
+        assetPath: match[0],
+      }));
+    });
+
+    expect(references.length).toBeGreaterThan(0);
+    for (const { sourcePath, assetPath } of references) {
+      expect(assetPath, `${sourcePath} uses a remote or embedded image`).not.toMatch(
+        /^(?:https?:\/\/|data:)/,
+      );
+      const resolvedAsset = assetPath.startsWith('/')
+        ? join(miniappRoot, assetPath.slice(1))
+        : resolve(dirname(sourcePath), assetPath);
+      expect(existsSync(resolvedAsset), `${sourcePath} references missing ${assetPath}`).toBe(true);
+      expect(statSync(resolvedAsset).isFile(), `${resolvedAsset} is not a file`).toBe(true);
+    }
   });
 
   it('wires practice theme and custom favorite feedback through local components', () => {
