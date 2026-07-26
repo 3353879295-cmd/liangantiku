@@ -5,12 +5,12 @@ Page({
     groups: [
       {
         title: '储粮保管',
-        note: '巡查、仓房、通风与安全',
+        note: '6 项 · 巡查、仓房、通风与安全',
         skills: PRACTICAL_SKILLS.filter((skill) => skill.occupation === '4-02-06-01'),
       },
       {
         title: '粮油质检',
-        note: '扦样、制样、检验与记录',
+        note: '6 项 · 扦样、制样、检验与记录',
         skills: PRACTICAL_SKILLS.filter((skill) => skill.occupation === '4-08-05-01'),
       },
     ],

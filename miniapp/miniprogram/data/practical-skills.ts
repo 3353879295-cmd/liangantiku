@@ -10,7 +10,8 @@ export interface PracticalSkill {
   occupation: OccupationCode;
   title: string;
   summary: string;
-  icon: string;
+  iconAsset: string;
+  purpose: string;
   preparations: string[];
   steps: PracticalStep[];
   safetyNotes: string[];
@@ -26,7 +27,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-02-06-01',
     title: '粮情巡查与记录',
     summary: '按固定路线观察粮面、仓房、温湿度与异常线索，留下可复核的原始记录。',
-    icon: 'search',
+    iconAsset: '/assets/practical/warehouse.png',
+    purpose: '建立连续、可复核的粮情记录，尽早发现仓储异常。',
     preparations: ['确认巡查任务和仓号', '携带记录工具及经确认可用的检测设备', '核对个人防护要求'],
     steps: [
       { title: '先看环境', detail: '从仓外到仓内按既定路线检查门窗、通风口、地面和作业通道。' },
@@ -48,7 +50,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-02-06-01',
     title: '入仓前安全检查',
     summary: '在开门、进仓和登高前完成准入、环境、设备与人员条件确认。',
-    icon: 'home',
+    iconAsset: '/assets/practical/warehouse.png',
+    purpose: '确认人员、环境和设备均满足入仓条件，避免带险作业。',
     preparations: ['查看作业票或任务单', '确认监护与联络安排', '按单位要求配齐个人防护用品'],
     steps: [
       { title: '确认准入', detail: '核对仓号、作业内容、授权范围和现场负责人，不进入未获准区域。' },
@@ -71,7 +74,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-02-06-01',
     title: '机械通风作业检查',
     summary: '围绕作业条件、设备连接、运行巡视和停机复核完成安全检查。',
-    icon: 'refresh',
+    iconAsset: '/assets/practical/warehouse.png',
+    purpose: '确保通风方案正确执行，及时发现设备与粮情异常。',
     preparations: ['取得批准的通风方案', '确认设备和电气检查状态', '准备运行记录表'],
     steps: [
       { title: '核对方案', detail: '确认仓号、目的、设备组合和现场职责与批准方案一致。' },
@@ -93,7 +97,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-02-06-01',
     title: '熏蒸作业安全配合',
     summary: '只讲授权、警戒、监护与应急边界，不提供药剂剂量或无监护操作方法。',
-    icon: 'shield',
+    iconAsset: '/assets/practical/grain-pest.png',
+    purpose: '在专业作业边界内完成警戒、联络和记录，防止熏蒸风险外溢。',
     preparations: [
       '确认作业由具备条件的单位和人员组织',
       '核对审批、警戒与应急安排',
@@ -122,7 +127,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-02-06-01',
     title: '储粮害虫检查',
     summary: '规范查看诱捕、筛检或可见痕迹，记录发现位置并交由规定流程确认。',
-    icon: 'bug',
+    iconAsset: '/assets/practical/grain-pest.png',
+    purpose: '规范发现、留样和报告虫害线索，为后续确认与处置提供依据。',
     preparations: ['确认检查点位和频次', '准备洁净采集与记录用品', '做好样品和工具防交叉污染'],
     steps: [
       { title: '按点检查', detail: '依布点或巡查路线查看粮面、墙角、门窗和设备周边的可见线索。' },
@@ -141,7 +147,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-02-06-01',
     title: '异常升温初步处置',
     summary: '复核点位、保护现场、分级报告，在批准方案下配合后续处置。',
-    icon: 'error-circle',
+    iconAsset: '/assets/practical/thermometer.png',
+    purpose: '复核异常升温并保全原始信息，为分级报告和批准处置提供依据。',
     preparations: ['调取近期粮温记录', '确认测温设备状态', '明确异常报告联系人'],
     steps: [
       {
@@ -163,7 +170,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-08-05-01',
     title: '粮油扦样',
     summary: '先界定批次，再按适用标准布点取样，保证样品具有代表性和可追溯性。',
-    icon: 'filter',
+    iconAsset: '/assets/practical/sampler.png',
+    purpose: '取得具有代表性且全程可追溯的粮油样品。',
     preparations: [
       '确认适用的现行扦样方法',
       '核对批次、数量和状态',
@@ -190,7 +198,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-08-05-01',
     title: '样品混合与分样',
     summary: '在避免损失和偏析的前提下，将原始样品制成满足检验与留样要求的样品。',
-    icon: 'git-branch',
+    iconAsset: '/assets/practical/sampler.png',
+    purpose: '形成均匀、身份清楚且满足检验和留样要求的分样。',
     preparations: ['确认样品身份和包装完整', '准备洁净干燥的分样器具', '核对检验、复检和留样需求'],
     steps: [
       { title: '检查样品', detail: '核对标签、数量、状态和交接信息，异常先记录并确认。' },
@@ -210,7 +219,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-08-05-01',
     title: '水分检验作业要点',
     summary: '围绕方法确认、样品制备、仪器状态、平行测定和原始记录控制检验质量。',
-    icon: 'measurement',
+    iconAsset: '/assets/practical/moisture-test.png',
+    purpose: '准确测定样品水分并保留可复核的质量控制记录。',
     preparations: [
       '确认粮种对应的现行检验方法',
       '核对样品身份和状态',
@@ -239,7 +249,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-08-05-01',
     title: '杂质检验作业要点',
     summary: '按适用标准完成样品称取、筛理与分类，避免组分遗漏和主观边界漂移。',
-    icon: 'filter-clear',
+    iconAsset: '/assets/practical/sampler.png',
+    purpose: '准确分离和量化杂质组分，保证结果一致、可追溯。',
     preparations: [
       '确认粮种对应的杂质检验方法',
       '准备适用且状态正常的筛具和衡器',
@@ -265,7 +276,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-08-05-01',
     title: '容重测定作业要点',
     summary: '确认适用范围和仪器状态，按规定装样、读数并完成平行结果复核。',
-    icon: 'dashboard',
+    iconAsset: '/assets/practical/sampler.png',
+    purpose: '在受控操作条件下获得稳定、可复核的容重结果。',
     preparations: [
       '确认粮种和现行容重测定方法',
       '检查容重器、衡器及配套部件状态',
@@ -288,7 +300,8 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
     occupation: '4-08-05-01',
     title: '检验室安全与记录',
     summary: '从人员、样品、试剂、设备和数据五个方面完成开工前检查与收尾。',
-    icon: 'secured',
+    iconAsset: '/assets/practical/moisture-test.png',
+    purpose: '保障检验人员、样品、设备和原始数据全过程安全可控。',
     preparations: [
       '了解当日检验任务和风险',
       '核对个人防护与应急设施',

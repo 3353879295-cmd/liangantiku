@@ -58,6 +58,15 @@ const assertComponentsResolve = (configPath: string) => {
   }
 };
 
+const readPngSize = (path: string) => {
+  const bytes = readFileSync(path);
+  expect(bytes.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+  };
+};
+
 describe('WeChat mini program structure', () => {
   it('maps npm dependencies into the configured miniprogram root', () => {
     const project = readJson<ProjectConfig>(join(projectRoot, 'project.config.json'));
@@ -301,6 +310,60 @@ describe('WeChat mini program structure', () => {
 
     const app = readJson<ComponentConfig>(join(miniappRoot, 'app.json'));
     expect(app.usingComponents?.['app-topbar']).toBeUndefined();
+  });
+
+  it('ships substantial local practical artwork and references it without remote URLs', () => {
+    const practicalAssetRoot = join(miniappRoot, 'assets', 'practical');
+    const icons = [
+      'warehouse.png',
+      'thermometer.png',
+      'grain-pest.png',
+      'sampler.png',
+      'moisture-test.png',
+    ];
+
+    const heroPath = join(practicalAssetRoot, 'rice-ear-hero.png');
+    expect(existsSync(heroPath)).toBe(true);
+    expect(readFileSync(heroPath).byteLength).toBeGreaterThan(50_000);
+    const heroSize = readPngSize(heroPath);
+    expect(heroSize.width).toBeGreaterThan(heroSize.height);
+    expect(heroSize.width / heroSize.height).toBeGreaterThanOrEqual(1.5);
+
+    for (const icon of icons) {
+      const iconPath = join(practicalAssetRoot, icon);
+      expect(existsSync(iconPath), `${icon} is missing`).toBe(true);
+      expect(readFileSync(iconPath).byteLength, `${icon} is a placeholder`).toBeGreaterThan(500);
+      const size = readPngSize(iconPath);
+      expect(size.width).toBe(size.height);
+      expect(size.width).toBeGreaterThanOrEqual(96);
+    }
+
+    const practicalMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'practical', 'index.wxml'),
+      'utf8',
+    );
+    expect(practicalMarkup).toContain('<image');
+    expect(practicalMarkup).toContain('src="{{skill.iconAsset}}"');
+    expect(practicalMarkup).not.toContain('name="{{skill.icon}}"');
+
+    const detailMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'practical-detail', 'index.wxml'),
+      'utf8',
+    );
+    expect(detailMarkup).toContain('<app-topbar');
+    expect(detailMarkup).toContain('/assets/practical/rice-ear-hero.png');
+    expect(detailMarkup).not.toMatch(/https?:\/\//);
+
+    const sectionPositions = [
+      '作业目的',
+      '作业准备',
+      '操作步骤',
+      '安全提示',
+      '常见错误',
+      '关联练习',
+    ].map((label) => detailMarkup.indexOf(label));
+    expect(sectionPositions.every((position) => position >= 0)).toBe(true);
+    expect(sectionPositions).toEqual([...sectionPositions].sort((left, right) => left - right));
   });
 
   it('keeps the emphasized random action in presenter order while spanning the full grid row', () => {

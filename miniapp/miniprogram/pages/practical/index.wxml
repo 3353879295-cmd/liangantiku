@@ -21,7 +21,14 @@
         data-id="{{skill.id}}"
         bind:tap="onOpenSkill"
       >
-        <view class="skill-card__icon"><t-icon name="{{skill.icon}}" size="38rpx" /></view>
+        <view class="skill-card__icon">
+          <image
+            class="skill-card__icon-image"
+            src="{{skill.iconAsset}}"
+            mode="aspectFit"
+            aria-label="{{skill.title}}图标"
+          />
+        </view>
         <view class="skill-card__content">
           <view class="skill-card__title">{{skill.title}}</view>
           <text class="skill-card__summary">{{skill.summary}}</text>

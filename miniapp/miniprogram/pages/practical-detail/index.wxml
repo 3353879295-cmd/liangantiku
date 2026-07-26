@@ -1,10 +1,31 @@
-<view class="page-shell detail-page">
-  <view wx:if="{{skill}}">
+<view class="page-shell page-shell--secondary detail-page">
+  <app-topbar
+    title="技能要点"
+    subtitle="{{skill ? roleText : '实操技能'}}"
+    fallback-tab="practical"
+  />
+
+  <block wx:if="{{skill}}">
     <view class="detail-hero">
-      <view class="detail-hero__icon"><t-icon name="{{skill.icon}}" size="48rpx" /></view>
-      <view class="detail-hero__role">{{skill.occupation === '4-02-06-01' ? '储粮保管' : '粮油质检'}}</view>
-      <view class="detail-hero__title">{{skill.title}}</view>
-      <text class="detail-hero__summary">{{skill.summary}}</text>
+      <image
+        class="detail-hero__image"
+        src="/assets/practical/rice-ear-hero.png"
+        mode="aspectFill"
+        aria-label="成熟稻穗近景"
+      />
+      <view class="detail-hero__copy">
+        <view class="detail-hero__role">{{roleText}}</view>
+        <view class="detail-hero__title">{{skill.title}}</view>
+        <text class="detail-hero__summary">{{skill.summary}}</text>
+      </view>
+    </view>
+
+    <view class="detail-section">
+      <view class="detail-section__title">作业目的</view>
+      <view class="purpose-card">
+        <view class="purpose-card__mark"></view>
+        <text>{{skill.purpose}}</text>
+      </view>
     </view>
 
     <view class="detail-section">
@@ -50,22 +71,33 @@
       </view>
     </view>
 
+    <view class="detail-section">
+      <view class="detail-section__title">关联练习</view>
+      <view wx:if="{{!relatedReady}}" class="related-state">
+        <t-icon name="loading" size="30rpx" />
+        <text>正在读取关联题目…</text>
+      </view>
+      <button
+        wx:elif="{{relatedQuestions.length}}"
+        class="related-button"
+        bindtap="onStartRelatedPractice"
+      >练习 {{relatedQuestions.length}} 道关联题</button>
+      <view wx:else class="related-state related-state--empty">
+        <view class="related-state__title">暂无关联练习</view>
+        <text>当前技能还没有可用题目，可先复习上方作业要点。</text>
+      </view>
+    </view>
+
     <view class="source-card">
       <view class="source-card__label">参考依据</view>
       <text class="source-card__body">{{skill.standardReference}}</text>
       <text class="source-card__ids">来源编号：{{sourceText}}</text>
     </view>
 
-    <button
-      class="related-button {{relatedReady && !relatedQuestions.length ? 'related-button--disabled' : ''}}"
-      disabled="{{relatedReady && !relatedQuestions.length}}"
-      bindtap="onStartRelatedPractice"
-    >{{relatedReady && !relatedQuestions.length ? '相关题目尚未同步' : '练习相关题目'}}</button>
-
     <view class="detail-disclaimer">
       本指南用于考证复习与作业要点回顾，不能替代单位规程、持证要求、现场培训和监护。
     </view>
-  </view>
+  </block>
 
   <empty-state wx:else title="未找到技能卡" description="这张技能卡可能已经调整，请返回实操页。" />
 </view>
