@@ -145,7 +145,6 @@
 }
 
 .action-card {
-  order: 1;
   min-height: 150rpx;
   padding: 24rpx;
   border-radius: var(--radius-lg);
@@ -155,7 +154,6 @@
 
 .action-card--emphasized {
   grid-column: 1 / -1;
-  order: 2;
   min-height: 112rpx;
   background: var(--color-primary);
 }

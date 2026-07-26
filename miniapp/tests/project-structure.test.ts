@@ -173,6 +173,16 @@ describe('WeChat mini program structure', () => {
     expect(app.usingComponents?.['app-topbar']).toBeUndefined();
   });
 
+  it('keeps the emphasized random action in presenter order while spanning the full grid row', () => {
+    const homeStyles = readFileSync(join(miniappRoot, 'pages', 'home', 'index.wxss'), 'utf8');
+    const actionRule = homeStyles.match(/\.action-card\s*\{([^}]*)\}/s)?.[1];
+    const emphasizedRule = homeStyles.match(/\.action-card--emphasized\s*\{([^}]*)\}/s)?.[1];
+
+    expect(actionRule).not.toMatch(/\border\s*:/);
+    expect(emphasizedRule).not.toMatch(/\border\s*:/);
+    expect(emphasizedRule).toMatch(/grid-column:\s*1\s*\/\s*-1;/);
+  });
+
   it('ships six non-placeholder verified question shards', () => {
     const expectedShards = [
       'warehouse_l5.json',
