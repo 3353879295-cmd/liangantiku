@@ -76,6 +76,20 @@ service.clearLearningData();
 expect(service.getPreferences().answerRevealMode).toBe('deferred');
 ```
 
+Add a damaged-current-preference test that keeps real learning data:
+
+```ts
+const damaged = createEmptyProgress();
+damaged.favorites.Q1 = 1000;
+const result = migrateProgress({
+  ...damaged,
+  preferences: { ...damaged.preferences, answerRevealMode: 'unknown' },
+});
+expect(result.recovered).toBe(true);
+expect(result.data.favorites).toEqual({ Q1: 1000 });
+expect(result.data.preferences.answerRevealMode).toBe('immediate');
+```
+
 - [ ] **Step 2: Run focused tests and verify RED**
 
 Run:
@@ -113,6 +127,12 @@ export const migrateVersionTwo = (value: ProgressDataV2): ProgressDataV3 => ({
 ```
 
 Make first-launch data and v1 migration finish as valid v3. Validate the new preference and persisted-session field. Update repository and service type imports to use the current data type.
+
+For schema v3 data whose learning records are otherwise valid but whose
+`answerRevealMode` is missing or invalid, preserve the complete learning data,
+replace only that preference with `immediate`, and return `recovered: true` so
+the existing repository writes an auditable backup. Do not fall through to the
+empty-data recovery branch.
 
 - [ ] **Step 4: Run focused tests and verify GREEN**
 
@@ -215,6 +235,7 @@ git commit -m "feat: lock feedback policy per practice"
 
 **Interfaces:**
 - Produces: `presentCertificateSelector(certificates, selectedKey, activeOccupation)`
+- Produces: `nextSelectorCollapsed(current, action)` where action is `role`, `level`, or `expand`
 - Produces: `summaryText`, role options, and level options
 - Component state: `collapsed: boolean`
 
@@ -224,9 +245,15 @@ Assert a selected warehouse level 4 produces:
 
 ```ts
 expect(view.summaryText).toBe('粮油仓储管理员 · 中级');
+expect(nextSelectorCollapsed(false, 'role')).toBe(false);
+expect(nextSelectorCollapsed(false, 'level')).toBe(true);
+expect(nextSelectorCollapsed(true, 'expand')).toBe(false);
 ```
 
-Assert the WXML contains a collapsed summary, “重新选择”, a tap handler that reopens it, and expanded role/level content. Assert only `onLevelTap` changes the component to collapsed state.
+Assert the WXML contains a collapsed summary, “重新选择”, a tap handler that
+reopens it, and expanded role/level content. The transition test exercises the
+same pure state reducer used by the component; do not use a source-text
+assertion to infer which handler changes state.
 
 - [ ] **Step 2: Run focused tests and verify RED**
 
@@ -516,10 +543,11 @@ Count and assert:
 
 - [ ] **Step 4: Run fixed-range hygiene checks**
 
-Run:
+Run with the plan baseline fixed independently of the number of implementation
+or review-fix commits:
 
 ```powershell
-git diff --check HEAD~7..HEAD
+git diff --check 8a2e734..HEAD
 git status --short
 ```
 
