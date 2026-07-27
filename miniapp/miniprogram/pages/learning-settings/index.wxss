@@ -153,6 +153,57 @@
   color: var(--color-primary-strong);
 }
 
+.reveal-card {
+  overflow: hidden;
+  padding: 10rpx;
+}
+
+.reveal-option {
+  display: flex;
+  min-height: 94rpx;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 18rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.reveal-option + .reveal-option {
+  margin-top: 6rpx;
+}
+
+.reveal-option--selected {
+  background: var(--color-primary-soft);
+}
+
+.reveal-option__copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.reveal-option__title {
+  color: var(--color-text);
+  font-size: 27rpx;
+  font-weight: 680;
+}
+
+.reveal-option__note {
+  display: block;
+  margin-top: 6rpx;
+  color: var(--color-option-text);
+  font-size: 21rpx;
+  font-weight: 480;
+  line-height: 1.5;
+}
+
+.reveal-option__check {
+  color: var(--color-text-secondary);
+}
+
+.reveal-option--selected .reveal-option__check {
+  color: var(--color-primary-strong);
+}
+
 .settings-note {
   display: flex;
   align-items: flex-start;

@@ -1,8 +1,11 @@
+import { presentRevealModes } from '../../presenters/learning-settings-presenter';
 import { appServices } from '../../services/app-services';
-import type { AnswerTheme } from '../../types/domain';
+import type { AnswerRevealMode, AnswerTheme } from '../../types/domain';
 
 const goalValues = [10, 20, 30, 50] as const;
 const themeValues = new Set<AnswerTheme>(['light', 'night']);
+const isAnswerRevealMode = (value: unknown): value is AnswerRevealMode =>
+  value === 'immediate' || value === 'deferred';
 
 const presentGoals = (selected: number) =>
   goalValues.map((value) => ({
@@ -30,8 +33,10 @@ Page({
   data: {
     dailyGoal: 20,
     answerTheme: 'light',
+    answerRevealMode: 'immediate',
     goalOptions: presentGoals(20),
     themeOptions: presentThemes('light'),
+    revealModeOptions: presentRevealModes('immediate'),
   },
 
   onShow() {
@@ -39,8 +44,10 @@ Page({
     this.setData({
       dailyGoal: preferences.dailyGoal,
       answerTheme: preferences.answerTheme,
+      answerRevealMode: preferences.answerRevealMode,
       goalOptions: presentGoals(preferences.dailyGoal),
       themeOptions: presentThemes(preferences.answerTheme),
+      revealModeOptions: presentRevealModes(preferences.answerRevealMode),
     });
   },
 
@@ -66,5 +73,17 @@ Page({
       themeOptions: presentThemes(answerTheme),
     });
     void wx.showToast({ title: '答题主题已更新', icon: 'none' });
+  },
+
+  onRevealModeTap(event: WechatMiniprogram.TouchEvent) {
+    const answerRevealMode: unknown = event.currentTarget.dataset['revealMode'];
+    if (!isAnswerRevealMode(answerRevealMode)) return;
+
+    appServices.progress.updatePreferences({ answerRevealMode });
+    this.setData({
+      answerRevealMode,
+      revealModeOptions: presentRevealModes(answerRevealMode),
+    });
+    void wx.showToast({ title: '解析方式已更新，下次练习生效', icon: 'none' });
   },
 });

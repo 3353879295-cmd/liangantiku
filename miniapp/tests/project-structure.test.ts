@@ -499,6 +499,25 @@ describe('WeChat mini program structure', () => {
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
   });
 
+  it('shows both answer reveal choices in learning settings', () => {
+    const markup = readFileSync(
+      join(miniappRoot, 'pages', 'learning-settings', 'index.wxml'),
+      'utf8',
+    );
+
+    for (const copy of [
+      '答案与解析',
+      '即时解析',
+      '交卷后解析',
+      '单选与判断选中即看解析，多选确认后看解析',
+      '答题时不显示正误，交卷后统一查看',
+    ]) {
+      expect(markup).toContain(copy);
+    }
+    expect(markup).toContain('data-reveal-mode="{{item.value}}"');
+    expect(markup).toContain('bindtap="onRevealModeTap"');
+  });
+
   it('wires profile secondary pages to existing services and truthful platform capabilities', () => {
     const editSource = readFileSync(join(miniappRoot, 'pages', 'edit-profile', 'index.ts'), 'utf8');
     const settingsSource = readFileSync(

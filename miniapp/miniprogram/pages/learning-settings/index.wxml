@@ -52,8 +52,35 @@
     </view>
   </view>
 
+  <view class="section-heading settings-section-heading">
+    <view class="section-title">答案与解析</view>
+    <text class="section-note">
+      {{answerRevealMode === 'deferred' ? '交卷后解析' : '即时解析'}}
+    </text>
+  </view>
+  <view class="reveal-card matte-card">
+    <view
+      wx:for="{{revealModeOptions}}"
+      wx:key="value"
+      class="reveal-option {{item.selected ? 'reveal-option--selected' : ''}}"
+      data-reveal-mode="{{item.value}}"
+      bindtap="onRevealModeTap"
+    >
+      <view class="reveal-option__copy">
+        <view class="reveal-option__title">{{item.title}}</view>
+        <text class="reveal-option__note" wx:if="{{item.value === 'immediate'}}">
+          单选与判断选中即看解析，多选确认后看解析
+        </text>
+        <text class="reveal-option__note" wx:else>答题时不显示正误，交卷后统一查看</text>
+      </view>
+      <view class="reveal-option__check">
+        <t-icon name="{{item.selected ? 'check-circle-filled' : 'circle'}}" size="34rpx" />
+      </view>
+    </view>
+  </view>
+
   <view class="settings-note matte-card">
     <t-icon name="info-circle" size="28rpx" />
-    <text>清除学习记录时，每日目标、答题主题、昵称和头像都会保留。</text>
+    <text>清除学习记录时，每日目标、答题主题、解析方式、昵称和头像都会保留。</text>
   </view>
 </view>
