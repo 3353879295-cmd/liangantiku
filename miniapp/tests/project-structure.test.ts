@@ -400,6 +400,35 @@ describe('WeChat mini program structure', () => {
     expect(practiceSource).toContain('navigateRelative(');
   });
 
+  it('keeps submitted practice review read-only with whole-paper navigation', () => {
+    const practiceMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'practice', 'index.wxml'),
+      'utf8',
+    );
+    const practiceSource = readFileSync(join(miniappRoot, 'pages', 'practice', 'index.ts'), 'utf8');
+
+    expect(practiceMarkup).toContain('disabled="{{item.disabled}}"');
+    expect(practiceMarkup).toMatch(/<button[^>]*\bbindtap="onPrevious"[^>]*>上一题<\/button>/s);
+    expect(practiceMarkup).toMatch(/<button[^>]*\bbindtap="onNext"[^>]*>/s);
+    expect(practiceSource).toContain("session.status === 'submitted'");
+    expect(practiceSource).toContain('analysisVisible: revealAnswer && Boolean(feedback)');
+  });
+
+  it('opens the submitted answer sheet from the result page before wrong-only review', () => {
+    const reportMarkup = readFileSync(join(miniappRoot, 'pages', 'report', 'index.wxml'), 'utf8');
+    const reportSource = readFileSync(join(miniappRoot, 'pages', 'report', 'index.ts'), 'utf8');
+    const answerSheetPosition = reportMarkup.indexOf('查看答题卡');
+    const wrongReviewPosition = reportMarkup.indexOf('查看本次错题解析');
+
+    expect(answerSheetPosition).toBeGreaterThan(-1);
+    expect(wrongReviewPosition).toBeGreaterThan(answerSheetPosition);
+    expect(reportMarkup).toMatch(
+      /<button[^>]*class="primary-button"[^>]*bindtap="onOpenAnswerSheet"[^>]*>查看答题卡<\/button>/s,
+    );
+    expect(reportSource).toContain('onOpenAnswerSheet()');
+    expect(reportSource).toContain("url: '/pages/answer-sheet/index'");
+  });
+
   it('pins the approved option readability and touch geometry values', () => {
     const styles = readFileSync(
       join(miniappRoot, 'components', 'question-option', 'index.wxss'),

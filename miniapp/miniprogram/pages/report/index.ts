@@ -53,6 +53,10 @@ Page({
     void wx.navigateTo({ url: '/pages/question-list/index?kind=session' });
   },
 
+  onOpenAnswerSheet() {
+    void wx.navigateTo({ url: '/pages/answer-sheet/index' });
+  },
+
   onRetry() {
     const session = getActivePractice();
     if (!session || !startPracticeFromQuestions(session.questions, session.mode)) return;

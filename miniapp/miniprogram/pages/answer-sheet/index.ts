@@ -7,6 +7,8 @@ import {
 import { appServices } from '../../services/app-services';
 import type { PracticeMode } from '../../types/domain';
 
+const pendingQuestionSelections = new WeakSet<object>();
+
 export const buildAnswerSheetSubmitModal = (
   mode: PracticeMode,
   unanswered: number,
@@ -78,9 +80,17 @@ Page({
   onSelectQuestion(event: WechatMiniprogram.TouchEvent) {
     const session = getActivePractice();
     const index = Number(event.currentTarget.dataset['index']);
-    if (!session || !Number.isInteger(index)) return;
+    if (!session || !Number.isInteger(index) || pendingQuestionSelections.has(this)) return;
     saveActivePractice(navigateToQuestion(session, index, Date.now()));
-    void wx.navigateBack();
+    pendingQuestionSelections.add(this);
+    const complete = () => {
+      pendingQuestionSelections.delete(this);
+    };
+    if (session.status === 'submitted') {
+      void wx.navigateTo({ url: '/pages/practice/index?resume=1', complete });
+      return;
+    }
+    void wx.navigateBack({ complete });
   },
 
   async onSubmit() {

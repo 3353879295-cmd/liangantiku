@@ -149,16 +149,17 @@
   color: #11120f;
 }
 
-.primary-button--disabled {
-  background: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
 .secondary-button {
   margin-top: 16rpx;
   border: 2rpx solid var(--color-border);
   background: var(--color-surface);
   color: var(--color-text);
+}
+
+.secondary-button--disabled[disabled] {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  opacity: 1;
 }
 
 .primary-button::after,

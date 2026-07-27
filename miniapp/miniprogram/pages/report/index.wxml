@@ -38,8 +38,9 @@
       </view>
     </view>
 
+    <button class="primary-button" bindtap="onOpenAnswerSheet">查看答题卡</button>
     <button
-      class="primary-button {{hasWrong ? '' : 'primary-button--disabled'}}"
+      class="secondary-button {{hasWrong ? '' : 'secondary-button--disabled'}}"
       disabled="{{!hasWrong}}"
       bindtap="onReviewWrong"
     >{{hasWrong ? '查看本次错题解析' : '本组没有错题'}}</button>
