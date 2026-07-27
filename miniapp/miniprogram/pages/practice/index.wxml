@@ -27,9 +27,7 @@
           <text class="question-module">{{question.module}}</text>
         </view>
         <view class="question-stem">{{question.stem}}</view>
-        <text wx:if="{{showConfirm}}" class="multiple-tip">
-          本题有多个正确答案，选好后点击确认答案
-        </text>
+        <text wx:if="{{multipleTipText}}" class="multiple-tip">{{multipleTipText}}</text>
       </view>
 
       <view class="option-list">

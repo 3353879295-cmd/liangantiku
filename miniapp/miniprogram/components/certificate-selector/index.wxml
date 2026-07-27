@@ -3,13 +3,18 @@
     wx:if="{{collapsed}}"
     class="selector-panel selector-panel--collapsed"
     hover-class="selector-panel--pressed"
+    aria-role="button"
+    aria-label="当前题库 {{summaryText}}，重新选择"
     bind:tap="onExpand"
   >
     <view class="collapsed-copy">
       <text class="collapsed-copy__label">当前题库</text>
       <text class="collapsed-copy__summary">{{summaryText}}</text>
     </view>
-    <text class="collapsed-action">重新选择</text>
+    <view class="collapsed-action">
+      <text>重新选择</text>
+      <view class="collapsed-action__chevron" aria-hidden="true"></view>
+    </view>
   </view>
 
   <view wx:else class="selector-panel selector-panel--expanded">

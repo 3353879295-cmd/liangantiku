@@ -49,6 +49,7 @@ interface TouchPoint {
 interface PracticeInteractionState {
   touchStartPoint: TouchPoint | null;
   navigationLocked: boolean;
+  answerSheetNavigationPending: boolean;
   unlockTimer?: ReturnType<typeof setTimeout>;
 }
 
@@ -60,9 +61,29 @@ const getPracticeInteractionState = (page: object): PracticeInteractionState => 
   const created: PracticeInteractionState = {
     touchStartPoint: null,
     navigationLocked: false,
+    answerSheetNavigationPending: false,
   };
   practiceInteractionStates.set(page, created);
   return created;
+};
+
+const openAnswerSheet = (page: object): void => {
+  const session = getActivePractice();
+  const state = getPracticeInteractionState(page);
+  if (!session || state.answerSheetNavigationPending) return;
+  state.answerSheetNavigationPending = true;
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    state.answerSheetNavigationPending = false;
+  };
+  const callbacks = { success: release, fail: release, complete: release };
+  if (session.status === 'submitted') {
+    void wx.redirectTo({ url: '/pages/answer-sheet/index', ...callbacks });
+    return;
+  }
+  void wx.navigateTo({ url: '/pages/answer-sheet/index', ...callbacks });
 };
 
 const MODE_LABELS: Record<PracticeMode, string> = {
@@ -143,6 +164,7 @@ Page({
     options: [] as Array<Question['options'][number] & ReturnType<typeof presentQuestionOption>>,
     draftSelection: [] as string[],
     showConfirm: true,
+    multipleTipText: '',
     canConfirm: false,
     isMultiple: false,
     isFirst: true,
@@ -216,6 +238,19 @@ Page({
       session.status === 'submitted' ||
       (session.answerRevealMode === 'immediate' && Boolean(feedback));
     const selectionMode = getQuestionSelectionMode(question.type, question.answer);
+    const showConfirm =
+      session.status === 'active' &&
+      session.answerRevealMode === 'immediate' &&
+      selectionMode === 'multiple' &&
+      !feedback;
+    const multipleTipText =
+      session.status === 'active' && selectionMode === 'multiple'
+        ? session.answerRevealMode === 'deferred'
+          ? '本题可多选，可在交卷前修改'
+          : showConfirm
+            ? '本题有多个正确答案，选好后点击确认答案'
+            : ''
+        : '';
     this.setData({
       loading: false,
       sessionReady: true,
@@ -235,11 +270,8 @@ Page({
         }),
       })),
       draftSelection: selected,
-      showConfirm:
-        session.status === 'active' &&
-        session.answerRevealMode === 'immediate' &&
-        selectionMode === 'multiple' &&
-        !feedback,
+      showConfirm,
+      multipleTipText,
       canConfirm: selected.length > 0,
       isMultiple: selectionMode === 'multiple',
       isFirst: session.currentIndex === 0,
@@ -364,11 +396,7 @@ Page({
     const state = getPracticeInteractionState(this);
     if (!session || state.navigationLocked) return;
     if (this.data.isLast) {
-      state.navigationLocked = true;
-      void wx.navigateTo({ url: '/pages/answer-sheet/index' });
-      state.unlockTimer = setTimeout(() => {
-        state.navigationLocked = false;
-      }, NAVIGATION_ANIMATION_DURATION_MS);
+      openAnswerSheet(this);
       return;
     }
     this.navigateRelative(1);
@@ -396,7 +424,7 @@ Page({
   },
 
   onOpenAnswerSheet() {
-    void wx.navigateTo({ url: '/pages/answer-sheet/index' });
+    openAnswerSheet(this);
   },
 
   onToggleTheme() {

@@ -101,10 +101,13 @@ export const answerQuestion = (
     session.answerRevealMode === 'deferred'
       ? session.feedback
       : { ...session.feedback, [questionId]: result };
+  const answers = { ...session.answers };
+  if (result.selected.length) answers[questionId] = result.selected;
+  else delete answers[questionId];
 
   return {
     ...session,
-    answers: { ...session.answers, [questionId]: result.selected },
+    answers,
     feedback,
     updatedAt: now,
   };
@@ -137,7 +140,7 @@ export const getAnswerSheet = (
   session: PracticeSession,
 ): Array<{ questionId: string; status: AnswerSheetStatus }> =>
   session.questionIds.map((questionId) => {
-    if (!session.answers[questionId]) return { questionId, status: 'unanswered' };
+    if (!session.answers[questionId]?.length) return { questionId, status: 'unanswered' };
     if (session.status !== 'submitted') return { questionId, status: 'answered' };
     const result = session.feedback[questionId];
     if (!result) return { questionId, status: 'answered' };

@@ -10,6 +10,18 @@ import {
 } from '../../services/practice-runtime';
 import { appServices } from '../../services/app-services';
 
+const pendingAnswerSheetNavigations = new WeakSet<object>();
+
+const createAnswerSheetNavigationCallbacks = (page: object) => {
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    pendingAnswerSheetNavigations.delete(page);
+  };
+  return { success: release, fail: release, complete: release };
+};
+
 Page({
   data: {
     ready: false,
@@ -54,7 +66,12 @@ Page({
   },
 
   onOpenAnswerSheet() {
-    void wx.navigateTo({ url: '/pages/answer-sheet/index' });
+    if (pendingAnswerSheetNavigations.has(this)) return;
+    pendingAnswerSheetNavigations.add(this);
+    void wx.navigateTo({
+      url: '/pages/answer-sheet/index',
+      ...createAnswerSheetNavigationCallbacks(this),
+    });
   },
 
   onRetry() {

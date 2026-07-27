@@ -46,13 +46,24 @@
 }
 
 .collapsed-action {
+  display: flex;
   flex: none;
+  align-items: center;
+  gap: 10rpx;
   padding: 13rpx 20rpx;
   border-radius: 999rpx;
   background: var(--color-primary);
   color: var(--color-text);
   font-size: 21rpx;
   font-weight: 650;
+}
+
+.collapsed-action__chevron {
+  width: 10rpx;
+  height: 10rpx;
+  border-right: 3rpx solid currentcolor;
+  border-bottom: 3rpx solid currentcolor;
+  transform: translateY(-3rpx) rotate(45deg);
 }
 
 .selector-label {

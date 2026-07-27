@@ -693,7 +693,12 @@ describe('practice page answer reveal policy', () => {
     definition.onNext.call(context);
     definition.onNext.call(context);
 
-    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages/answer-sheet/index' });
+    expect(navigateTo).toHaveBeenCalledWith({
+      url: '/pages/answer-sheet/index',
+      success: expect.any(Function),
+      fail: expect.any(Function),
+      complete: expect.any(Function),
+    });
     expect(navigateTo).toHaveBeenCalledTimes(1);
     expect(runtime.getActivePractice()?.status).toBe('active');
   });

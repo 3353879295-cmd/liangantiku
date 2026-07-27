@@ -29,7 +29,14 @@ interface AnswerSheetPageDefinition {
   onSelectQuestion(this: AnswerSheetPageContext, event: WechatMiniprogram.TouchEvent): void;
 }
 
-const questionTap = (index: number) =>
+interface NavigationOptions {
+  url?: string;
+  success?: () => void;
+  fail?: () => void;
+  complete?: () => void;
+}
+
+const questionTap = (index: unknown) =>
   ({
     currentTarget: { dataset: { index } },
   }) as unknown as WechatMiniprogram.TouchEvent;
@@ -37,18 +44,21 @@ const questionTap = (index: number) =>
 const loadAnswerSheetPage = async () => {
   vi.resetModules();
   let definition: AnswerSheetPageDefinition | undefined;
-  const navigateBack = vi.fn();
-  const navigateTo = vi.fn();
+  const navigateBack = vi.fn<(options: NavigationOptions) => void>();
+  const navigateTo = vi.fn<(options: NavigationOptions) => void>();
+  const redirectTo = vi.fn<(options: NavigationOptions) => void>();
+  const setStorageSync = vi.fn();
 
   vi.stubGlobal('Page', (value: AnswerSheetPageDefinition) => {
     definition = value;
   });
   vi.stubGlobal('wx', {
     getStorageSync: vi.fn(() => ''),
-    setStorageSync: vi.fn(),
+    setStorageSync,
     removeStorageSync: vi.fn(),
     navigateBack,
     navigateTo,
+    redirectTo,
   });
 
   const page = (await import('../miniprogram/pages/answer-sheet/index')) as AnswerSheetPageModule;
@@ -74,7 +84,9 @@ const loadAnswerSheetPage = async () => {
     navigateTo,
     page,
     practiceSession,
+    redirectTo,
     runtime,
+    setStorageSync,
   };
 };
 
@@ -128,7 +140,8 @@ describe('answer-sheet question selection', () => {
   });
 
   it('saves a submitted selection before opening its read-only practice review', async () => {
-    const { context, definition, navigateBack, navigateTo, runtime } = await loadAnswerSheetPage();
+    const { context, definition, navigateBack, navigateTo, redirectTo, runtime } =
+      await loadAnswerSheetPage();
     const session = runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-review-1' }), makeQuestion({ id: 'Q-review-2' })],
       'sequential',
@@ -137,7 +150,7 @@ describe('answer-sheet question selection', () => {
       throw new Error('submitted practice session was not created');
     }
     let indexWhenNavigating = -1;
-    navigateTo.mockImplementation(() => {
+    redirectTo.mockImplementation(() => {
       indexWhenNavigating = runtime.getActivePractice()?.currentIndex ?? -1;
     });
 
@@ -145,15 +158,18 @@ describe('answer-sheet question selection', () => {
 
     expect(indexWhenNavigating).toBe(1);
     expect(runtime.getActivePractice()?.currentIndex).toBe(1);
-    expect(navigateTo).toHaveBeenCalledWith({
+    expect(redirectTo).toHaveBeenCalledWith({
       url: '/pages/practice/index?resume=1',
+      success: expect.any(Function),
+      fail: expect.any(Function),
       complete: expect.any(Function),
     });
+    expect(navigateTo).not.toHaveBeenCalled();
     expect(navigateBack).not.toHaveBeenCalled();
   });
 
   it('ignores repeated submitted selections until navigation completes', async () => {
-    const { context, definition, navigateTo, runtime } = await loadAnswerSheetPage();
+    const { context, definition, redirectTo, runtime } = await loadAnswerSheetPage();
     const session = runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-repeat-1' }), makeQuestion({ id: 'Q-repeat-2' })],
       'sequential',
@@ -165,19 +181,19 @@ describe('answer-sheet question selection', () => {
     definition.onSelectQuestion.call(context, questionTap(1));
     definition.onSelectQuestion.call(context, questionTap(0));
 
-    expect(navigateTo).toHaveBeenCalledTimes(1);
+    expect(redirectTo).toHaveBeenCalledTimes(1);
     expect(runtime.getActivePractice()?.currentIndex).toBe(1);
 
-    const firstNavigation = navigateTo.mock.calls[0]?.[0] as { complete?: () => void } | undefined;
+    const firstNavigation = redirectTo.mock.calls[0]?.[0];
     firstNavigation?.complete?.();
     definition.onSelectQuestion.call(context, questionTap(0));
 
-    expect(navigateTo).toHaveBeenCalledTimes(2);
+    expect(redirectTo).toHaveBeenCalledTimes(2);
     expect(runtime.getActivePractice()?.currentIndex).toBe(0);
   });
 
-  it('unlocks submitted selection after a failed navigation completes', async () => {
-    const { context, definition, navigateTo, runtime } = await loadAnswerSheetPage();
+  it('unlocks submitted selection from the failure callback before complete for retry', async () => {
+    const { context, definition, redirectTo, runtime } = await loadAnswerSheetPage();
     const session = runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-failure-1' }), makeQuestion({ id: 'Q-failure-2' })],
       'sequential',
@@ -185,15 +201,52 @@ describe('answer-sheet question selection', () => {
     if (!session || !runtime.submitActivePractice(2000)) {
       throw new Error('submitted practice session was not created');
     }
-    navigateTo.mockImplementationOnce((options: { complete?: () => void }) => {
-      options.complete?.();
+    redirectTo.mockImplementationOnce((options) => {
+      options.fail?.();
     });
 
     definition.onSelectQuestion.call(context, questionTap(1));
     definition.onSelectQuestion.call(context, questionTap(0));
 
-    expect(navigateTo).toHaveBeenCalledTimes(2);
+    expect(redirectTo).toHaveBeenCalledTimes(2);
     expect(runtime.getActivePractice()?.currentIndex).toBe(0);
+  });
+
+  it.each([
+    { label: 'negative', index: -1 },
+    { label: 'upper bound', index: 2 },
+    { label: 'missing', index: undefined },
+  ])('ignores a $label cell index without saving or navigating', async ({ index }) => {
+    const { context, definition, navigateBack, navigateTo, redirectTo, runtime, setStorageSync } =
+      await loadAnswerSheetPage();
+    const session = runtime.startPracticeFromQuestions(
+      [makeQuestion({ id: 'Q-guard-1' }), makeQuestion({ id: 'Q-guard-2' })],
+      'sequential',
+    );
+    if (!session) throw new Error('active practice session was not created');
+    setStorageSync.mockClear();
+
+    expect(() => definition.onSelectQuestion.call(context, questionTap(index))).not.toThrow();
+
+    expect(runtime.getActivePractice()?.currentIndex).toBe(0);
+    expect(setStorageSync).not.toHaveBeenCalled();
+    expect(navigateBack).not.toHaveBeenCalled();
+    expect(navigateTo).not.toHaveBeenCalled();
+    expect(redirectTo).not.toHaveBeenCalled();
+  });
+
+  it('ignores a cell selection when no session exists', async () => {
+    const { context, definition, navigateBack, navigateTo, redirectTo, runtime, setStorageSync } =
+      await loadAnswerSheetPage();
+    setStorageSync.mockClear();
+
+    definition.onSelectQuestion.call(context, questionTap(0));
+
+    expect(runtime.getActivePractice()).toBeNull();
+    expect(setStorageSync).not.toHaveBeenCalled();
+    expect(navigateBack).not.toHaveBeenCalled();
+    expect(navigateTo).not.toHaveBeenCalled();
+    expect(redirectTo).not.toHaveBeenCalled();
   });
 
   it('keeps correct, wrong, and unanswered submitted cells distinct', async () => {

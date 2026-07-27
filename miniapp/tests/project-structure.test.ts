@@ -287,15 +287,25 @@ describe('WeChat mini program structure', () => {
       join(miniappRoot, 'components', 'certificate-selector', 'index.wxml'),
       'utf8',
     );
+    const styles = readFileSync(
+      join(miniappRoot, 'components', 'certificate-selector', 'index.wxss'),
+      'utf8',
+    );
 
     expect(markup).toContain('wx:if="{{collapsed}}"');
     expect(markup).toContain('wx:else');
     expect(markup).toContain('{{summaryText}}');
     expect(markup).toContain('重新选择');
     expect(markup).toContain('bind:tap="onExpand"');
+    expect(markup).toContain('aria-label="当前题库 {{summaryText}}，重新选择"');
     expect(markup).toContain('class="selector-panel selector-panel--expanded"');
     expect(markup).toContain('class="role-options"');
     expect(markup).toContain('class="level-options"');
+    expect(markup).toContain('class="collapsed-action__chevron"');
+    expect(markup).not.toMatch(/[▼▽↓⌄]/u);
+    expect(styles).toMatch(/\.collapsed-action__chevron\s*\{[^}]*border-right:/s);
+    expect(styles).toMatch(/\.collapsed-action__chevron\s*\{[^}]*border-bottom:/s);
+    expect(styles).toMatch(/\.collapsed-action__chevron\s*\{[^}]*rotate\(45deg\)/s);
   });
 
   it('keeps literal WXML image sources local and resolvable', () => {

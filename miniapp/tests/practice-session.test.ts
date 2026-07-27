@@ -214,6 +214,22 @@ describe('practice session', () => {
     expect(confirmed.report).toBeUndefined();
   });
 
+  it('defensively treats an empty in-memory selection as unanswered', () => {
+    const question = makeQuestion({ id: 'Q-empty-selection' });
+    const session = createPracticeSession([question], {
+      mode: 'sequential',
+      answerRevealMode: 'deferred',
+      now: 1000,
+    });
+
+    expect(
+      getAnswerSheet({
+        ...session,
+        answers: { [question.id]: [] },
+      }),
+    ).toEqual([{ questionId: question.id, status: 'unanswered' }]);
+  });
+
   it('aggregates report progress by stable chapter ID', () => {
     const questions = [
       makeQuestion({

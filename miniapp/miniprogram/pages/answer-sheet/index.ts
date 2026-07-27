@@ -9,6 +9,16 @@ import type { PracticeMode } from '../../types/domain';
 
 const pendingQuestionSelections = new WeakSet<object>();
 
+const createNavigationCallbacks = (page: object) => {
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    pendingQuestionSelections.delete(page);
+  };
+  return { success: release, fail: release, complete: release };
+};
+
 export const buildAnswerSheetSubmitModal = (
   mode: PracticeMode,
   unanswered: number,
@@ -80,17 +90,23 @@ Page({
   onSelectQuestion(event: WechatMiniprogram.TouchEvent) {
     const session = getActivePractice();
     const index = Number(event.currentTarget.dataset['index']);
-    if (!session || !Number.isInteger(index) || pendingQuestionSelections.has(this)) return;
-    saveActivePractice(navigateToQuestion(session, index, Date.now()));
-    pendingQuestionSelections.add(this);
-    const complete = () => {
-      pendingQuestionSelections.delete(this);
-    };
-    if (session.status === 'submitted') {
-      void wx.navigateTo({ url: '/pages/practice/index?resume=1', complete });
+    if (
+      !session ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= session.questionIds.length ||
+      pendingQuestionSelections.has(this)
+    ) {
       return;
     }
-    void wx.navigateBack({ complete });
+    saveActivePractice(navigateToQuestion(session, index, Date.now()));
+    pendingQuestionSelections.add(this);
+    const callbacks = createNavigationCallbacks(this);
+    if (session.status === 'submitted') {
+      void wx.redirectTo({ url: '/pages/practice/index?resume=1', ...callbacks });
+      return;
+    }
+    void wx.navigateBack(callbacks);
   },
 
   async onSubmit() {
