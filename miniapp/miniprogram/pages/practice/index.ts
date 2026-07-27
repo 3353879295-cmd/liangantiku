@@ -3,7 +3,12 @@ import {
   presentQuestionOption,
   selectDraftOption,
 } from '../../presenters/question-option-presenter';
-import { confirmQuestionAnswer, navigateToQuestion } from '../../services/practice-session';
+import { resolvePracticeSwipe } from '../../presenters/practice-swipe-presenter';
+import {
+  answerQuestion,
+  confirmQuestionAnswer,
+  navigateToQuestion,
+} from '../../services/practice-session';
 import {
   getActivePractice,
   restorePractice,
@@ -34,6 +39,31 @@ const MODES = new Set<PracticeMode>([
 const PRACTICE_LIMITS = new Set<string>(PRACTICE_QUESTION_LIMITS.map((limit) => String(limit)));
 const RANDOM_LIMITS = new Set<PracticeQuestionLimit>([10, 20, 30]);
 const QUESTION_TYPE_WHITELIST = new Set<string>(QUESTION_TYPES);
+const NAVIGATION_ANIMATION_DURATION_MS = 180;
+
+interface TouchPoint {
+  x: number;
+  y: number;
+}
+
+interface PracticeInteractionState {
+  touchStartPoint: TouchPoint | null;
+  navigationLocked: boolean;
+  unlockTimer?: ReturnType<typeof setTimeout>;
+}
+
+const practiceInteractionStates = new WeakMap<object, PracticeInteractionState>();
+
+const getPracticeInteractionState = (page: object): PracticeInteractionState => {
+  const current = practiceInteractionStates.get(page);
+  if (current) return current;
+  const created: PracticeInteractionState = {
+    touchStartPoint: null,
+    navigationLocked: false,
+  };
+  practiceInteractionStates.set(page, created);
+  return created;
+};
 
 const MODE_LABELS: Record<PracticeMode, string> = {
   chapter: '章节练习',
@@ -115,6 +145,7 @@ Page({
     showConfirm: true,
     canConfirm: false,
     isMultiple: false,
+    isFirst: true,
     isLast: false,
     analysisVisible: false,
     analysisCorrect: false,
@@ -125,6 +156,7 @@ Page({
     themeClass: '',
     toastVisible: false,
     toastMessage: '',
+    transitionClass: '',
   },
 
   async onLoad(options: Record<string, string | undefined>) {
@@ -181,8 +213,8 @@ Page({
     const selected = draft ?? session.answers[question.id] ?? [];
     const feedback = session.feedback[question.id];
     const revealAnswer =
-      session.mode === 'mock' ? session.status === 'submitted' : Boolean(feedback);
-    const hasAnswer = Boolean(session.answers[question.id]);
+      session.status === 'submitted' ||
+      (session.answerRevealMode === 'immediate' && Boolean(feedback));
     const selectionMode = getQuestionSelectionMode(question.type, question.answer);
     this.setData({
       loading: false,
@@ -204,9 +236,13 @@ Page({
       })),
       draftSelection: selected,
       showConfirm:
-        session.status === 'active' && (session.mode === 'mock' ? !hasAnswer : !revealAnswer),
+        session.status === 'active' &&
+        session.answerRevealMode === 'immediate' &&
+        selectionMode === 'multiple' &&
+        !feedback,
       canConfirm: selected.length > 0,
       isMultiple: selectionMode === 'multiple',
+      isFirst: session.currentIndex === 0,
       isLast: session.currentIndex === session.questions.length - 1,
       analysisVisible: revealAnswer && Boolean(feedback),
       analysisCorrect: feedback?.correct ?? false,
@@ -220,9 +256,24 @@ Page({
     const session = getActivePractice();
     const question = session?.questions[session.currentIndex];
     if (!session || !question || session.status === 'submitted') return;
-    if (session.mode !== 'mock' && session.feedback[question.id]) return;
+    if (session.answerRevealMode === 'immediate' && session.feedback[question.id]) return;
     const selectionMode = getQuestionSelectionMode(question.type, question.answer);
     const selected = selectDraftOption(this.data.draftSelection, event.detail.key, selectionMode);
+
+    if (session.answerRevealMode === 'deferred') {
+      const next = answerQuestion(session, question.id, selected, Date.now());
+      saveActivePractice(next);
+      this.renderSession(next);
+      return;
+    }
+
+    if (selectionMode === 'single') {
+      const next = confirmQuestionAnswer(session, question.id, selected, Date.now());
+      saveActivePractice(next);
+      this.renderSession(next);
+      return;
+    }
+
     const options = question.options.map((option) => ({
       ...option,
       ...presentQuestionOption({
@@ -245,6 +296,13 @@ Page({
     const session = getActivePractice();
     const question = session?.questions[session.currentIndex];
     if (!session || !question || session.status === 'submitted') return;
+    if (
+      session.answerRevealMode !== 'immediate' ||
+      getQuestionSelectionMode(question.type, question.answer) !== 'multiple' ||
+      session.feedback[question.id]
+    ) {
+      return;
+    }
     if (!this.data.draftSelection.length) {
       void wx.showToast({ title: '请至少选择一项', icon: 'none' });
       return;
@@ -254,16 +312,87 @@ Page({
     this.renderSession(next);
   },
 
-  onNext() {
+  onTouchStart(event: WechatMiniprogram.TouchEvent) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    getPracticeInteractionState(this).touchStartPoint = {
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  },
+
+  onTouchEnd(event: WechatMiniprogram.TouchEvent) {
+    const state = getPracticeInteractionState(this);
+    const start = state.touchStartPoint;
+    state.touchStartPoint = null;
+    const touch = event.changedTouches[0];
     const session = getActivePractice();
-    if (!session) return;
-    if (this.data.isLast) {
-      void wx.navigateTo({ url: '/pages/report/index' });
+    if (!start || !touch || !session || state.navigationLocked) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    const swipe = resolvePracticeSwipe({
+      deltaX,
+      deltaY,
+      currentIndex: session.currentIndex,
+      total: session.questions.length,
+    });
+
+    if (swipe.boundary) {
+      state.navigationLocked = true;
+      this.setData({
+        transitionClass:
+          deltaX > 0 ? 'practice-content--rebound-previous' : 'practice-content--rebound-next',
+      });
+      state.unlockTimer = setTimeout(() => {
+        state.navigationLocked = false;
+        this.setData({ transitionClass: '' });
+      }, NAVIGATION_ANIMATION_DURATION_MS);
       return;
     }
-    const next = navigateToQuestion(session, session.currentIndex + 1, Date.now());
+
+    if (swipe.direction === 'previous') this.navigateRelative(-1);
+    if (swipe.direction === 'next') this.navigateRelative(1);
+  },
+
+  onPrevious() {
+    this.navigateRelative(-1);
+  },
+
+  onNext() {
+    const session = getActivePractice();
+    const state = getPracticeInteractionState(this);
+    if (!session || state.navigationLocked) return;
+    if (this.data.isLast) {
+      state.navigationLocked = true;
+      void wx.navigateTo({ url: '/pages/answer-sheet/index' });
+      state.unlockTimer = setTimeout(() => {
+        state.navigationLocked = false;
+      }, NAVIGATION_ANIMATION_DURATION_MS);
+      return;
+    }
+    this.navigateRelative(1);
+  },
+
+  navigateRelative(offset: -1 | 1) {
+    const state = getPracticeInteractionState(this);
+    const session = getActivePractice();
+    if (!session || state.navigationLocked) return;
+    const targetIndex = session.currentIndex + offset;
+    if (targetIndex < 0 || targetIndex >= session.questions.length) return;
+
+    state.navigationLocked = true;
+    this.setData({
+      transitionClass: offset < 0 ? 'practice-content--previous' : 'practice-content--next',
+    });
+    const next = navigateToQuestion(session, targetIndex, Date.now());
     saveActivePractice(next);
     this.renderSession(next);
+    void wx.pageScrollTo({ scrollTop: 0, duration: 0 });
+    state.unlockTimer = setTimeout(() => {
+      state.navigationLocked = false;
+      this.setData({ transitionClass: '' });
+    }, NAVIGATION_ANIMATION_DURATION_MS);
   },
 
   onOpenAnswerSheet() {
@@ -291,5 +420,11 @@ Page({
 
   onToastClose() {
     this.setData({ toastVisible: false });
+  },
+
+  onUnload() {
+    const state = getPracticeInteractionState(this);
+    if (state.unlockTimer !== undefined) clearTimeout(state.unlockTimer);
+    practiceInteractionStates.delete(this);
   },
 });

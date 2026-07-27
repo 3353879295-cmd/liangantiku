@@ -383,6 +383,23 @@ describe('WeChat mini program structure', () => {
     expect(favoriteMarkup.match(/<view\s+class="favorite-button__ripple /g)).toHaveLength(1);
   });
 
+  it('wires practice touch navigation and keeps previous and next button fallbacks', () => {
+    const practiceMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'practice', 'index.wxml'),
+      'utf8',
+    );
+    const practiceSource = readFileSync(join(miniappRoot, 'pages', 'practice', 'index.ts'), 'utf8');
+
+    expect(practiceMarkup).toMatch(
+      /<view\s+class="practice-content \{\{transitionClass\}\}"[^>]*\bbindtouchstart="onTouchStart"[^>]*\bbindtouchend="onTouchEnd"/s,
+    );
+    expect(practiceMarkup).toMatch(/<button[^>]*\bbindtap="onPrevious"[^>]*>上一题<\/button>/s);
+    expect(practiceMarkup).toMatch(/<button[^>]*\bbindtap="onNext"[^>]*>/s);
+    expect(practiceSource).toContain('onTouchStart(');
+    expect(practiceSource).toContain('onTouchEnd(');
+    expect(practiceSource).toContain('navigateRelative(');
+  });
+
   it('pins the approved option readability and touch geometry values', () => {
     const styles = readFileSync(
       join(miniappRoot, 'components', 'question-option', 'index.wxss'),

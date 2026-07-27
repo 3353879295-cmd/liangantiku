@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CERTIFICATES } from '../miniprogram/data/certificates';
 import { KNOWLEDGE_CATALOG } from '../miniprogram/data/knowledge-catalog';
@@ -25,6 +25,7 @@ import {
 } from '../miniprogram/presenters/question-option-presenter';
 import { presentQuestionList } from '../miniprogram/presenters/question-list-presenter';
 import { presentReport } from '../miniprogram/presenters/report-presenter';
+import type { PracticeSession } from '../miniprogram/services/practice-session';
 import { makeQuestion } from './factories';
 
 describe('presentDashboard', () => {
@@ -522,5 +523,178 @@ describe('question draft selection', () => {
     expect(getQuestionSelectionMode('case', ['A'])).toBe('single');
     expect(getQuestionSelectionMode('case', ['A', 'C'])).toBe('multiple');
     expect(getQuestionSelectionMode('multiple', ['A'])).toBe('multiple');
+  });
+});
+
+interface PracticePageData {
+  draftSelection: string[];
+  options: Array<{ key: string; selected: boolean; state: string; disabled: boolean }>;
+  showConfirm: boolean;
+  analysisVisible: boolean;
+  isLast: boolean;
+}
+
+interface PracticePageContext {
+  data: PracticePageData;
+  setData(update: Partial<PracticePageData>): void;
+  renderSession: PracticePageDefinition['renderSession'];
+}
+
+interface PracticePageDefinition {
+  data: PracticePageData;
+  renderSession(this: PracticePageContext, session: PracticeSession, draft?: string[]): void;
+  onSelectOption(
+    this: PracticePageContext,
+    event: WechatMiniprogram.CustomEvent<{ key: string }>,
+  ): void;
+  onConfirmAnswer(this: PracticePageContext): void;
+  onNext(this: PracticePageContext): void;
+}
+
+const loadPracticePage = async (
+  answerRevealMode: 'immediate' | 'deferred',
+  question = makeQuestion(),
+) => {
+  vi.resetModules();
+  let definition: PracticePageDefinition | undefined;
+  const navigateTo = vi.fn();
+
+  vi.stubGlobal('Page', (value: PracticePageDefinition) => {
+    definition = value;
+  });
+  vi.stubGlobal('wx', {
+    getStorageSync: vi.fn(() => ''),
+    setStorageSync: vi.fn(),
+    removeStorageSync: vi.fn(),
+    navigateTo,
+    pageScrollTo: vi.fn(),
+  });
+
+  await import('../miniprogram/pages/practice/index');
+  const { appServices } = await import('../miniprogram/services/app-services');
+  const runtime = await import('../miniprogram/services/practice-runtime');
+  if (!definition) throw new Error('practice Page was not registered');
+
+  appServices.progress.updatePreferences({ answerRevealMode });
+  const session = runtime.startPracticeFromQuestions([question], 'sequential');
+  if (!session) throw new Error('practice session was not created');
+
+  const registered = definition;
+  const context: PracticePageContext = {
+    data: structuredClone(registered.data),
+    setData(update) {
+      Object.assign(this.data, update);
+    },
+    renderSession(sessionToRender, draft) {
+      registered.renderSession.call(this, sessionToRender, draft);
+    },
+  };
+  registered.renderSession.call(context, session);
+  const select = (key: string) =>
+    registered.onSelectOption.call(context, {
+      detail: { key },
+    } as WechatMiniprogram.CustomEvent<{ key: string }>);
+
+  return { context, definition: registered, navigateTo, runtime, select };
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe('practice page answer reveal policy', () => {
+  it('confirms an immediate single answer on selection and reveals feedback', async () => {
+    const { context, runtime, select } = await loadPracticePage(
+      'immediate',
+      makeQuestion({ id: 'Q-immediate-single', answer: ['A'] }),
+    );
+
+    select('A');
+
+    const session = runtime.getActivePractice();
+    expect(session?.answers['Q-immediate-single']).toEqual(['A']);
+    expect(session?.feedback['Q-immediate-single']?.correct).toBe(true);
+    expect(context.data.analysisVisible).toBe(true);
+    expect(context.data.showConfirm).toBe(false);
+  });
+
+  it('keeps an immediate multiple answer as a draft until confirmation', async () => {
+    const question = makeQuestion({
+      id: 'Q-immediate-multiple',
+      type: 'multiple',
+      answer: ['A', 'C'],
+    });
+    const { context, definition, runtime, select } = await loadPracticePage('immediate', question);
+
+    select('A');
+    select('C');
+
+    expect(runtime.getActivePractice()?.answers[question.id]).toBeUndefined();
+    expect(runtime.getActivePractice()?.feedback[question.id]).toBeUndefined();
+    expect(context.data.draftSelection).toEqual(['A', 'C']);
+    expect(context.data.showConfirm).toBe(true);
+
+    definition.onConfirmAnswer.call(context);
+
+    expect(runtime.getActivePractice()?.answers[question.id]).toEqual(['A', 'C']);
+    expect(runtime.getActivePractice()?.feedback[question.id]?.correct).toBe(true);
+    expect(context.data.analysisVisible).toBe(true);
+  });
+
+  it('saves every deferred selection without revealing correctness and allows changes', async () => {
+    const question = makeQuestion({
+      id: 'Q-deferred',
+      answer: ['B'],
+    });
+    const { context, runtime, select } = await loadPracticePage('deferred', question);
+
+    select('A');
+    expect(runtime.getActivePractice()?.answers[question.id]).toEqual(['A']);
+    expect(runtime.getActivePractice()?.feedback[question.id]).toBeUndefined();
+    expect(context.data.options.find(({ key }) => key === 'A')).toMatchObject({
+      selected: true,
+      state: 'selected',
+      disabled: false,
+    });
+    expect(context.data.analysisVisible).toBe(false);
+
+    select('B');
+    expect(runtime.getActivePractice()?.answers[question.id]).toEqual(['B']);
+    expect(runtime.getActivePractice()?.feedback[question.id]).toBeUndefined();
+    expect(context.data.options.find(({ key }) => key === 'B')).toMatchObject({
+      selected: true,
+      state: 'selected',
+      disabled: false,
+    });
+    expect(context.data.showConfirm).toBe(false);
+  });
+
+  it('keeps a submitted answer read-only', async () => {
+    const question = makeQuestion({ id: 'Q-submitted', answer: ['A'] });
+    const { context, definition, runtime, select } = await loadPracticePage('deferred', question);
+    select('A');
+    const submitted = runtime.submitActivePractice(2000);
+    if (!submitted) throw new Error('practice session was not submitted');
+    definition.renderSession.call(context, submitted);
+
+    select('B');
+
+    expect(runtime.getActivePractice()?.answers[question.id]).toEqual(['A']);
+    expect(context.data.draftSelection).toEqual(['A']);
+  });
+
+  it('opens the answer sheet from the final question without submitting', async () => {
+    const { context, definition, navigateTo, runtime } = await loadPracticePage(
+      'deferred',
+      makeQuestion({ id: 'Q-final' }),
+    );
+
+    definition.onNext.call(context);
+    definition.onNext.call(context);
+
+    expect(navigateTo).toHaveBeenCalledWith({ url: '/pages/answer-sheet/index' });
+    expect(navigateTo).toHaveBeenCalledTimes(1);
+    expect(runtime.getActivePractice()?.status).toBe('active');
   });
 });

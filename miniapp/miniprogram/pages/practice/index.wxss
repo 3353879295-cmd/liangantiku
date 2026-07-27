@@ -25,6 +25,26 @@
   --practice-option-wrong-text: #f3d9d5;
 }
 
+.practice-content {
+  transform-origin: center top;
+}
+
+.practice-content--previous {
+  animation: practice-enter-previous 180ms ease-out;
+}
+
+.practice-content--next {
+  animation: practice-enter-next 180ms ease-out;
+}
+
+.practice-content--rebound-previous {
+  animation: practice-rebound-previous 180ms ease-out;
+}
+
+.practice-content--rebound-next {
+  animation: practice-rebound-next 180ms ease-out;
+}
+
 .practice-topbar,
 .practice-topbar__actions {
   display: flex;
@@ -128,9 +148,12 @@
 .practice-footer {
   position: fixed;
   z-index: 10;
+  display: flex;
+  align-items: center;
   right: 0;
   bottom: 0;
   left: 0;
+  gap: 16rpx;
   padding: 18rpx 32rpx calc(18rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid var(--color-border);
   background: rgb(245 245 247 / 94%);
@@ -140,17 +163,35 @@
   background: rgb(21 25 17 / 94%);
 }
 
-.primary-button {
+.primary-button,
+.navigation-button {
+  flex: 1;
   min-height: 92rpx;
+  margin: 0;
   border-radius: 24rpx;
-  background: var(--color-primary);
-  color: #11120f;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 600;
   line-height: 92rpx;
 }
 
+.navigation-button {
+  background: var(--color-primary);
+  color: #11120f;
+}
+
+.navigation-button--previous {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.navigation-button--previous[disabled] {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
 .primary-button--confirm {
+  flex: 1.15;
   background: #11120f;
   color: #fff;
   transition:
@@ -174,6 +215,43 @@
   color: var(--color-text-secondary);
 }
 
-.primary-button::after {
+.primary-button::after,
+.navigation-button::after {
   display: none;
+}
+
+@keyframes practice-enter-previous {
+  from {
+    opacity: 0.88;
+    transform: translateX(-20rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes practice-enter-next {
+  from {
+    opacity: 0.88;
+    transform: translateX(20rpx);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes practice-rebound-previous {
+  50% {
+    transform: translateX(14rpx);
+  }
+}
+
+@keyframes practice-rebound-next {
+  50% {
+    transform: translateX(-14rpx);
+  }
 }
