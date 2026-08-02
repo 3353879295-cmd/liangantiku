@@ -77,23 +77,4 @@
       <text>{{loading ? '正在加载当前目录' : '当前等级目录待补充'}}</text>
     </view>
   </view>
-
-  <view class="section-heading">
-    <view class="section-title">最近刷题</view>
-    <text class="section-note">当前题库</text>
-  </view>
-  <view class="recent-card">
-    <view wx:if="{{recentQuestions.length}}">
-      <view wx:for="{{recentQuestions}}" wx:key="id" class="recent-row">
-        <view class="recent-row__marker"><t-icon name="history" size="30rpx" /></view>
-        <view class="recent-row__copy">
-          <view class="recent-row__title">{{item.title}}</view>
-          <text class="recent-row__meta">{{item.metaText}}</text>
-        </view>
-      </view>
-    </view>
-    <view wx:else class="recent-empty">
-      {{loading ? '正在读取练习记录' : '还没有当前题库的刷题记录'}}
-    </view>
-  </view>
 </view>

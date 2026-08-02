@@ -1,10 +1,10 @@
 import { CERTIFICATES } from '../../data/certificates';
 import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
-import { findCatalogChapterTitle, presentCatalogParts } from '../../presenters/catalog-presenter';
+import { presentCatalogParts } from '../../presenters/catalog-presenter';
 import { HOME_ACTIONS, presentHomeCertificate } from '../../presenters/home-presenter';
 import type { HomeAction } from '../../presenters/home-presenter';
 import { appServices, localDateKey } from '../../services/app-services';
-import type { CertificateKey, Question } from '../../types/domain';
+import type { CertificateKey } from '../../types/domain';
 
 interface HomeActionCard extends HomeAction {
   icon: string;
@@ -18,12 +18,6 @@ interface HomeCatalogChapter {
   title: string;
   metaText: string;
   progressText: string;
-}
-
-interface RecentQuestionItem {
-  id: string;
-  title: string;
-  metaText: string;
 }
 
 const defaultCertificateKey = (): CertificateKey => '4-02-06-01:5';
@@ -47,8 +41,6 @@ const actions: HomeActionCard[] = HOME_ACTIONS.map((action) => ({
 
 const initialCertificate = presentHomeCertificate(CERTIFICATES, defaultCertificateKey(), 0);
 
-const isQuestion = (question: Question | undefined): question is Question => Boolean(question);
-
 Page({
   data: {
     certificates: CERTIFICATES,
@@ -62,11 +54,12 @@ Page({
     resumeActionText: '去学习',
     actions,
     catalogChapters: [] as HomeCatalogChapter[],
-    recentQuestions: [] as RecentQuestionItem[],
     loading: true,
   },
 
   onShow() {
+    this.getTabBar()?.setData({ value: '/pages/home/index' });
+
     const app = getApp<IAppOption>();
     if (app.globalData.recoveryNotice) {
       const content = app.globalData.recoveryNotice;
@@ -103,18 +96,13 @@ Page({
       selectedKey: certificate.key,
       certificate: presentHomeCertificate(CERTIFICATES, certificate.key, 0),
       catalogChapters: [] as HomeCatalogChapter[],
-      recentQuestions: [] as RecentQuestionItem[],
       loading: true,
     });
 
-    const recentIds = appServices.progress.listRecentQuestionIds(Number.MAX_SAFE_INTEGER);
-    const [questions, recentQuestionRecords] = await Promise.all([
-      appServices.questions.list({
-        occupation: certificate.occupation,
-        level: certificate.level,
-      }),
-      appServices.questions.getByIds(recentIds),
-    ]);
+    const questions = await appServices.questions.list({
+      occupation: certificate.occupation,
+      level: certificate.level,
+    });
     if (this.data.selectedKey !== certificate.key) return;
 
     const parts = presentCatalogParts({
@@ -135,25 +123,9 @@ Page({
         progressText: chapter.progressText,
       }));
 
-    const recentById = new Map(recentQuestionRecords.map((question) => [question.id, question]));
-    const recentQuestions = recentIds
-      .map((id) => recentById.get(id))
-      .filter(isQuestion)
-      .filter(
-        (question) =>
-          question.occupation === certificate.occupation && question.level === certificate.level,
-      )
-      .slice(0, 3)
-      .map((question) => ({
-        id: question.id,
-        title: question.stem,
-        metaText: `${findCatalogChapterTitle(KNOWLEDGE_CATALOG, question.chapterId)} · ${certificate.levelName}`,
-      }));
-
     this.setData({
       certificate: presentHomeCertificate(CERTIFICATES, certificate.key, questions.length),
       catalogChapters,
-      recentQuestions,
       loading: false,
     });
   },

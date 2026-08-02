@@ -1,52 +1,17 @@
-import { QUESTION_TYPES } from '../types/domain';
 import type {
   CertificateLevel,
   CertificateAvailability,
   OccupationCode,
-  PracticeQuestionLimit,
   Question,
-  QuestionType,
 } from '../types/domain';
 import type { Certificate } from '../data/certificates';
 
-export const RANDOM_QUESTION_LIMITS = [10, 20, 30] as const;
-export type RandomQuestionLimit = (typeof RANDOM_QUESTION_LIMITS)[number];
-export type RandomCountSelection = 'all' | RandomQuestionLimit;
-
-const randomQuestionLimits = new Set<PracticeQuestionLimit>(RANDOM_QUESTION_LIMITS);
-const questionTypeWhitelist = new Set<string>(QUESTION_TYPES);
-const isRandomQuestionLimit = (value: PracticeQuestionLimit): value is RandomQuestionLimit =>
-  RANDOM_QUESTION_LIMITS.some((limit) => limit === value);
-
-const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
-  single: '单选题',
-  multiple: '多选题',
-  judge: '判断题',
-  case: '案例题',
-};
-
-export interface RandomCountOption {
-  value: RandomCountSelection;
-  label: string;
-  selected: boolean;
-  disabled: boolean;
-}
-
-export interface RandomTypeOption {
-  value: 'all' | QuestionType;
-  label: string;
-  count: number;
-  selected: boolean;
-  disabled: boolean;
-}
+export const RANDOM_QUESTION_LIMIT = 10;
 
 export interface RandomPracticeSetupViewModel {
   bankTitle: string;
   bankQuestionCount: number;
-  availableQuestionCount: number;
-  selection: RandomCountSelection;
-  countOptions: RandomCountOption[];
-  typeOptions: RandomTypeOption[];
+  questionCount: typeof RANDOM_QUESTION_LIMIT;
   summaryText: string;
   statusText: string;
   canStart: boolean;
@@ -55,23 +20,7 @@ export interface RandomPracticeSetupViewModel {
 export interface RandomPracticeSetupInput {
   certificate: Certificate;
   questions: readonly Pick<Question, 'type'>[];
-  limit?: PracticeQuestionLimit;
-  selection?: RandomCountSelection;
-  questionTypes: readonly QuestionType[];
 }
-
-const countQuestionTypes = (
-  questions: readonly Pick<Question, 'type'>[],
-): Record<QuestionType, number> => {
-  const counts: Record<QuestionType, number> = {
-    single: 0,
-    multiple: 0,
-    judge: 0,
-    case: 0,
-  };
-  for (const question of questions) counts[question.type] += 1;
-  return counts;
-};
 
 const canUseCertificate = (availability: CertificateAvailability, questionCount: number): boolean =>
   availability === 'available' && questionCount > 0;
@@ -79,91 +28,23 @@ const canUseCertificate = (availability: CertificateAvailability, questionCount:
 export const presentRandomPracticeSetup = ({
   certificate,
   questions,
-  limit,
-  selection: requestedSelection,
-  questionTypes,
 }: RandomPracticeSetupInput): RandomPracticeSetupViewModel => {
-  const counts = countQuestionTypes(questions);
-  const requestedTypes = [...new Set(questionTypes)];
-  const availableQuestionCount = requestedTypes.length
-    ? requestedTypes.reduce((total, questionType) => total + counts[questionType], 0)
-    : questions.length;
-  const hasUnavailableType = requestedTypes.some((questionType) => counts[questionType] === 0);
-  const adaptive = availableQuestionCount > 0 && availableQuestionCount < 10;
-  const validLegacyLimit = limit === undefined || isRandomQuestionLimit(limit);
-  const compatibleLimit = limit !== undefined && isRandomQuestionLimit(limit) ? limit : 10;
-  const preferredSelection = requestedSelection ?? compatibleLimit;
-  const selection: RandomCountSelection = adaptive
-    ? 'all'
-    : preferredSelection === 'all'
-      ? 10
-      : preferredSelection;
-  const validSelection = selection === 'all' || randomQuestionLimits.has(selection);
+  const bankQuestionCount = questions.length;
   const canStart =
-    canUseCertificate(certificate.availability, questions.length) &&
-    validLegacyLimit &&
-    validSelection &&
-    !hasUnavailableType &&
-    (selection === 'all' || availableQuestionCount >= selection);
-  const selectedTypeText = requestedTypes.length
-    ? requestedTypes.map((questionType) => QUESTION_TYPE_LABELS[questionType]).join('、')
-    : '全部题型';
-  const countOptions: RandomCountOption[] = [
-    ...(adaptive
-      ? [
-          {
-            value: 'all' as const,
-            label: `全部 ${availableQuestionCount} 题`,
-            selected: selection === 'all',
-            disabled: false,
-          },
-        ]
-      : []),
-    ...RANDOM_QUESTION_LIMITS.map((value) => ({
-      value,
-      label: `${value} 题`,
-      selected: selection === value,
-      disabled: value > availableQuestionCount,
-    })),
-  ];
-  const summaryText =
-    availableQuestionCount === 0
-      ? '当前没有可练习题目'
-      : selection === 'all'
-        ? `抽取全部 ${availableQuestionCount} 题 · ${selectedTypeText}`
-        : `抽取 ${selection} 题 · ${selectedTypeText}`;
+    canUseCertificate(certificate.availability, bankQuestionCount) &&
+    bankQuestionCount >= RANDOM_QUESTION_LIMIT;
 
   return {
     bankTitle: certificate.title,
-    bankQuestionCount: questions.length,
-    availableQuestionCount,
-    selection,
-    countOptions,
-    typeOptions: [
-      {
-        value: 'all',
-        label: '全部',
-        count: questions.length,
-        selected: requestedTypes.length === 0,
-        disabled: questions.length === 0,
-      },
-      ...QUESTION_TYPES.map((value) => ({
-        value,
-        label: QUESTION_TYPE_LABELS[value],
-        count: counts[value],
-        selected: requestedTypes.includes(value),
-        disabled: counts[value] === 0,
-      })),
-    ],
-    summaryText,
+    bankQuestionCount,
+    questionCount: RANDOM_QUESTION_LIMIT,
+    summaryText: `固定抽取 ${RANDOM_QUESTION_LIMIT} 题 · 全部题型`,
     statusText:
-      certificate.availability === 'coming-soon' || questions.length === 0
+      certificate.availability === 'coming-soon' || bankQuestionCount === 0
         ? '该等级题库待补充'
         : canStart
-          ? `当前筛选可用 ${availableQuestionCount} 题`
-          : availableQuestionCount === 0
-            ? '当前筛选没有可用题目'
-            : `当前筛选仅 ${availableQuestionCount} 题，题量不足`,
+          ? '题目将从当前题库随机抽取'
+          : `当前题库仅 ${bankQuestionCount} 题，暂不足 ${RANDOM_QUESTION_LIMIT} 题`,
     canStart,
   };
 };
@@ -171,27 +52,10 @@ export const presentRandomPracticeSetup = ({
 export interface RandomPracticeRouteInput {
   occupation: OccupationCode;
   level: CertificateLevel;
-  selection: RandomCountSelection;
-  questionTypes: readonly QuestionType[];
 }
 
-export const buildRandomPracticeRoute = ({
-  occupation,
-  level,
-  selection,
-  questionTypes,
-}: RandomPracticeRouteInput): string | null => {
-  if (selection !== 'all' && !randomQuestionLimits.has(selection)) return null;
-  if (questionTypes.some((questionType) => !questionTypeWhitelist.has(questionType))) return null;
-
-  const query = [`occupation=${occupation}`, `level=${level}`, 'mode=random'];
-  if (selection !== 'all') query.push(`limit=${selection}`);
-  const selectedTypes = [...new Set(questionTypes)];
-  if (selectedTypes.length) {
-    query.push(`types=${encodeURIComponent(selectedTypes.join(','))}`);
-  }
-  return `/pages/practice/index?${query.join('&')}`;
-};
+export const buildRandomPracticeRoute = ({ occupation, level }: RandomPracticeRouteInput): string =>
+  `/pages/practice/index?occupation=${occupation}&level=${level}&mode=random&limit=${RANDOM_QUESTION_LIMIT}`;
 
 export interface MockExamPolicy {
   revealFeedbackBeforeSubmit: false;

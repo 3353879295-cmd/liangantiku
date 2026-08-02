@@ -135,6 +135,20 @@ describe('WeChat mini program structure', () => {
     ]);
   });
 
+  it('ships the TDesign icon component into miniprogram_npm for runtime resolution', () => {
+    const bundledIcon = join(
+      miniappRoot,
+      'miniprogram_npm',
+      'tdesign-miniprogram',
+      'icon',
+      'icon.json',
+    );
+
+    expect(existsSync(bundledIcon), 'TDesign icon bundle is missing from miniprogram_npm').toBe(
+      true,
+    );
+  });
+
   it('ships the canonical and generated catalogs without the legacy library presenter', () => {
     for (const relativePath of [
       join(miniappRoot, '..', '..', 'data', 'knowledge_catalog.json'),

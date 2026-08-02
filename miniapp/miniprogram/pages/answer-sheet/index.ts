@@ -3,6 +3,7 @@ import {
   getActivePractice,
   restorePractice,
   saveActivePractice,
+  submitActivePractice,
 } from '../../services/practice-runtime';
 import { appServices } from '../../services/app-services';
 import type { PracticeMode } from '../../types/domain';
@@ -29,7 +30,7 @@ export const buildAnswerSheetSubmitModal = (
     content: unanswered
       ? `未答题 ${unanswered} 道，提交后将按未答处理。`
       : '未答题 0 道，提交后将生成本次结果。',
-    confirmText: isMock ? '确认交卷' : '结束本次练习',
+    confirmText: isMock ? '确认交卷' : '确认结束',
   };
 };
 
@@ -116,7 +117,13 @@ Page({
       (item) => item.status === 'unanswered',
     ).length;
     const result = await wx.showModal(buildAnswerSheetSubmitModal(session.mode, unanswered));
-    if (result.confirm) void wx.redirectTo({ url: '/pages/report/index' });
+    if (!result.confirm) return;
+    const submitted = submitActivePractice();
+    if (!submitted?.report) {
+      void wx.showToast({ title: '提交失败，请稍后重试', icon: 'none' });
+      return;
+    }
+    void wx.redirectTo({ url: '/pages/report/index' });
   },
 
   onToggleTheme() {

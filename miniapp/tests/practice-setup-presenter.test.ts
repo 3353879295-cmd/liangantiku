@@ -34,120 +34,54 @@ const questionTypes: QuestionType[] = [
 const questions = questionTypes.map((type, index) => makeQuestion({ id: `Q${index + 1}`, type }));
 
 describe('random practice setup presenter', () => {
-  it('offers only 10, 20, and 30 while disabling counts above the filtered inventory', () => {
+  it('always presents a fixed ten-question all-type practice', () => {
     const view = presentRandomPracticeSetup({
       certificate: availableCertificate,
       questions,
-      limit: 10,
-      questionTypes: [],
     });
 
-    expect(view.availableQuestionCount).toBe(12);
-    expect(view.countOptions).toEqual([
-      { value: 10, label: '10 题', selected: true, disabled: false },
-      { value: 20, label: '20 题', selected: false, disabled: true },
-      { value: 30, label: '30 题', selected: false, disabled: true },
-    ]);
-    expect(view.countOptions.some(({ value }) => value === (50 as number))).toBe(false);
+    expect(view).toEqual({
+      bankTitle: availableCertificate.title,
+      bankQuestionCount: 12,
+      questionCount: 10,
+      summaryText: '固定抽取 10 题 · 全部题型',
+      statusText: '题目将从当前题库随机抽取',
+      canStart: true,
+    });
     expect(view.canStart).toBe(true);
   });
 
-  it('uses an adaptive all option for an eight-question bank without an arbitrary route limit', () => {
+  it('does not silently reduce the fixed count when the bank has fewer than ten questions', () => {
     const view = presentRandomPracticeSetup({
       certificate: availableCertificate,
       questions: questions.slice(0, 8),
-      limit: 10,
-      questionTypes: [],
     });
 
-    expect(view.countOptions).toEqual([
-      { value: 'all', label: '全部 8 题', selected: true, disabled: false },
-      { value: 10, label: '10 题', selected: false, disabled: true },
-      { value: 20, label: '20 题', selected: false, disabled: true },
-      { value: 30, label: '30 题', selected: false, disabled: true },
-    ]);
-    expect(view.selection).toBe('all');
-    expect(view.summaryText).toBe('抽取全部 8 题 · 全部题型');
-    expect(view.canStart).toBe(true);
-    expect(
-      buildRandomPracticeRoute({
-        occupation: '4-02-06-01',
-        level: 5,
-        selection: 'all',
-        questionTypes: [],
-      }),
-    ).toBe('/pages/practice/index?occupation=4-02-06-01&level=5&mode=random');
-  });
-
-  it('recomputes the adaptive count from the selected type filter', () => {
-    const view = presentRandomPracticeSetup({
-      certificate: availableCertificate,
-      questions,
-      limit: 10,
-      questionTypes: ['multiple'],
-    });
-
-    expect(view.availableQuestionCount).toBe(2);
-    expect(view.countOptions[0]).toEqual({
-      value: 'all',
-      label: '全部 2 题',
-      selected: true,
-      disabled: false,
-    });
-    expect(view.selection).toBe('all');
-    expect(view.summaryText).toBe('抽取全部 2 题 · 多选题');
-    expect(view.canStart).toBe(true);
-    expect(
-      buildRandomPracticeRoute({
-        occupation: '4-02-06-01',
-        level: 5,
-        selection: 'all',
-        questionTypes: ['multiple'],
-      }),
-    ).toBe('/pages/practice/index?occupation=4-02-06-01&level=5&mode=random&types=multiple');
-  });
-
-  it('counts selected whitelisted types and refuses a type absent from the current bank', () => {
-    const selected = presentRandomPracticeSetup({
-      certificate: availableCertificate,
-      questions,
-      limit: 10,
-      questionTypes: ['single', 'judge'],
-    });
-    const unavailable = presentRandomPracticeSetup({
-      certificate: availableCertificate,
-      questions,
-      limit: 10,
-      questionTypes: ['case'],
-    });
-
-    expect(selected.availableQuestionCount).toBe(10);
-    expect(selected.typeOptions.find(({ value }) => value === 'single')?.selected).toBe(true);
-    expect(selected.typeOptions.find(({ value }) => value === 'multiple')?.selected).toBe(false);
-    expect(selected.summaryText).toContain('单选题、判断题');
-    expect(selected.canStart).toBe(true);
-
-    expect(unavailable.availableQuestionCount).toBe(0);
-    expect(unavailable.typeOptions.find(({ value }) => value === 'case')).toMatchObject({
-      selected: true,
-      disabled: true,
-      count: 0,
-    });
-    expect(unavailable.canStart).toBe(false);
+    expect(view.questionCount).toBe(10);
+    expect(view.summaryText).toBe('固定抽取 10 题 · 全部题型');
+    expect(view.statusText).toBe('当前题库仅 8 题，暂不足 10 题');
+    expect(view.canStart).toBe(false);
   });
 
   it('never starts a coming-soon certificate even if stale questions are supplied', () => {
     const randomView = presentRandomPracticeSetup({
       certificate: comingSoonCertificate,
       questions,
-      limit: 10,
-      questionTypes: [],
     });
     const mockView = presentMockPracticeInfo(comingSoonCertificate, questions.length);
 
     expect(randomView.canStart).toBe(false);
     expect(mockView.canStart).toBe(false);
     expect(mockView.statusText).toBe('该等级题库待补充');
+  });
+
+  it('builds only the fixed ten-question route', () => {
+    expect(
+      buildRandomPracticeRoute({
+        occupation: '4-02-06-01',
+        level: 5,
+      }),
+    ).toBe('/pages/practice/index?occupation=4-02-06-01&level=5&mode=random&limit=10');
   });
 });
 

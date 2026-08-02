@@ -10,6 +10,16 @@ const TABS: TabItem[] = [
   { text: '我的', value: '/pages/profile/index', icon: 'user' },
 ];
 
+interface TabBarContext {
+  setData(update: { value: string }): void;
+}
+
+export const syncCurrentRoute = (component: TabBarContext): void => {
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1];
+  if (currentPage?.route) component.setData({ value: `/${currentPage.route}` });
+};
+
 Component({
   data: {
     value: TABS[0]?.value ?? '/pages/home/index',
@@ -17,11 +27,12 @@ Component({
   },
   lifetimes: {
     attached() {
-      const pages = getCurrentPages();
-      const currentPage = pages[pages.length - 1];
-      if (currentPage?.route) {
-        this.setData({ value: `/${currentPage.route}` });
-      }
+      syncCurrentRoute(this);
+    },
+  },
+  pageLifetimes: {
+    show() {
+      syncCurrentRoute(this);
     },
   },
   methods: {

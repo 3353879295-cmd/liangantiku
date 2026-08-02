@@ -16,6 +16,10 @@ Page({
     ],
   },
 
+  onShow() {
+    this.getTabBar()?.setData({ value: '/pages/practical/index' });
+  },
+
   onOpenSkill(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset['id']);
     if (id) void wx.navigateTo({ url: `/pages/practical-detail/index?id=${id}` });

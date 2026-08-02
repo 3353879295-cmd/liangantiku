@@ -23,6 +23,8 @@ Page({
   },
 
   onShow() {
+    this.getTabBar()?.setData({ value: '/pages/profile/index' });
+
     const today = localDateKey();
     const preferences = appServices.progress.getPreferences();
     const certificate = CERTIFICATES.find(

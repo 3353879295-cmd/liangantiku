@@ -11,59 +11,27 @@
   </view>
 
   <block wx:else>
-    <view class="setup-hero matte-card">
-      <view class="setup-hero__mark"><t-icon name="swap" size="38rpx" /></view>
-      <view class="setup-hero__copy">
-        <view class="setup-hero__title">按你的节奏抽题</view>
-        <text class="setup-hero__meta">当前题库共 {{bankQuestionCount}} 题</text>
-      </view>
-    </view>
-
-    <view class="setup-section">
-      <view class="section-heading">
-        <view class="section-title">选择题量</view>
-        <text class="section-note">超出可用题量时不可选</text>
-      </view>
-      <view class="count-grid">
-        <view
-          wx:for="{{countOptions}}"
-          wx:key="value"
-          class="count-option {{item.value === 'all' ? 'count-option--adaptive' : ''}} {{item.selected ? 'count-option--selected' : ''}} {{item.disabled ? 'count-option--disabled' : ''}}"
-          data-selection="{{item.value}}"
-          aria-disabled="{{item.disabled}}"
-          bindtap="onCountTap"
-        >
-          <view class="count-option__label">{{item.label}}</view>
-          <text wx:if="{{item.disabled}}" class="count-option__note">题量不足</text>
+    <view class="fixed-practice-card matte-card">
+      <view class="fixed-practice-card__header">
+        <view class="fixed-practice-card__mark"><t-icon name="swap" size="36rpx" /></view>
+        <view class="fixed-practice-card__copy">
+          <text class="fixed-practice-card__eyebrow">随机练习</text>
+          <view class="fixed-practice-card__title">{{summaryText}}</view>
         </view>
       </view>
-    </view>
-
-    <view class="setup-section">
-      <view class="section-heading">
-        <view class="section-title">选择题型</view>
-        <text class="section-note">可多选</text>
-      </view>
-      <view class="type-grid">
-        <view
-          wx:for="{{typeOptions}}"
-          wx:key="value"
-          class="type-option {{item.selected ? 'type-option--selected' : ''}} {{item.disabled ? 'type-option--disabled' : ''}}"
-          data-type="{{item.value}}"
-          aria-disabled="{{item.disabled}}"
-          bindtap="onTypeTap"
-        >
-          <view class="type-option__name">{{item.label}}</view>
-          <text class="type-option__count">{{item.count}} 题</text>
+      <view class="fixed-practice-card__details">
+        <view class="fixed-practice-card__row">
+          <text>当前题库</text>
+          <text>{{bankQuestionCount}} 题</text>
+        </view>
+        <view class="fixed-practice-card__row">
+          <text>抽题方式</text>
+          <text>随机且不重复</text>
         </view>
       </view>
-    </view>
-
-    <view class="setup-summary matte-card">
-      <view class="setup-summary__icon"><t-icon name="check-circle" size="36rpx" /></view>
-      <view class="setup-summary__copy">
-        <view class="setup-summary__title">{{summaryText}}</view>
-        <text class="setup-summary__meta">{{statusText}}</text>
+      <view class="fixed-practice-card__status {{canStart ? '' : 'fixed-practice-card__status--disabled'}}">
+        <t-icon name="{{canStart ? 'check-circle' : 'info-circle'}}" size="28rpx" />
+        <text>{{statusText}}</text>
       </view>
     </view>
 
@@ -71,6 +39,6 @@
       class="start-button"
       disabled="{{!canStart}}"
       bindtap="onStart"
-    >开始随机练习</button>
+    >开始 {{questionCount}} 题</button>
   </block>
 </view>

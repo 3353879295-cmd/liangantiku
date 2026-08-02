@@ -27,6 +27,7 @@ interface AnswerSheetPageDefinition {
   data: AnswerSheetPageData;
   renderSheet(this: AnswerSheetPageContext): void;
   onSelectQuestion(this: AnswerSheetPageContext, event: WechatMiniprogram.TouchEvent): void;
+  onSubmit(this: AnswerSheetPageContext): Promise<void>;
 }
 
 interface NavigationOptions {
@@ -48,6 +49,7 @@ const loadAnswerSheetPage = async () => {
   const navigateTo = vi.fn<(options: NavigationOptions) => void>();
   const redirectTo = vi.fn<(options: NavigationOptions) => void>();
   const setStorageSync = vi.fn();
+  const showModal = vi.fn(() => Promise.resolve({ confirm: true, cancel: false }));
 
   vi.stubGlobal('Page', (value: AnswerSheetPageDefinition) => {
     definition = value;
@@ -59,6 +61,7 @@ const loadAnswerSheetPage = async () => {
     navigateBack,
     navigateTo,
     redirectTo,
+    showModal,
   });
 
   const page = (await import('../miniprogram/pages/answer-sheet/index')) as AnswerSheetPageModule;
@@ -87,6 +90,7 @@ const loadAnswerSheetPage = async () => {
     redirectTo,
     runtime,
     setStorageSync,
+    showModal,
   };
 };
 
@@ -96,14 +100,14 @@ afterEach(() => {
 });
 
 describe('answer-sheet submit modal', () => {
-  it('uses the exact normal-practice action in the title and confirm button', async () => {
+  it('keeps the normal-practice confirm text within the WeChat four-character limit', async () => {
     const { page } = await loadAnswerSheetPage();
 
     expect(typeof page.buildAnswerSheetSubmitModal).toBe('function');
     expect(page.buildAnswerSheetSubmitModal?.('random', 3)).toEqual({
       title: '结束本次练习',
       content: '未答题 3 道，提交后将按未答处理。',
-      confirmText: '结束本次练习',
+      confirmText: '确认结束',
     });
   });
 
@@ -115,6 +119,36 @@ describe('answer-sheet submit modal', () => {
       content: '未答题 0 道，提交后将生成本次结果。',
       confirmText: '确认交卷',
     });
+  });
+});
+
+describe('answer-sheet submission', () => {
+  it('submits a deferred session before opening its report', async () => {
+    const { context, definition, practiceSession, redirectTo, runtime, showModal } =
+      await loadAnswerSheetPage();
+    const question = makeQuestion({ id: 'Q-DEFERRED-SUBMIT' });
+    const active = practiceSession.answerQuestion(
+      practiceSession.createPracticeSession([question], {
+        mode: 'random',
+        answerRevealMode: 'deferred',
+        now: 1000,
+      }),
+      question.id,
+      ['A'],
+      1200,
+    );
+    runtime.saveActivePractice(active);
+    let statusWhenOpeningReport = '';
+    redirectTo.mockImplementation(() => {
+      statusWhenOpeningReport = runtime.getActivePractice()?.status ?? '';
+    });
+
+    await definition.onSubmit.call(context);
+
+    expect(showModal).toHaveBeenCalledTimes(1);
+    expect(statusWhenOpeningReport).toBe('submitted');
+    expect(runtime.getActivePractice()?.feedback[question.id]?.correct).toBe(true);
+    expect(redirectTo).toHaveBeenCalledWith({ url: '/pages/report/index' });
   });
 });
 

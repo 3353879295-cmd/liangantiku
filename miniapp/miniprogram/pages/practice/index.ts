@@ -37,7 +37,6 @@ const MODES = new Set<PracticeMode>([
   'favorite',
 ]);
 const PRACTICE_LIMITS = new Set<string>(PRACTICE_QUESTION_LIMITS.map((limit) => String(limit)));
-const RANDOM_LIMITS = new Set<PracticeQuestionLimit>([10, 20, 30]);
 const QUESTION_TYPE_WHITELIST = new Set<string>(QUESTION_TYPES);
 const NAVIGATION_ANIMATION_DURATION_MS = 180;
 
@@ -111,15 +110,18 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
   try {
     let limit: PracticeQuestionLimit | undefined;
     const rawLimit = options['limit'];
-    if (rawLimit !== undefined) {
+    if (mode === 'random') {
+      if (rawLimit !== undefined && rawLimit !== '10') return null;
+      limit = 10;
+    } else if (rawLimit !== undefined) {
       if (!PRACTICE_LIMITS.has(rawLimit)) return null;
       limit = Number(rawLimit) as PracticeQuestionLimit;
-      if (mode === 'random' && !RANDOM_LIMITS.has(limit)) return null;
     }
 
     let questionTypes: QuestionType[] | undefined;
     const rawTypes = options['types'];
     if (rawTypes !== undefined) {
+      if (mode === 'random') return null;
       const decodedTypes = decodeURIComponent(rawTypes).split(',');
       if (
         !decodedTypes.length ||

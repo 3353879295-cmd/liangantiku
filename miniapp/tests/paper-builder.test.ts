@@ -224,7 +224,7 @@ describe('textbook practice route guards', () => {
     },
   );
 
-  it('decodes a random-practice type filter once and accepts supported counts', async () => {
+  it('accepts only the fixed ten-question random-practice route', async () => {
     stubMiniProgramPageGlobals();
     const pageModule =
       (await import('../miniprogram/pages/practice/index')) as unknown as PracticePageModule;
@@ -234,8 +234,7 @@ describe('textbook practice route guards', () => {
         occupation: '4-02-06-01',
         level: '5',
         mode: 'random',
-        limit: '30',
-        types: 'single%2Cjudge',
+        limit: '10',
       }),
     ).toEqual({
       resume: false,
@@ -243,8 +242,7 @@ describe('textbook practice route guards', () => {
         occupation: '4-02-06-01',
         level: 5,
         mode: 'random',
-        limit: 30,
-        questionTypes: ['single', 'judge'],
+        limit: 10,
       },
     });
   });
@@ -273,8 +271,11 @@ describe('textbook practice route guards', () => {
   });
 
   it.each([
+    { limit: '20' },
+    { limit: '30' },
     { limit: '15' },
     { limit: '50' },
+    { limit: '10', types: 'single' },
     { types: 'single%2Cessay' },
     { types: 'single%252Cjudge' },
     { types: '' },
