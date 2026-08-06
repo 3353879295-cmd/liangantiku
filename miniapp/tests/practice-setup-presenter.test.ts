@@ -6,6 +6,7 @@ import {
   presentMockPracticeInfo,
   presentRandomPracticeSetup,
 } from '../miniprogram/presenters/practice-setup-presenter';
+import type { Certificate } from '../miniprogram/data/certificates';
 import type { CertificateKey, QuestionType } from '../miniprogram/types/domain';
 import { makeQuestion } from './factories';
 
@@ -16,7 +17,15 @@ const requireCertificate = (key: CertificateKey) => {
 };
 
 const availableCertificate = requireCertificate('4-02-06-01:5');
-const comingSoonCertificate = requireCertificate('4-02-06-01:2');
+const comingSoonCertificate: Certificate = {
+  ...availableCertificate,
+  key: '4-02-06-01:2',
+  level: 2,
+  levelName: '技师',
+  availability: 'coming-soon',
+  title: '粮油仓储管理员 · 技师',
+  shortTitle: '保管员技师',
+};
 const questionTypes: QuestionType[] = [
   'single',
   'single',

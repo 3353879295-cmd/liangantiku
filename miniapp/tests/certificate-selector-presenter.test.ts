@@ -17,11 +17,6 @@ describe('certificate selector presenter', () => {
         title: '粮油仓储管理员',
         selected: true,
       },
-      {
-        occupation: '4-08-05-01',
-        title: '粮油质量检验员',
-        selected: false,
-      },
     ]);
     expect(
       view.levels.map(({ key, name, statusText, selected }) => ({
@@ -34,17 +29,17 @@ describe('certificate selector presenter', () => {
       { key: '4-02-06-01:5', name: '初级', statusText: '', selected: false },
       { key: '4-02-06-01:4', name: '中级', statusText: '', selected: true },
       { key: '4-02-06-01:3', name: '高级', statusText: '', selected: false },
-      { key: '4-02-06-01:2', name: '技师', statusText: '待补充', selected: false },
-      { key: '4-02-06-01:1', name: '高级技师', statusText: '待补充', selected: false },
+      { key: '4-02-06-01:2', name: '技师', statusText: '', selected: false },
+      { key: '4-02-06-01:1', name: '高级技师', statusText: '', selected: false },
     ]);
   });
 
-  it('shows the active occupation levels without inventing unavailable certificates', () => {
+  it('falls back to the active warehouse catalog while quality inspection is deferred', () => {
     const view = presentCertificateSelector(CERTIFICATES, '4-08-05-01:3', '4-08-05-01');
 
-    expect(view.summaryText).toBe('粮油质量检验员 · 高级');
+    expect(view.summaryText).toBe('粮油仓储管理员 · 初级');
     expect(view.levels).toHaveLength(5);
-    expect(view.levels.every(({ key }) => key.startsWith('4-08-05-01:'))).toBe(true);
+    expect(view.levels.every(({ key }) => key.startsWith('4-02-06-01:'))).toBe(true);
   });
 
   it('keeps role changes expanded, collapses a level choice, and reopens on demand', () => {

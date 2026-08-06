@@ -27,9 +27,9 @@ const sourceCatalog = new Map<
 );
 
 describe('practical skill catalog', () => {
-  it('contains twelve complete and uniquely addressable guides', () => {
-    expect(PRACTICAL_SKILLS).toHaveLength(12);
-    expect(new Set(PRACTICAL_SKILLS.map((item) => item.id)).size).toBe(12);
+  it('contains six complete and uniquely addressable warehouse guides', () => {
+    expect(PRACTICAL_SKILLS).toHaveLength(6);
+    expect(new Set(PRACTICAL_SKILLS.map((item) => item.id)).size).toBe(6);
     for (const skill of PRACTICAL_SKILLS) {
       expect(skill.preparations.length).toBeGreaterThan(0);
       expect(skill.steps.length).toBeGreaterThanOrEqual(3);
@@ -46,12 +46,6 @@ describe('practical skill catalog', () => {
       'fumigation-safety',
       'stored-pest-check',
       'abnormal-heating-response',
-      'sampling',
-      'sample-division',
-      'moisture-test',
-      'impurity-test',
-      'test-weight',
-      'laboratory-safety',
     ]);
   });
 
@@ -94,12 +88,6 @@ describe('practical skill catalog', () => {
       'fumigation-safety': '/assets/practical/grain-pest.png',
       'stored-pest-check': '/assets/practical/grain-pest.png',
       'abnormal-heating-response': '/assets/practical/thermometer.png',
-      sampling: '/assets/practical/sampler.png',
-      'sample-division': '/assets/practical/sampler.png',
-      'moisture-test': '/assets/practical/moisture-test.png',
-      'impurity-test': '/assets/practical/sampler.png',
-      'test-weight': '/assets/practical/sampler.png',
-      'laboratory-safety': '/assets/practical/moisture-test.png',
     });
   });
 
@@ -140,9 +128,6 @@ describe('practical skill catalog', () => {
       'mechanical-ventilation': ['SRC-0004'],
       'stored-pest-check': ['SRC-0004'],
       'abnormal-heating-response': ['SRC-0004'],
-      'moisture-test': ['SRC-0003'],
-      'impurity-test': ['SRC-0003'],
-      'test-weight': ['SRC-0003'],
     });
   });
 

@@ -47,12 +47,6 @@
             data-value="4-02-06-01"
             bind:tap="onFilter"
           >保管员</view>
-          <view
-            class="filter-chip {{occupation === '4-08-05-01' ? 'filter-chip--active' : ''}}"
-            data-group="occupation"
-            data-value="4-08-05-01"
-            bind:tap="onFilter"
-          >质检员</view>
         </view>
       </scroll-view>
 

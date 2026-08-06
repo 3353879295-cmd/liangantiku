@@ -23,7 +23,7 @@ export interface PracticalSkill {
   nonCurrentReference?: string;
 }
 
-export const PRACTICAL_SKILLS: PracticalSkill[] = [
+const ALL_PRACTICAL_SKILLS: PracticalSkill[] = [
   {
     id: 'grain-condition-rounds',
     occupation: '4-02-06-01',
@@ -342,6 +342,10 @@ export const PRACTICAL_SKILLS: PracticalSkill[] = [
       '农产品食品检验员国家职业技能标准（2019年版）；GB/T 5490-2010《粮油检验 一般规则》',
   },
 ];
+
+export const PRACTICAL_SKILLS = ALL_PRACTICAL_SKILLS.filter(
+  (skill) => skill.occupation === '4-02-06-01',
+);
 
 export const getPracticalSkill = (id: string): PracticalSkill | undefined =>
   PRACTICAL_SKILLS.find((skill) => skill.id === id);

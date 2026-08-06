@@ -396,6 +396,34 @@
               ]
             }
           ]
+        },
+        {
+          "id": "warehouse-import",
+          "number": 99,
+          "title": "保管员资料整理题库",
+          "levels": [
+            5,
+            4,
+            3,
+            2,
+            1
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-import-c01",
+              "number": 1,
+              "title": "保管员综合理论",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-import-c01-s01",
+                  "number": 1,
+                  "title": "资料整理题目",
+                  "page": null
+                }
+              ]
+            }
+          ]
         }
       ]
     },

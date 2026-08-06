@@ -1,6 +1,6 @@
 export type OccupationCode = '4-02-06-01' | '4-08-05-01';
 export type CertificateLevel = 5 | 4 | 3 | 2 | 1;
-export type AvailableQuestionLevel = 5 | 4 | 3;
+export type AvailableQuestionLevel = 5 | 4 | 3 | 2 | 1;
 export type CertificateAvailability = 'available' | 'coming-soon';
 export type AnswerTheme = 'light' | 'night';
 export type AnswerRevealMode = 'immediate' | 'deferred';

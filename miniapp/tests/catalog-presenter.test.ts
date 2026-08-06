@@ -256,7 +256,7 @@ describe('presentCatalogParts', () => {
     expect(JSON.stringify(view)).not.toContain('NaN');
   });
 
-  it('preserves all 37 canonical zero-question sections from the runtime catalog', async () => {
+  it('preserves all 60 canonical zero-question sections from the runtime catalog', async () => {
     const repository = new LocalQuestionRepository(QUESTION_RECORDS);
     const questions = await repository.list();
     const canonicalSectionIds = Object.values(KNOWLEDGE_CATALOG.occupations).flatMap((occupation) =>
@@ -294,7 +294,7 @@ describe('presentCatalogParts', () => {
       ),
     );
 
-    expect(canonicalEmptySectionIds).toHaveLength(37);
+    expect(canonicalEmptySectionIds).toHaveLength(60);
     expect(
       canonicalEmptySectionIds.every((sectionId) => {
         const section = presentedSections.get(sectionId);

@@ -1,15 +1,16 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
+import { gzipSync } from 'node:zlib';
 
 export const SHARDS = [
   'warehouse_l5.json',
   'warehouse_l4.json',
   'warehouse_l3.json',
-  'inspector_l5.json',
-  'inspector_l4.json',
-  'inspector_l3.json',
+  'warehouse_l2.json',
+  'warehouse_l1.json',
 ];
 
 const loadShard = (sourceDir, filename, minimumPerShard) => {
@@ -48,18 +49,37 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } =
   const counts = {};
   for (const filename of SHARDS) {
     const records = loaded[filename];
-    writeFileSync(join(targetDir, filename), `${JSON.stringify(records, null, 2)}\n`, 'utf8');
     counts[filename] = records.length;
   }
   const runtimeRecords = SHARDS.flatMap((filename) => loaded[filename]);
-  const runtimeModule = `import type { RuntimeQuestionRecord } from '../../types/runtime-question';
+  const encodedRecords = gzipSync(Buffer.from(JSON.stringify(runtimeRecords))).toString('base64');
+  const packedChunks = encodedRecords.match(/.{1,120}/g) ?? [];
+  const runtimeModule = `import { gunzipSync, strFromU8 } from 'fflate';
+import type { RuntimeQuestionRecord } from '../../types/runtime-question';
 
-export const RUNTIME_QUESTION_RECORDS: RuntimeQuestionRecord[] = ${JSON.stringify(runtimeRecords, null, 2)};
+const packed = [
+${packedChunks.map((chunk) => `  '${chunk}',`).join('\n')}
+].join('');
+
+const base64ToBytes = (value: string): Uint8Array => {
+  if (typeof wx !== 'undefined' && typeof wx.base64ToArrayBuffer === 'function') {
+    return new Uint8Array(wx.base64ToArrayBuffer(value));
+  }
+  const binary = globalThis.atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
+const compressed = base64ToBytes(packed);
+const records: unknown = JSON.parse(strFromU8(gunzipSync(compressed)));
+
+export const RUNTIME_QUESTION_RECORDS = records as RuntimeQuestionRecord[];
 `;
   writeFileSync(join(targetDir, 'runtime-question-records.ts'), runtimeModule, 'utf8');
   const catalogModule = `import type { RuntimeKnowledgeCatalog } from '../../types/knowledge-catalog';
 
-export const RUNTIME_KNOWLEDGE_CATALOG: RuntimeKnowledgeCatalog = ${JSON.stringify(catalog, null, 2)};
+const catalog: unknown = ${JSON.stringify(catalog, null, 2)};
+
+export const RUNTIME_KNOWLEDGE_CATALOG = catalog as RuntimeKnowledgeCatalog;
 `;
   writeFileSync(join(targetDir, 'runtime-knowledge-catalog.ts'), catalogModule, 'utf8');
   return counts;

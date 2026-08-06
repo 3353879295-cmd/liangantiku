@@ -1,6 +1,6 @@
 import type { RuntimeKnowledgeCatalog } from '../../types/knowledge-catalog';
 
-export const RUNTIME_KNOWLEDGE_CATALOG: RuntimeKnowledgeCatalog = {
+const catalog: unknown = {
   "occupations": {
     "4-02-06-01": {
       "title": "粮油仓储管理员",
@@ -398,6 +398,34 @@ export const RUNTIME_KNOWLEDGE_CATALOG: RuntimeKnowledgeCatalog = {
               ]
             }
           ]
+        },
+        {
+          "id": "warehouse-import",
+          "number": 99,
+          "title": "保管员资料整理题库",
+          "levels": [
+            5,
+            4,
+            3,
+            2,
+            1
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-import-c01",
+              "number": 1,
+              "title": "保管员综合理论",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-import-c01-s01",
+                  "number": 1,
+                  "title": "资料整理题目",
+                  "page": null
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -580,3 +608,5 @@ export const RUNTIME_KNOWLEDGE_CATALOG: RuntimeKnowledgeCatalog = {
     }
   }
 };
+
+export const RUNTIME_KNOWLEDGE_CATALOG = catalog as RuntimeKnowledgeCatalog;

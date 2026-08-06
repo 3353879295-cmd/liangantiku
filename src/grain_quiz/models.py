@@ -13,7 +13,7 @@ NonBlankString = Annotated[
 ]
 QuestionId = Annotated[
     str,
-    StringConstraints(pattern=r"^(WH|QI)-L[345]-[0-9]{6}$"),
+    StringConstraints(pattern=r"^(WH|QI)-L[12345]-[0-9]{6}$"),
 ]
 SourceId = Annotated[
     str,
@@ -77,7 +77,7 @@ class ReviewStatus(str, Enum):
 class Option(BaseModel):
     """A selectable response option."""
 
-    key: Literal["A", "B", "C", "D"]
+    key: Literal["A", "B", "C", "D", "E", "F"]
     text: str
 
 
@@ -103,7 +103,7 @@ class Question(BaseModel):
     occupation_code: OccupationCode
     occupation_name: str
     direction: str
-    level: Literal[5, 4, 3]
+    level: Literal[5, 4, 3, 2, 1]
     module: NonBlankString
     topic: NonBlankString
     chapter_id: NonBlankString
@@ -139,8 +139,8 @@ class Question(BaseModel):
                 raise ValueError(
                     "judge questions require A=\u6b63\u786e and B=\u9519\u8bef"
                 )
-        elif len(self.options) != 4:
-            raise ValueError("single, multiple and case questions require four options")
+        elif len(self.options) < 4 or len(self.options) > 6:
+            raise ValueError("single, multiple and case questions require four to six options")
         option_keys = {item.key for item in self.options}
         if len(option_keys) != len(self.options) or not set(self.answer) <= option_keys:
             raise ValueError("answer keys must match unique option keys")

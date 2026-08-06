@@ -9,6 +9,11 @@ def test_valid_single_question():
     assert Question.model_validate(BASE).answer == ["A"]
 
 
+def test_question_accepts_technician_and_senior_technician_levels():
+    assert Question.model_validate({**BASE, "id": "WH-L2-000001", "level": 2}).level == 2
+    assert Question.model_validate({**BASE, "id": "WH-L1-000001", "level": 1}).level == 1
+
+
 def test_question_keeps_stable_catalog_references():
     question = Question.model_validate(BASE)
 

@@ -100,9 +100,8 @@ def test_export_json_shards_are_sorted_and_verified_only(tmp_path: Path):
         "warehouse_l5.json": 2,
         "warehouse_l4.json": 0,
         "warehouse_l3.json": 0,
-        "inspector_l5.json": 0,
-        "inspector_l4.json": 1,
-        "inspector_l3.json": 0,
+        "warehouse_l2.json": 0,
+        "warehouse_l1.json": 0,
     }
     for filename in counts:
         records = json.loads((tmp_path / filename).read_text(encoding="utf-8"))

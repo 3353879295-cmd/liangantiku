@@ -75,6 +75,9 @@ EXPECTED_OUTLINES = {
         section|warehouse-l3-c11-s04|4|防治储粮害虫|page=388|visible_levels=3
         section|warehouse-l3-c11-s05|5|防治鼠雀|page=399|visible_levels=3
         section|warehouse-l3-c11-s06|6|防治储粮发热霉变|page=402|visible_levels=3
+        part|warehouse-import|99|保管员资料整理题库|visible_levels=5,4,3,2,1
+        chapter|warehouse-import-c01|1|保管员综合理论|page=null|visible_levels=5,4,3,2,1
+        section|warehouse-import-c01-s01|1|资料整理题目|page=null|visible_levels=5,4,3,2,1
         """
     ),
     "4-08-05-01": _lines(
@@ -180,9 +183,9 @@ def test_warehouse_catalog_matches_confirmed_textbook_structure():
     catalog = load_knowledge_catalog(CATALOG_PATH)
 
     assert catalog.counts("4-02-06-01") == {
-        "parts": 4,
-        "chapters": 11,
-        "sections": 44,
+        "parts": 5,
+        "chapters": 12,
+        "sections": 45,
     }
     assert catalog.allows(
         "4-02-06-01",
@@ -195,6 +198,12 @@ def test_warehouse_catalog_matches_confirmed_textbook_structure():
         3,
         "warehouse-l3-c11",
         "warehouse-l3-c11-s06",
+    )
+    assert catalog.allows(
+        "4-02-06-01",
+        1,
+        "warehouse-import-c01",
+        "warehouse-import-c01-s01",
     )
     assert not catalog.allows(
         "4-02-06-01",

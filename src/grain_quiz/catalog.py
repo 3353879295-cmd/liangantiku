@@ -164,7 +164,7 @@ def load_knowledge_catalog(path: Path) -> KnowledgeCatalog:
                 or any(
                     not isinstance(level, int)
                     or isinstance(level, bool)
-                    or level not in {5, 4, 3}
+                    or level not in {5, 4, 3, 2, 1}
                     for level in raw_levels
                 )
             ):

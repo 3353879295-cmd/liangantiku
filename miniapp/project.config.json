@@ -10,9 +10,7 @@
     "minified": true,
     "packNpmManually": true,
     "postcss": true,
-    "useCompilerPlugins": [
-      "typescript"
-    ],
+    "useCompilerPlugins": ["typescript"],
     "compileWorklet": false,
     "uglifyFileName": false,
     "uploadWithSourceMap": false,

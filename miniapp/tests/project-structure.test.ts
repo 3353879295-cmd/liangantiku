@@ -3,6 +3,8 @@ import { dirname, extname, join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { RUNTIME_QUESTION_RECORDS } from '../miniprogram/data/questions/runtime-question-records';
+
 const miniappRoot = resolve(import.meta.dirname, '..', 'miniprogram');
 const projectRoot = resolve(miniappRoot, '..');
 
@@ -690,36 +692,48 @@ describe('WeChat mini program structure', () => {
     expect(emphasizedRule).toMatch(/grid-column:\s*1\s*\/\s*-1;/);
   });
 
-  it('ships six non-placeholder verified question shards', () => {
-    const expectedShards = [
-      'warehouse_l5.json',
-      'warehouse_l4.json',
-      'warehouse_l3.json',
-      'inspector_l5.json',
-      'inspector_l4.json',
-      'inspector_l3.json',
-    ];
+  it('ships the packed five-level verified warehouse question bank', () => {
+    const expectedCounts = {
+      1: 624,
+      2: 748,
+      3: 950,
+      4: 658,
+      5: 1130,
+    };
     const ids = new Set<string>();
 
-    for (const filename of expectedShards) {
-      const records = readJson<Array<{ id: string; review_status: string }>>(
-        join(miniappRoot, 'data', 'questions', filename),
-      );
-      expect(records.length, `${filename} needs at least 8 questions`).toBeGreaterThanOrEqual(8);
-      expect(records.every(({ review_status }) => review_status === 'verified')).toBe(true);
-      for (const { id } of records) {
-        expect(ids.has(id), `duplicate runtime id: ${id}`).toBe(false);
-        ids.add(id);
-      }
+    for (const record of RUNTIME_QUESTION_RECORDS) {
+      expect(record.occupation).toBe('4-02-06-01');
+      expect(record.review_status).toBe('verified');
+      expect(ids.has(record.id), `duplicate runtime id: ${record.id}`).toBe(false);
+      ids.add(record.id);
     }
 
-    expect(ids.size).toBe(61);
+    expect(ids.size).toBe(4_110);
     expect(
-      expectedShards.some((filename) =>
-        readJson<Array<{ type: string }>>(join(miniappRoot, 'data', 'questions', filename)).some(
-          ({ type }) => type === 'case',
-        ),
+      Object.fromEntries(
+        [1, 2, 3, 4, 5].map((level) => [
+          level,
+          RUNTIME_QUESTION_RECORDS.filter((record) => record.level === level).length,
+        ]),
       ),
-    ).toBe(true);
+    ).toEqual(expectedCounts);
+    const runtimeModule = readFileSync(
+      join(miniappRoot, 'data', 'questions', 'runtime-question-records.ts'),
+      'utf8',
+    );
+    expect(runtimeModule).toContain("import { gunzipSync, strFromU8 } from 'fflate';");
+    expect(runtimeModule).toContain('const packed = [');
+  });
+
+  it('does not expose the deferred inspector bank in active question flows', () => {
+    const questionListMarkup = readFileSync(
+      join(miniappRoot, 'pages', 'question-list', 'index.wxml'),
+      'utf8',
+    );
+    const practicePage = readFileSync(join(miniappRoot, 'pages', 'practice', 'index.ts'), 'utf8');
+
+    expect(questionListMarkup).not.toContain('4-08-05-01');
+    expect(practicePage).toContain("new Set<OccupationCode>(['4-02-06-01'])");
   });
 });

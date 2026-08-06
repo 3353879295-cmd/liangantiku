@@ -83,10 +83,10 @@ afterEach(() => {
 describe('question-list page certificate scope', () => {
   it('defaults wrong questions to the current certificate and scopes its chapters', async () => {
     const { appServices, context, definition } = await loadQuestionListPage();
-    appServices.progress.updatePreferences({ selectedCertificateKey: '4-08-05-01:3' });
+    appServices.progress.updatePreferences({ selectedCertificateKey: '4-02-06-01:3' });
     const questions = await appServices.questions.list();
     const currentQuestions = questions
-      .filter((question) => question.occupation === '4-08-05-01' && question.level === 3)
+      .filter((question) => question.occupation === '4-02-06-01' && question.level === 3)
       .slice(0, 2);
     const currentIds = currentQuestions.map((question) => question.id);
     const otherId = questions.find(
@@ -105,7 +105,7 @@ describe('question-list page certificate scope', () => {
 
     await definition.onLoad.call(context, { kind: 'wrong' });
 
-    expect(context.data.occupation).toBe('4-08-05-01');
+    expect(context.data.occupation).toBe('4-02-06-01');
     expect(context.data.level).toBe(3);
     expect(context.data.view.items.map((item) => item.id)).toEqual(currentIds);
     expect(context.data.view.chapters.map((chapter) => chapter.id)).toEqual([
@@ -118,11 +118,11 @@ describe('question-list page certificate scope', () => {
     appServices.progress.updatePreferences({ selectedCertificateKey: '4-02-06-01:5' });
     await definition.onLoad.call(context, { kind: 'favorite' });
 
-    appServices.progress.updatePreferences({ selectedCertificateKey: '4-08-05-01:4' });
+    appServices.progress.updatePreferences({ selectedCertificateKey: '4-02-06-01:4' });
     expect(typeof definition.onShow).toBe('function');
     await definition.onShow?.call(context);
 
-    expect(context.data.occupation).toBe('4-08-05-01');
+    expect(context.data.occupation).toBe('4-02-06-01');
     expect(context.data.level).toBe(4);
     expect(context.data.chapterId).toBe('');
   });

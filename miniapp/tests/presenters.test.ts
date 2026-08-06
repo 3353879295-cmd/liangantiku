@@ -75,7 +75,7 @@ describe('presentDashboard', () => {
 });
 
 describe('home question bank presentation', () => {
-  it('keeps a selectable technician certificate visible but prevents an empty practice', () => {
+  it('prevents practice when a currently available certificate has no supplied questions', () => {
     expect(presentHomeCertificate(CERTIFICATES, '4-02-06-01:2', 0)).toMatchObject({
       roleTitle: '粮油仓储管理员',
       levelName: '技师',
@@ -86,11 +86,11 @@ describe('home question bank presentation', () => {
     });
   });
 
-  it('presents an available question bank with its formal role and question count', () => {
-    expect(presentHomeCertificate(CERTIFICATES, '4-08-05-01:4', 12)).toMatchObject({
-      certificateKey: '4-08-05-01:4',
-      roleTitle: '粮油质量检验员',
-      levelName: '中级',
+  it('presents an available warehouse question bank with its formal role and question count', () => {
+    expect(presentHomeCertificate(CERTIFICATES, '4-02-06-01:5', 12)).toMatchObject({
+      certificateKey: '4-02-06-01:5',
+      roleTitle: '粮油仓储管理员',
+      levelName: '初级',
       availabilityText: '可练习',
       canStart: true,
       questionCountText: '12 题',
@@ -117,17 +117,17 @@ describe('home question bank presentation', () => {
 });
 
 describe('library presenters', () => {
-  it('groups certificates by occupation', () => {
+  it('groups certificates under the active warehouse occupation only', () => {
     const groups = groupCertificates(CERTIFICATES);
 
-    expect(groups).toHaveLength(2);
-    expect(groups.map((group) => group.title)).toEqual(['储粮保管员', '粮油质检员']);
+    expect(groups).toHaveLength(1);
+    expect(groups.map((group) => group.title)).toEqual(['储粮保管员']);
   });
 
-  it('exposes five levels for each occupation and marks unavailable banks explicitly', () => {
+  it('exposes all five available warehouse levels', () => {
     const groups = groupCertificates(CERTIFICATES);
 
-    expect(groups.map((group) => group.items.length)).toEqual([5, 5]);
+    expect(groups.map((group) => group.items.length)).toEqual([5]);
     expect(groups[0]?.items.map((item) => item.levelName)).toEqual([
       '初级',
       '中级',
@@ -139,8 +139,8 @@ describe('library presenters', () => {
       'available',
       'available',
       'available',
-      'coming-soon',
-      'coming-soon',
+      'available',
+      'available',
     ]);
   });
 

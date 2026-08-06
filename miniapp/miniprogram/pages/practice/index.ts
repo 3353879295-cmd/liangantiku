@@ -26,8 +26,8 @@ import type {
   QuestionType,
 } from '../../types/domain';
 
-const OCCUPATIONS = new Set<OccupationCode>(['4-02-06-01', '4-08-05-01']);
-const LEVELS = new Set<CertificateLevel>([5, 4, 3]);
+const OCCUPATIONS = new Set<OccupationCode>(['4-02-06-01']);
+const LEVELS = new Set<CertificateLevel>([5, 4, 3, 2, 1]);
 const MODES = new Set<PracticeMode>([
   'chapter',
   'sequential',

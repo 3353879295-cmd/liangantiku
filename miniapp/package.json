@@ -13,6 +13,7 @@
     "sync:questions": "node scripts/sync-question-bank.mjs"
   },
   "dependencies": {
+    "fflate": "^0.8.2",
     "tdesign-miniprogram": "1.15.3"
   },
   "devDependencies": {

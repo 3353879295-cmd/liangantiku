@@ -36,17 +36,17 @@ const createFixture = () => {
 };
 
 describe('question bank sync', () => {
-  it('copies all six verified shards', () => {
+  it('packs all five verified shards into the runtime module', () => {
     const { source, target } = createFixture();
 
     const counts = syncQuestionBank(source, target, { minimumPerShard: 1 });
 
     expect(Object.keys(counts)).toEqual(SHARDS);
     expect(counts[firstShard]).toBe(1);
-    expect(JSON.parse(readFileSync(join(target, firstShard), 'utf8'))).toHaveLength(1);
     const runtimeModule = readFileSync(join(target, 'runtime-question-records.ts'), 'utf8');
     expect(runtimeModule).toContain('export const RUNTIME_QUESTION_RECORDS');
-    expect(runtimeModule).toContain(`${firstShard}-1`);
+    expect(runtimeModule).toContain("import { gunzipSync, strFromU8 } from 'fflate';");
+    expect(runtimeModule).toContain('const base64ToBytes');
     expect(runtimeModule).not.toContain("from './");
     const catalogModule = readFileSync(join(target, 'runtime-knowledge-catalog.ts'), 'utf8');
     expect(catalogModule).toContain('export const RUNTIME_KNOWLEDGE_CATALOG');
