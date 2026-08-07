@@ -146,10 +146,15 @@ def _write_rules(tmp_path: Path, rules: list[dict[str, object]]) -> Path:
     return path
 
 
-def _rule(section_id: str = "warehouse-l2-c03-s04") -> dict[str, object]:
+def _rule(
+    *,
+    level: int = 3,
+    chapter_id: str = "warehouse-l3-c11",
+    section_id: str = "warehouse-l3-c11-s04",
+) -> dict[str, object]:
     return {
-        "level": 2,
-        "chapter_id": "warehouse-l2-c03",
+        "level": level,
+        "chapter_id": chapter_id,
         "section_id": section_id,
         "strong_phrases": ["磷化氢环流熏蒸"],
         "keywords": ["熏蒸", "害虫"],
@@ -167,7 +172,7 @@ def test_rule_loader_reads_the_fixed_contract(tmp_path: Path):
     assert rules.chapter_score == 9
     assert rules.chapter_margin == 3
     assert rules.basic_lead == 4
-    assert rules.rules[0].section_id == "warehouse-l2-c03-s04"
+    assert rules.rules[0].section_id == "warehouse-l3-c11-s04"
 
 
 def test_rule_loader_rejects_duplicate_level_and_section(tmp_path: Path):
@@ -178,16 +183,14 @@ def test_rule_loader_rejects_duplicate_level_and_section(tmp_path: Path):
 def test_rule_loader_rejects_s00_as_a_scoring_target(tmp_path: Path):
     with pytest.raises(ValueError, match="s00"):
         load_warehouse_rules(
-            _write_rules(tmp_path, [_rule("warehouse-l2-c03-s00")]),
+            _write_rules(tmp_path, [_rule(section_id="warehouse-l3-c11-s00")]),
             CATALOG,
         )
 
 
 def test_rule_loader_rejects_a_path_outside_the_level_catalog(tmp_path: Path):
-    bad = _rule("warehouse-l3-c11-s04")
-    bad["chapter_id"] = "warehouse-l3-c11"
     with pytest.raises(ValueError, match="not allowed by catalog"):
-        load_warehouse_rules(_write_rules(tmp_path, [bad]), CATALOG)
+        load_warehouse_rules(_write_rules(tmp_path, [_rule(level=2)]), CATALOG)
 ```
 
 - [ ] **Step 2: 运行测试确认 RED**
