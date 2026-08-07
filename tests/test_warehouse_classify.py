@@ -3,12 +3,44 @@ from pathlib import Path
 
 import pytest
 
-from grain_quiz.catalog import load_knowledge_catalog
+from grain_quiz.catalog import KnowledgeCatalog, load_knowledge_catalog
 from grain_quiz.warehouse_classify import load_warehouse_rules
 
 
 CATALOG = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
 RULES_PATH = Path("tools/warehouse_classification_rules.json")
+
+
+@pytest.fixture
+def catalog_with_l2_seed(tmp_path: Path) -> KnowledgeCatalog:
+    document = json.loads(Path("data/knowledge_catalog.json").read_text(encoding="utf-8"))
+    document["occupations"]["4-02-06-01"]["parts"].append(
+        {
+            "id": "warehouse-l2-test",
+            "number": 100,
+            "title": "技师测试目录",
+            "levels": [2],
+            "chapters": [
+                {
+                    "id": "warehouse-l2-c03",
+                    "number": 3,
+                    "title": "粮情控制",
+                    "page": None,
+                    "sections": [
+                        {
+                            "id": "warehouse-l2-c03-s04",
+                            "number": 4,
+                            "title": "储粮害虫",
+                            "page": None,
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+    path = tmp_path / "knowledge_catalog_with_l2_seed.json"
+    path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    return load_knowledge_catalog(path)
 
 
 def _rule(**overrides: object) -> dict[str, object]:
@@ -70,11 +102,15 @@ def test_valid_fixed_contract_loads(tmp_path: Path) -> None:
     assert rules.rules[0].strong_phrases == ("储粮害虫防治",)
 
 
-def test_checked_in_rules_artifact_loads() -> None:
-    rules = load_warehouse_rules(RULES_PATH, CATALOG)
+def test_checked_in_l2_rules_artifact_loads_in_target_catalog(
+    catalog_with_l2_seed: KnowledgeCatalog,
+) -> None:
+    rules = load_warehouse_rules(RULES_PATH, catalog_with_l2_seed)
 
     assert rules.version == "2026-08-07.1"
-    assert rules.rules[0].section_id == "warehouse-l3-c11-s04"
+    assert rules.rules[0].level == 2
+    assert rules.rules[0].chapter_id == "warehouse-l2-c03"
+    assert rules.rules[0].section_id == "warehouse-l2-c03-s04"
 
 
 def test_duplicate_level_and_section_is_rejected(tmp_path: Path) -> None:
@@ -166,6 +202,13 @@ def test_normalized_duplicate_terms_report_the_term(tmp_path: Path) -> None:
 
 def test_unknown_level_is_rejected(tmp_path: Path) -> None:
     path = _write_rules(tmp_path, _document(_rule(level=6)))
+
+    with pytest.raises(ValueError, match="level"):
+        load_warehouse_rules(path, CATALOG)
+
+
+def test_bool_level_is_rejected(tmp_path: Path) -> None:
+    path = _write_rules(tmp_path, _document(_rule(level=True)))
 
     with pytest.raises(ValueError, match="level"):
         load_warehouse_rules(path, CATALOG)
