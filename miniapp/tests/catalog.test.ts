@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import KNOWLEDGE_CATALOG from '../../data/knowledge_catalog.json';
 import { CERTIFICATES, certificateKey } from '../miniprogram/data/certificates';
-import { KNOWLEDGE_CATALOG } from '../miniprogram/data/knowledge-catalog';
 
 describe('certificate catalog', () => {
   it('contains all five active warehouse certificate levels', () => {
@@ -27,23 +27,17 @@ describe('certificate catalog', () => {
     expect(chapterTitlesFor(5)).toEqual(
       expect.arrayContaining(['职业道德', '基础知识', '粮油出入库作业', '粮情检查', '粮情控制']),
     );
-    expect(partsFor(5).map((part) => part.id)).toEqual([
-      'warehouse-basic',
-      'warehouse-l5',
-      'warehouse-import',
-    ]);
-    expect(partsFor(4).map((part) => part.id)).toEqual([
-      'warehouse-basic',
-      'warehouse-l4',
-      'warehouse-import',
-    ]);
-    expect(partsFor(3).map((part) => part.id)).toEqual([
-      'warehouse-basic',
-      'warehouse-l3',
-      'warehouse-import',
-    ]);
-    expect(partsFor(2).map((part) => part.id)).toEqual(['warehouse-import']);
-    expect(partsFor(1).map((part) => part.id)).toEqual(['warehouse-import']);
+    expect(partsFor(5).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l5']);
+    expect(partsFor(4).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l4']);
+    expect(partsFor(3).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l3']);
+    expect(partsFor(2).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l2']);
+    expect(partsFor(1).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l1']);
+    expect(chapterTitlesFor(2)).toEqual(
+      expect.arrayContaining(['职业道德', '基础知识', '粮油出入库管理', '粮情检查', '粮情控制', '培训指导']),
+    );
+    expect(chapterTitlesFor(1)).toEqual(
+      expect.arrayContaining(['职业道德', '基础知识', '粮油出入库管理', '粮情检查', '粮情控制', '粮油储藏工艺设计', '培训指导']),
+    );
     expect(chapterIdsFor(4).every((id) => !id.startsWith('warehouse-l5-'))).toBe(true);
     expect(chapterIdsFor(3).every((id) => !id.startsWith('warehouse-l5-'))).toBe(true);
   });

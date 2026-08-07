@@ -16,58 +16,68 @@ def _lines(value: str) -> tuple[str, ...]:
 EXPECTED_OUTLINES = {
     "4-02-06-01": _lines(
         """
-        part|warehouse-basic|1|基础知识|visible_levels=5,4,3
-        chapter|warehouse-basic-c01|1|职业道德|page=2|visible_levels=5,4,3
-        section|warehouse-basic-c01-s01|1|职业道德基础知识|page=2|visible_levels=5,4,3
-        section|warehouse-basic-c01-s02|2|粮油仓储业从业人员职业守则|page=6|visible_levels=5,4,3
-        chapter|warehouse-basic-c02|2|基础知识|page=9|visible_levels=5,4,3
-        section|warehouse-basic-c02-s01|1|粮油仓储管理基础知识|page=9|visible_levels=5,4,3
-        section|warehouse-basic-c02-s02|2|安全生产与环境保护基础知识|page=62|visible_levels=5,4,3
-        section|warehouse-basic-c02-s03|3|相关法律法规基础知识|page=75|visible_levels=5,4,3
+        part|warehouse-basic|1|基础知识|visible_levels=5,4,3,2,1
+        chapter|warehouse-basic-c01|1|职业道德|page=2|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c01-s01|1|职业道德基础知识|page=2|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c01-s02|2|粮油仓储业从业人员职业守则|page=6|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c01-s00|3|本章综合考查|page=null|visible_levels=5,4,3,2,1
+        chapter|warehouse-basic-c02|2|基础知识|page=9|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c02-s01|1|粮油仓储管理基础知识|page=9|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c02-s02|2|安全生产与环境保护基础知识|page=62|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c02-s03|3|相关法律法规基础知识|page=75|visible_levels=5,4,3,2,1
+        section|warehouse-basic-c02-s00|4|本章综合考查|page=null|visible_levels=5,4,3,2,1
         part|warehouse-l5|2|初级粮油仓储管理员|visible_levels=5
         chapter|warehouse-l5-c03|3|粮油出入库作业|page=90|visible_levels=5
         section|warehouse-l5-c03-s01|1|粮油出入库准备|page=90|visible_levels=5
         section|warehouse-l5-c03-s02|2|粮油出入库作业|page=100|visible_levels=5
         section|warehouse-l5-c03-s03|3|粮油出入库收尾工作|page=131|visible_levels=5
+        section|warehouse-l5-c03-s00|4|本章综合考查|page=null|visible_levels=5
         chapter|warehouse-l5-c04|4|粮情检查|page=140|visible_levels=5
         section|warehouse-l5-c04-s01|1|检查储粮温度|page=140|visible_levels=5
         section|warehouse-l5-c04-s02|2|检查储粮湿度|page=147|visible_levels=5
         section|warehouse-l5-c04-s03|3|使用电子气体检测仪检查粮堆气体成分|page=157|visible_levels=5
         section|warehouse-l5-c04-s04|4|检查储粮害虫|page=159|visible_levels=5
         section|warehouse-l5-c04-s05|5|检查鼠雀|page=165|visible_levels=5
+        section|warehouse-l5-c04-s00|6|本章综合考查|page=null|visible_levels=5
         chapter|warehouse-l5-c05|5|粮情控制|page=173|visible_levels=5
         section|warehouse-l5-c05-s01|1|控制储存粮油温度|page=173|visible_levels=5
         section|warehouse-l5-c05-s02|2|控制储存粮油水分|page=175|visible_levels=5
         section|warehouse-l5-c05-s03|3|控制粮堆气体成分|page=179|visible_levels=5
         section|warehouse-l5-c05-s04|4|防治储粮害虫|page=186|visible_levels=5
         section|warehouse-l5-c05-s05|5|储粮鼠类防治|page=188|visible_levels=5
+        section|warehouse-l5-c05-s00|6|本章综合考查|page=null|visible_levels=5
         part|warehouse-l4|3|中级粮油仓储管理员|visible_levels=4
         chapter|warehouse-l4-c06|6|粮油出入库作业|page=196|visible_levels=4
         section|warehouse-l4-c06-s01|1|粮油出入库准备|page=196|visible_levels=4
         section|warehouse-l4-c06-s02|2|粮油出入库作业|page=209|visible_levels=4
         section|warehouse-l4-c06-s03|3|粮油出入库收尾|page=226|visible_levels=4
+        section|warehouse-l4-c06-s00|4|本章综合考查|page=null|visible_levels=4
         chapter|warehouse-l4-c07|7|粮情检查|page=230|visible_levels=4
         section|warehouse-l4-c07-s01|1|检查储粮温度|page=230|visible_levels=4
         section|warehouse-l4-c07-s02|2|检查储粮湿度和水分|page=235|visible_levels=4
         section|warehouse-l4-c07-s03|3|检测粮堆气体|page=241|visible_levels=4
         section|warehouse-l4-c07-s04|4|检查储粮害虫|page=244|visible_levels=4
+        section|warehouse-l4-c07-s00|5|本章综合考查|page=null|visible_levels=4
         chapter|warehouse-l4-c08|8|粮情控制|page=250|visible_levels=4
         section|warehouse-l4-c08-s01|1|控制储存粮油温度|page=250|visible_levels=4
         section|warehouse-l4-c08-s02|2|控制储存粮油水分|page=273|visible_levels=4
         section|warehouse-l4-c08-s03|3|控制粮堆气体成分|page=277|visible_levels=4
         section|warehouse-l4-c08-s04|4|防治储粮害虫|page=279|visible_levels=4
         section|warehouse-l4-c08-s05|5|储粮鼠类防治|page=297|visible_levels=4
+        section|warehouse-l4-c08-s00|6|本章综合考查|page=null|visible_levels=4
         part|warehouse-l3|4|高级粮油仓储管理员|visible_levels=3
         chapter|warehouse-l3-c09|9|粮油出入库管理|page=302|visible_levels=3
         section|warehouse-l3-c09-s01|1|粮油出入库准备|page=302|visible_levels=3
         section|warehouse-l3-c09-s02|2|粮油出入库作业|page=315|visible_levels=3
         section|warehouse-l3-c09-s03|3|粮油出入库收尾|page=328|visible_levels=3
+        section|warehouse-l3-c09-s00|4|本章综合考查|page=null|visible_levels=3
         chapter|warehouse-l3-c10|10|粮情检查|page=340|visible_levels=3
         section|warehouse-l3-c10-s01|1|分析储粮温度变化原因|page=340|visible_levels=3
         section|warehouse-l3-c10-s02|2|分析储粮水分变化原因|page=343|visible_levels=3
         section|warehouse-l3-c10-s03|3|检测粮堆气体|page=345|visible_levels=3
         section|warehouse-l3-c10-s04|4|检查储粮害虫|page=349|visible_levels=3
         section|warehouse-l3-c10-s05|5|检查储油质量|page=355|visible_levels=3
+        section|warehouse-l3-c10-s00|6|本章综合考查|page=null|visible_levels=3
         chapter|warehouse-l3-c11|11|粮情控制|page=372|visible_levels=3
         section|warehouse-l3-c11-s01|1|控制储存粮油温度|page=372|visible_levels=3
         section|warehouse-l3-c11-s02|2|控制储存粮油水分|page=380|visible_levels=3
@@ -75,9 +85,55 @@ EXPECTED_OUTLINES = {
         section|warehouse-l3-c11-s04|4|防治储粮害虫|page=388|visible_levels=3
         section|warehouse-l3-c11-s05|5|防治鼠雀|page=399|visible_levels=3
         section|warehouse-l3-c11-s06|6|防治储粮发热霉变|page=402|visible_levels=3
-        part|warehouse-import|99|保管员资料整理题库|visible_levels=5,4,3,2,1
-        chapter|warehouse-import-c01|1|保管员综合理论|page=null|visible_levels=5,4,3,2,1
-        section|warehouse-import-c01-s01|1|资料整理题目|page=null|visible_levels=5,4,3,2,1
+        section|warehouse-l3-c11-s00|7|本章综合考查|page=null|visible_levels=3
+        part|warehouse-l2|5|技师粮油仓储管理员|visible_levels=2
+        chapter|warehouse-l2-c01|1|粮油出入库管理|page=null|visible_levels=2
+        section|warehouse-l2-c01-s01|1|粮油出入库准备|page=null|visible_levels=2
+        section|warehouse-l2-c01-s00|2|本章综合考查|page=null|visible_levels=2
+        chapter|warehouse-l2-c02|2|粮情检查|page=null|visible_levels=2
+        section|warehouse-l2-c02-s01|1|粮堆气体成分|page=null|visible_levels=2
+        section|warehouse-l2-c02-s02|2|储粮虫害|page=null|visible_levels=2
+        section|warehouse-l2-c02-s03|3|粮油储藏品质|page=null|visible_levels=2
+        section|warehouse-l2-c02-s04|4|发热与霉变|page=null|visible_levels=2
+        section|warehouse-l2-c02-s00|5|本章综合考查|page=null|visible_levels=2
+        chapter|warehouse-l2-c03|3|粮情控制|page=null|visible_levels=2
+        section|warehouse-l2-c03-s01|1|储粮温度|page=null|visible_levels=2
+        section|warehouse-l2-c03-s02|2|储粮水分|page=null|visible_levels=2
+        section|warehouse-l2-c03-s03|3|粮堆气体成分|page=null|visible_levels=2
+        section|warehouse-l2-c03-s04|4|储粮虫害|page=null|visible_levels=2
+        section|warehouse-l2-c03-s05|5|储粮发热与霉变|page=null|visible_levels=2
+        section|warehouse-l2-c03-s06|6|储粮效益分析|page=null|visible_levels=2
+        section|warehouse-l2-c03-s00|7|本章综合考查|page=null|visible_levels=2
+        chapter|warehouse-l2-c04|4|培训指导|page=null|visible_levels=2
+        section|warehouse-l2-c04-s01|1|培训|page=null|visible_levels=2
+        section|warehouse-l2-c04-s02|2|指导|page=null|visible_levels=2
+        section|warehouse-l2-c04-s03|3|专业技术报告|page=null|visible_levels=2
+        section|warehouse-l2-c04-s00|4|本章综合考查|page=null|visible_levels=2
+        part|warehouse-l1|6|高级技师粮油仓储管理员|visible_levels=1
+        chapter|warehouse-l1-c01|1|粮油出入库管理|page=null|visible_levels=1
+        section|warehouse-l1-c01-s01|1|粮油出入库准备|page=null|visible_levels=1
+        section|warehouse-l1-c01-s00|2|本章综合考查|page=null|visible_levels=1
+        chapter|warehouse-l1-c02|2|粮情检查|page=null|visible_levels=1
+        section|warehouse-l1-c02-s01|1|储粮虫害|page=null|visible_levels=1
+        section|warehouse-l1-c02-s02|2|粮油储藏品质|page=null|visible_levels=1
+        section|warehouse-l1-c02-s00|3|本章综合考查|page=null|visible_levels=1
+        chapter|warehouse-l1-c03|3|粮情控制|page=null|visible_levels=1
+        section|warehouse-l1-c03-s01|1|储粮温度|page=null|visible_levels=1
+        section|warehouse-l1-c03-s02|2|储粮水分|page=null|visible_levels=1
+        section|warehouse-l1-c03-s03|3|储粮虫害|page=null|visible_levels=1
+        section|warehouse-l1-c03-s04|4|储粮品质|page=null|visible_levels=1
+        section|warehouse-l1-c03-s00|5|本章综合考查|page=null|visible_levels=1
+        chapter|warehouse-l1-c04|4|粮油储藏工艺设计|page=null|visible_levels=1
+        section|warehouse-l1-c04-s01|1|低温储粮|page=null|visible_levels=1
+        section|warehouse-l1-c04-s02|2|储粮调质通风|page=null|visible_levels=1
+        section|warehouse-l1-c04-s03|3|气调储粮|page=null|visible_levels=1
+        section|warehouse-l1-c04-s04|4|储粮效益分析|page=null|visible_levels=1
+        section|warehouse-l1-c04-s00|5|本章综合考查|page=null|visible_levels=1
+        chapter|warehouse-l1-c05|5|培训指导|page=null|visible_levels=1
+        section|warehouse-l1-c05-s01|1|培训|page=null|visible_levels=1
+        section|warehouse-l1-c05-s02|2|指导|page=null|visible_levels=1
+        section|warehouse-l1-c05-s03|3|专业技术报告|page=null|visible_levels=1
+        section|warehouse-l1-c05-s00|4|本章综合考查|page=null|visible_levels=1
         """
     ),
     "4-08-05-01": _lines(
@@ -179,38 +235,14 @@ def test_catalog_occupations_are_immutable():
     assert catalog.runtime_document() == original_document
 
 
-def test_warehouse_catalog_matches_confirmed_textbook_structure():
+def test_warehouse_catalog_matches_confirmed_five_level_structure():
     catalog = load_knowledge_catalog(CATALOG_PATH)
 
-    assert catalog.counts("4-02-06-01") == {
-        "parts": 5,
-        "chapters": 12,
-        "sections": 45,
-    }
-    assert catalog.allows(
-        "4-02-06-01",
-        5,
-        "warehouse-basic-c01",
-        "warehouse-basic-c01-s01",
-    )
-    assert catalog.allows(
-        "4-02-06-01",
-        3,
-        "warehouse-l3-c11",
-        "warehouse-l3-c11-s06",
-    )
-    assert catalog.allows(
-        "4-02-06-01",
-        1,
-        "warehouse-import-c01",
-        "warehouse-import-c01-s01",
-    )
-    assert not catalog.allows(
-        "4-02-06-01",
-        4,
-        "warehouse-l3-c11",
-        "warehouse-l3-c11-s06",
-    )
+    assert catalog.counts("4-02-06-01") == {"parts": 6, "chapters": 20, "sections": 92}
+    assert catalog.allows("4-02-06-01", 1, "warehouse-basic-c02", "warehouse-basic-c02-s03")
+    assert catalog.allows("4-02-06-01", 2, "warehouse-l2-c03", "warehouse-l2-c03-s04")
+    assert catalog.allows("4-02-06-01", 1, "warehouse-l1-c04", "warehouse-l1-c04-s03")
+    assert not catalog.allows("4-02-06-01", 1, "warehouse-import-c01", "warehouse-import-c01-s01")
 
 
 def test_inspector_catalog_is_independent_and_available_to_every_level():

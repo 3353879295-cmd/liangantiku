@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from grain_quiz.catalog import load_knowledge_catalog
 from grain_quiz.io import load_questions, load_sources, write_questions
 from grain_quiz.models import Question
 from grain_quiz.taxonomy import load_taxonomy
@@ -66,8 +67,8 @@ def test_taxonomy_accepts_known_topic():
     assert taxonomy.allows(
         "4-02-06-01",
         5,
-        "\u7cae\u60c5\u68c0\u67e5",
-        "\u7cae\u6e29\u68c0\u67e5",
+        "粮情检查",
+        "检查储粮温度",
     )
 
 
@@ -80,3 +81,37 @@ def test_taxonomy_rejects_unknown_topic():
         "\u7cae\u60c5\u68c0\u67e5",
         "\u4e0d\u5b58\u5728\u7684\u77e5\u8bc6\u70b9",
     )
+
+
+def test_warehouse_taxonomy_matches_visible_catalog_titles_in_order():
+    catalog = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
+    taxonomy = load_taxonomy(Path("data/taxonomy.json"))
+    occupation = catalog.occupations["4-02-06-01"]
+    levels = taxonomy.occupations["4-02-06-01"]["levels"]
+
+    for level in (5, 4, 3, 2, 1):
+        expected_modules = {
+            chapter.title: [section.title for section in chapter.sections]
+            for part in occupation.parts
+            if level in part.levels
+            for chapter in part.chapters
+        }
+        assert levels[str(level)]["modules"] == expected_modules
+
+    assert list(levels["2"]["modules"]) == [
+        "职业道德",
+        "基础知识",
+        "粮油出入库管理",
+        "粮情检查",
+        "粮情控制",
+        "培训指导",
+    ]
+    assert list(levels["1"]["modules"]) == [
+        "职业道德",
+        "基础知识",
+        "粮油出入库管理",
+        "粮情检查",
+        "粮情控制",
+        "粮油储藏工艺设计",
+        "培训指导",
+    ]

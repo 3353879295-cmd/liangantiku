@@ -13,7 +13,16 @@ RULES_PATH = Path("tools/warehouse_classification_rules.json")
 
 @pytest.fixture
 def catalog_with_l2_seed(tmp_path: Path) -> KnowledgeCatalog:
-    document = json.loads(Path("data/knowledge_catalog.json").read_text(encoding="utf-8"))
+    catalog = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
+    if catalog.allows(
+        "4-02-06-01",
+        2,
+        "warehouse-l2-c03",
+        "warehouse-l2-c03-s04",
+    ):
+        return catalog
+
+    document = catalog.runtime_document()
     document["occupations"]["4-02-06-01"]["parts"].append(
         {
             "id": "warehouse-l2-test",
