@@ -32,6 +32,21 @@ _RULE_KEYS = {
 }
 
 
+def _key_mismatch_error(
+    label: str,
+    actual_keys: set[str],
+    expected_keys: set[str],
+) -> ValueError:
+    missing = sorted(expected_keys - actual_keys)
+    unexpected = sorted(actual_keys - expected_keys)
+    details: list[str] = []
+    if missing:
+        details.append(f"missing: {', '.join(missing)}")
+    if unexpected:
+        details.append(f"unexpected: {', '.join(unexpected)}")
+    return ValueError(f"{label} has invalid keys ({'; '.join(details)})")
+
+
 @dataclass(frozen=True)
 class WarehouseRule:
     level: int
@@ -76,10 +91,9 @@ def _require_exact_mapping(
 ) -> dict[str, int]:
     if not isinstance(value, dict):
         raise ValueError(f"{label} must be an object")
-    if set(value) != expected_keys:
-        raise ValueError(
-            f"{label} must contain exactly: {', '.join(sorted(expected_keys))}"
-        )
+    actual_keys = set(value)
+    if actual_keys != expected_keys:
+        raise _key_mismatch_error(label, actual_keys, expected_keys)
 
     result: dict[str, int] = {}
     for key in sorted(expected_keys):
@@ -99,12 +113,18 @@ def _require_terms(value: object, label: str) -> tuple[str, ...]:
     if not isinstance(value, list):
         raise ValueError(f"{label} must be an array")
     terms: list[str] = []
+    seen: dict[str, str] = {}
     for index, item in enumerate(value):
         if not isinstance(item, str) or not item.strip():
             raise ValueError(f"{label}[{index}] must be a non-blank string")
-        terms.append(item.strip())
-    if len(set(terms)) != len(terms):
-        raise ValueError(f"{label} contains duplicate term")
+        normalized = item.strip()
+        if normalized in seen:
+            raise ValueError(
+                f"{label} contains duplicate term {normalized!r} "
+                f"(raw values {seen[normalized]!r} and {item!r})"
+            )
+        seen[normalized] = item
+        terms.append(normalized)
     return tuple(terms)
 
 
@@ -123,9 +143,8 @@ def load_warehouse_rules(path: Path, catalog: KnowledgeCatalog) -> WarehouseRule
 
     document = _read_json(path)
     if set(document) != _TOP_LEVEL_KEYS:
-        raise ValueError(
-            "warehouse classification rules must contain exactly: "
-            + ", ".join(sorted(_TOP_LEVEL_KEYS))
+        raise _key_mismatch_error(
+            "warehouse classification rules", set(document), _TOP_LEVEL_KEYS
         )
 
     version = _require_nonblank_text(document.get("version"), "version")
@@ -153,9 +172,7 @@ def load_warehouse_rules(path: Path, catalog: KnowledgeCatalog) -> WarehouseRule
         if not isinstance(raw_rule, dict):
             raise ValueError(f"{label} must be an object")
         if set(raw_rule) != _RULE_KEYS:
-            raise ValueError(
-                f"{label} must contain exactly: {', '.join(sorted(_RULE_KEYS))}"
-            )
+            raise _key_mismatch_error(label, set(raw_rule), _RULE_KEYS)
 
         level = raw_rule.get("level")
         if not isinstance(level, int) or isinstance(level, bool) or level not in {1, 2, 3, 4, 5}:

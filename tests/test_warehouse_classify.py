@@ -8,6 +8,7 @@ from grain_quiz.warehouse_classify import load_warehouse_rules
 
 
 CATALOG = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
+RULES_PATH = Path("tools/warehouse_classification_rules.json")
 
 
 def _rule(**overrides: object) -> dict[str, object]:
@@ -69,6 +70,13 @@ def test_valid_fixed_contract_loads(tmp_path: Path) -> None:
     assert rules.rules[0].strong_phrases == ("储粮害虫防治",)
 
 
+def test_checked_in_rules_artifact_loads() -> None:
+    rules = load_warehouse_rules(RULES_PATH, CATALOG)
+
+    assert rules.version == "2026-08-07.1"
+    assert rules.rules[0].section_id == "warehouse-l3-c11-s04"
+
+
 def test_duplicate_level_and_section_is_rejected(tmp_path: Path) -> None:
     path = _write_rules(tmp_path, _document(_rule(), _rule()))
 
@@ -90,4 +98,113 @@ def test_catalog_path_not_allowed_for_rule_level_is_rejected(tmp_path: Path) -> 
     path = _write_rules(tmp_path, _document(_rule(level=2)))
 
     with pytest.raises(ValueError, match="not allowed by catalog"):
+        load_warehouse_rules(path, CATALOG)
+
+
+@pytest.mark.parametrize(
+    ("mapping", "key", "value"),
+    [
+        ("field_weights", "stem", True),
+        ("term_weights", "keywords", True),
+        ("thresholds", "basic_lead", True),
+    ],
+)
+def test_bool_values_are_not_accepted_as_integers(
+    tmp_path: Path,
+    mapping: str,
+    key: str,
+    value: object,
+) -> None:
+    document = _document(_rule())
+    document[mapping][key] = value  # type: ignore[index]
+
+    with pytest.raises(ValueError, match="must be an integer"):
+        load_warehouse_rules(_write_rules(tmp_path, document), CATALOG)
+
+
+@pytest.mark.parametrize(
+    ("mapping", "key", "value", "message"),
+    [
+        ("field_weights", "stem", 0, "positive"),
+        ("field_weights", "stem", -1, "positive"),
+        ("term_weights", "strong_phrases", 0, "positive"),
+        ("term_weights", "exclude_terms", 0, "negative"),
+        ("term_weights", "exclude_terms", 1, "negative"),
+        ("thresholds", "section_score", 0, "positive"),
+    ],
+)
+def test_weight_and_threshold_signs_are_strict(
+    tmp_path: Path,
+    mapping: str,
+    key: str,
+    value: int,
+    message: str,
+) -> None:
+    document = _document(_rule())
+    document[mapping][key] = value  # type: ignore[index]
+
+    with pytest.raises(ValueError, match=message):
+        load_warehouse_rules(_write_rules(tmp_path, document), CATALOG)
+
+
+def test_blank_terms_are_rejected(tmp_path: Path) -> None:
+    path = _write_rules(tmp_path, _document(_rule(strong_phrases=["  "])))
+
+    with pytest.raises(ValueError, match="non-blank string"):
+        load_warehouse_rules(path, CATALOG)
+
+
+def test_normalized_duplicate_terms_report_the_term(tmp_path: Path) -> None:
+    path = _write_rules(
+        tmp_path,
+        _document(_rule(keywords=[" 害虫 ", "害虫"])),
+    )
+
+    with pytest.raises(ValueError, match=r"duplicate term.*害虫"):
+        load_warehouse_rules(path, CATALOG)
+
+
+def test_unknown_level_is_rejected(tmp_path: Path) -> None:
+    path = _write_rules(tmp_path, _document(_rule(level=6)))
+
+    with pytest.raises(ValueError, match="level"):
+        load_warehouse_rules(path, CATALOG)
+
+
+@pytest.mark.parametrize(
+    ("mapping", "mutation", "message"),
+    [
+        (
+            "field_weights",
+            lambda value: value.pop("stem"),
+            r"missing.*stem",
+        ),
+        (
+            "term_weights",
+            lambda value: value.__setitem__("unexpected", 1),
+            r"unexpected.*unexpected",
+        ),
+    ],
+)
+def test_missing_or_extra_mapping_keys_are_reported(
+    tmp_path: Path,
+    mapping: str,
+    mutation: object,
+    message: str,
+) -> None:
+    document = _document(_rule())
+    mutation_fn = mutation
+    mutation_fn(document[mapping])  # type: ignore[operator,index]
+
+    with pytest.raises(ValueError, match=message):
+        load_warehouse_rules(_write_rules(tmp_path, document), CATALOG)
+
+
+def test_missing_strong_phrases_and_keywords_are_rejected(tmp_path: Path) -> None:
+    path = _write_rules(
+        tmp_path,
+        _document(_rule(strong_phrases=[], keywords=[])),
+    )
+
+    with pytest.raises(ValueError, match="strong_phrases or keywords"):
         load_warehouse_rules(path, CATALOG)

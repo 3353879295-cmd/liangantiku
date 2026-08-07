@@ -20,9 +20,9 @@
   },
   "rules": [
     {
-      "level": 2,
-      "chapter_id": "warehouse-l2-c03",
-      "section_id": "warehouse-l2-c03-s04",
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s04",
       "strong_phrases": ["磷化氢环流熏蒸", "储粮害虫防治方案"],
       "keywords": ["熏蒸剂", "杀虫剂", "害虫", "防护剂"],
       "context_terms": ["剂量", "浓度", "密闭", "散气"],
