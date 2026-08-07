@@ -1,0 +1,32 @@
+{
+  "version": "2026-08-07.1",
+  "field_weights": {
+    "stem": 3,
+    "options": 1,
+    "explanation": 2
+  },
+  "term_weights": {
+    "strong_phrases": 4,
+    "keywords": 2,
+    "context_terms": 1,
+    "exclude_terms": -4
+  },
+  "thresholds": {
+    "section_score": 12,
+    "section_margin": 4,
+    "chapter_score": 9,
+    "chapter_margin": 3,
+    "basic_lead": 4
+  },
+  "rules": [
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c03",
+      "section_id": "warehouse-l2-c03-s04",
+      "strong_phrases": ["磷化氢环流熏蒸", "储粮害虫防治方案"],
+      "keywords": ["熏蒸剂", "杀虫剂", "害虫", "防护剂"],
+      "context_terms": ["剂量", "浓度", "密闭", "散气"],
+      "exclude_terms": ["害虫识别", "虫态检查", "取样检查"]
+    }
+  ]
+}
