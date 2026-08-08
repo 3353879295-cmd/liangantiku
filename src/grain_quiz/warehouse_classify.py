@@ -381,9 +381,10 @@ class WarehouseClassifier:
         score = 0
         matched: dict[str, str] = {}
         primary_hit = False
+        counted_by_field = [set() for _ in fields]
 
-        for field, field_weight in fields:
-            counted: set[str] = set()
+        for field_index, (field, field_weight) in enumerate(fields):
+            counted = counted_by_field[field_index]
             for term in rule.strong_phrases:
                 normalized = normalize_classification_text(term)
                 if normalized in field and normalized not in counted:
@@ -400,22 +401,22 @@ class WarehouseClassifier:
                     primary_hit = True
 
         if primary_hit:
-            for field, field_weight in fields:
-                counted_context: set[str] = set()
+            for field_index, (field, field_weight) in enumerate(fields):
+                counted = counted_by_field[field_index]
                 for term in rule.context_terms:
                     normalized = normalize_classification_text(term)
-                    if normalized in field and normalized not in counted_context:
+                    if normalized in field and normalized not in counted:
                         score += self.rules.context_term_weight * field_weight
-                        counted_context.add(normalized)
+                        counted.add(normalized)
                         matched.setdefault(normalized, term)
 
-        for field, field_weight in fields:
-            counted_excludes: set[str] = set()
+        for field_index, (field, field_weight) in enumerate(fields):
+            counted = counted_by_field[field_index]
             for term in rule.exclude_terms:
                 normalized = normalize_classification_text(term)
-                if normalized in field and normalized not in counted_excludes:
+                if normalized in field and normalized not in counted:
                     score += self.rules.exclude_term_weight * field_weight
-                    counted_excludes.add(normalized)
+                    counted.add(normalized)
                     matched.setdefault(f"!{normalized}", f"!{term}")
 
         return ClassificationCandidate(

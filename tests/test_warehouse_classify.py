@@ -471,3 +471,30 @@ def test_same_input_and_rule_version_are_deterministic(
     }
 
     assert classifier.classify(**arguments) == classifier.classify(**arguments)
+
+
+def test_same_normalized_term_scores_only_once_per_field_across_buckets() -> None:
+    duplicate_term_classifier = WarehouseClassifier(
+        _classification_rules(
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-l2-c03",
+                section_id="warehouse-l2-c03-s04",
+                strong_phrases=("害虫",),
+                keywords=("害虫",),
+                context_terms=("害虫",),
+                exclude_terms=("害虫",),
+            )
+        )
+    )
+
+    result = duplicate_term_classifier.classify(
+        level=2,
+        stem="害虫",
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "section"
+    assert result.candidates[0].score == 12
+    assert result.candidates[0].matched_terms == ("害虫",)
