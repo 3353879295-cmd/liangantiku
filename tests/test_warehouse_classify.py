@@ -4,7 +4,12 @@ from pathlib import Path
 import pytest
 
 from grain_quiz.catalog import KnowledgeCatalog, load_knowledge_catalog
-from grain_quiz.warehouse_classify import load_warehouse_rules
+from grain_quiz.warehouse_classify import (
+    WarehouseClassifier,
+    WarehouseRule,
+    WarehouseRuleSet,
+    load_warehouse_rules,
+)
 
 
 CATALOG = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
@@ -260,3 +265,209 @@ def test_missing_strong_phrases_and_keywords_are_rejected(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError, match="strong_phrases or keywords"):
         load_warehouse_rules(path, CATALOG)
+
+
+def _classification_rules(*rules: WarehouseRule) -> WarehouseRuleSet:
+    return WarehouseRuleSet(
+        version="2026-08-07.1",
+        stem_weight=3,
+        options_weight=1,
+        explanation_weight=2,
+        strong_phrase_weight=4,
+        keyword_weight=2,
+        context_term_weight=1,
+        exclude_term_weight=-4,
+        section_score=12,
+        section_margin=4,
+        chapter_score=9,
+        chapter_margin=3,
+        basic_lead=4,
+        rules=rules,
+    )
+
+
+@pytest.fixture
+def classifier() -> WarehouseClassifier:
+    return WarehouseClassifier(
+        _classification_rules(
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-l2-c03",
+                section_id="warehouse-l2-c03-s04",
+                strong_phrases=("磷化氢环流熏蒸",),
+                keywords=("PH3环流熏蒸", "储粮害虫"),
+                context_terms=("浓度", "散气", "密闭"),
+                exclude_terms=("害虫识别", "虫态检查"),
+            ),
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-l2-c02",
+                section_id="warehouse-l2-c02-s02",
+                strong_phrases=("害虫识别", "虫态检查"),
+                keywords=("储粮害虫",),
+                context_terms=("取样", "筛检"),
+                exclude_terms=("熏蒸", "杀虫剂"),
+            ),
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-l2-c03",
+                section_id="warehouse-l2-c03-s01",
+                strong_phrases=(),
+                keywords=("粮温",),
+                context_terms=("通风",),
+                exclude_terms=(),
+            ),
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-l2-c03",
+                section_id="warehouse-l2-c03-s02",
+                strong_phrases=(),
+                keywords=("水分",),
+                context_terms=(),
+                exclude_terms=(),
+            ),
+        )
+    )
+
+
+@pytest.fixture
+def basic_classifier() -> WarehouseClassifier:
+    return WarehouseClassifier(
+        _classification_rules(
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-basic-c02",
+                section_id="warehouse-basic-c02-s03",
+                strong_phrases=("安全操作", "安全生产责任制"),
+                keywords=(),
+                context_terms=("设备", "环境保护法律法规"),
+                exclude_terms=(),
+            ),
+            WarehouseRule(
+                level=2,
+                chapter_id="warehouse-l2-c03",
+                section_id="warehouse-l2-c03-s01",
+                strong_phrases=("安全操作粮食通风设备",),
+                keywords=(),
+                context_terms=(),
+                exclude_terms=(),
+            ),
+        )
+    )
+
+
+def test_classifier_normalizes_nfkc_and_weights_fields(
+    classifier: WarehouseClassifier,
+) -> None:
+    result = classifier.classify(
+        level=2,
+        stem="采用ＰＨ３ 环 流 熏 蒸控制害虫",
+        options=("应检查浓度", "完成后散气"),
+        explanation="磷化氢环流熏蒸属于化学防治",
+    )
+
+    assert result.status == "section"
+    assert result.chapter_id == "warehouse-l2-c03"
+    assert result.section_id == "warehouse-l2-c03-s04"
+    assert result.candidates[0].score == 16
+    assert "磷化氢环流熏蒸" in result.candidates[0].matched_terms
+
+
+def test_context_terms_do_not_score_without_a_primary_term(
+    classifier: WarehouseClassifier,
+) -> None:
+    result = classifier.classify(
+        level=2,
+        stem="应控制浓度并按时散气",
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "pending"
+    assert result.reason == "low_score"
+
+
+def test_section_requires_score_12_and_margin_4(
+    classifier: WarehouseClassifier,
+) -> None:
+    result = classifier.classify(
+        level=2,
+        stem="磷化氢环流熏蒸",
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "section"
+    assert result.candidates[0].score == 12
+
+
+def test_chapter_fallback_uses_s00_when_chapter_is_clear(
+    classifier: WarehouseClassifier,
+) -> None:
+    result = classifier.classify(
+        level=2,
+        stem="粮温和水分需要综合控制",
+        options=(),
+        explanation="通风方案同时考虑温度与水分",
+    )
+
+    assert result.status == "chapter"
+    assert result.chapter_id == "warehouse-l2-c03"
+    assert result.section_id == "warehouse-l2-c03-s00"
+
+
+def test_equal_top_candidates_are_pending(classifier: WarehouseClassifier) -> None:
+    result = classifier.classify(
+        level=2,
+        stem="储粮害虫",
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "pending"
+    assert result.reason == "ambiguous"
+
+
+def test_unknown_level_is_pending(classifier: WarehouseClassifier) -> None:
+    result = classifier.classify(
+        level=9,
+        stem="熏蒸",
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "pending"
+    assert result.reason == "no_rule"
+
+
+def test_basic_rule_must_lead_level_specific_rule_by_four_points(
+    basic_classifier: WarehouseClassifier,
+) -> None:
+    specific = basic_classifier.classify(
+        level=2,
+        stem="安全操作粮食通风设备",
+        options=(),
+        explanation="",
+    )
+    basic = basic_classifier.classify(
+        level=2,
+        stem="安全生产责任制与环境保护法律法规",
+        options=(),
+        explanation="",
+    )
+
+    assert specific.chapter_id == "warehouse-l2-c03"
+    assert basic.chapter_id == "warehouse-basic-c02"
+
+
+def test_same_input_and_rule_version_are_deterministic(
+    classifier: WarehouseClassifier,
+) -> None:
+    arguments = {
+        "level": 2,
+        "stem": "磷化氢环流熏蒸后检测浓度并散气",
+        "options": ("保持密闭",),
+        "explanation": "用于储粮害虫防治",
+    }
+
+    assert classifier.classify(**arguments) == classifier.classify(**arguments)
