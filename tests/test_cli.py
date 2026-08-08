@@ -9,7 +9,7 @@ def valid_question_data(**overrides: object) -> dict[str, object]:
     return {
         **BASE,
         "module": "\u7cae\u60c5\u68c0\u67e5",
-        "topic": "\u7cae\u6e29\u68c0\u67e5",
+        "topic": "\u68c0\u67e5\u50a8\u7cae\u6e29\u5ea6",
         "review_status": "verified",
         **overrides,
     }
