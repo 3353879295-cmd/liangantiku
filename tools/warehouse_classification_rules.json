@@ -20,13 +20,2322 @@
   },
   "rules": [
     {
+      "level": 5,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s01",
+      "strong_phrases": [
+        "诚实守信",
+        "爱岗敬业"
+      ],
+      "keywords": [
+        "服务群众",
+        "职业道德"
+      ],
+      "context_terms": [
+        "基本规范",
+        "道德"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度",
+        "水分"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s01",
+      "strong_phrases": [
+        "诚实守信",
+        "爱岗敬业"
+      ],
+      "keywords": [
+        "服务群众",
+        "职业道德"
+      ],
+      "context_terms": [
+        "基本规范",
+        "道德"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度",
+        "水分"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s01",
+      "strong_phrases": [
+        "诚实守信",
+        "爱岗敬业"
+      ],
+      "keywords": [
+        "服务群众",
+        "职业道德"
+      ],
+      "context_terms": [
+        "基本规范",
+        "道德"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度",
+        "水分"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s01",
+      "strong_phrases": [
+        "诚实守信",
+        "爱岗敬业"
+      ],
+      "keywords": [
+        "服务群众",
+        "职业道德"
+      ],
+      "context_terms": [
+        "基本规范",
+        "道德"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度",
+        "水分"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s01",
+      "strong_phrases": [
+        "诚实守信",
+        "爱岗敬业"
+      ],
+      "keywords": [
+        "服务群众",
+        "职业道德"
+      ],
+      "context_terms": [
+        "基本规范",
+        "道德"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度",
+        "水分"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s02",
+      "strong_phrases": [
+        "职业守则",
+        "规范操作"
+      ],
+      "keywords": [
+        "岗位职责",
+        "职业规范"
+      ],
+      "context_terms": [
+        "遵守",
+        "操作规范"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s02",
+      "strong_phrases": [
+        "职业守则",
+        "规范操作"
+      ],
+      "keywords": [
+        "岗位职责",
+        "职业规范"
+      ],
+      "context_terms": [
+        "遵守",
+        "操作规范"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s02",
+      "strong_phrases": [
+        "职业守则",
+        "规范操作"
+      ],
+      "keywords": [
+        "岗位职责",
+        "职业规范"
+      ],
+      "context_terms": [
+        "遵守",
+        "操作规范"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s02",
+      "strong_phrases": [
+        "职业守则",
+        "规范操作"
+      ],
+      "keywords": [
+        "岗位职责",
+        "职业规范"
+      ],
+      "context_terms": [
+        "遵守",
+        "操作规范"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-basic-c01",
+      "section_id": "warehouse-basic-c01-s02",
+      "strong_phrases": [
+        "职业守则",
+        "规范操作"
+      ],
+      "keywords": [
+        "岗位职责",
+        "职业规范"
+      ],
+      "context_terms": [
+        "遵守",
+        "操作规范"
+      ],
+      "exclude_terms": [
+        "设备",
+        "药剂",
+        "检测",
+        "温度"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s01",
+      "strong_phrases": [
+        "粮食呼吸",
+        "导热"
+      ],
+      "keywords": [
+        "吸湿",
+        "散落性",
+        "仓房",
+        "设备",
+        "计量",
+        "账卡"
+      ],
+      "context_terms": [
+        "基础知识",
+        "储藏原理"
+      ],
+      "exclude_terms": [
+        "入库步骤",
+        "出库步骤",
+        "粮情处置",
+        "熏蒸",
+        "通风降温"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s01",
+      "strong_phrases": [
+        "粮食呼吸",
+        "导热"
+      ],
+      "keywords": [
+        "吸湿",
+        "散落性",
+        "仓房",
+        "设备",
+        "计量",
+        "账卡"
+      ],
+      "context_terms": [
+        "基础知识",
+        "储藏原理"
+      ],
+      "exclude_terms": [
+        "入库步骤",
+        "出库步骤",
+        "粮情处置",
+        "熏蒸",
+        "通风降温"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s01",
+      "strong_phrases": [
+        "粮食呼吸",
+        "导热"
+      ],
+      "keywords": [
+        "吸湿",
+        "散落性",
+        "仓房",
+        "设备",
+        "计量",
+        "账卡"
+      ],
+      "context_terms": [
+        "基础知识",
+        "储藏原理"
+      ],
+      "exclude_terms": [
+        "入库步骤",
+        "出库步骤",
+        "粮情处置",
+        "熏蒸",
+        "通风降温"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s01",
+      "strong_phrases": [
+        "粮食呼吸",
+        "导热"
+      ],
+      "keywords": [
+        "吸湿",
+        "散落性",
+        "仓房",
+        "设备",
+        "计量",
+        "账卡"
+      ],
+      "context_terms": [
+        "基础知识",
+        "储藏原理"
+      ],
+      "exclude_terms": [
+        "入库步骤",
+        "出库步骤",
+        "粮情处置",
+        "熏蒸",
+        "通风降温"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s01",
+      "strong_phrases": [
+        "粮食呼吸",
+        "导热"
+      ],
+      "keywords": [
+        "吸湿",
+        "散落性",
+        "仓房",
+        "设备",
+        "计量",
+        "账卡"
+      ],
+      "context_terms": [
+        "基础知识",
+        "储藏原理"
+      ],
+      "exclude_terms": [
+        "入库步骤",
+        "出库步骤",
+        "粮情处置",
+        "熏蒸",
+        "通风降温"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s02",
+      "strong_phrases": [
+        "安全生产",
+        "粉尘爆炸"
+      ],
+      "keywords": [
+        "有限空间",
+        "消防",
+        "环境保护",
+        "劳动防护"
+      ],
+      "context_terms": [
+        "安全",
+        "防护"
+      ],
+      "exclude_terms": [
+        "爱岗敬业",
+        "职业道德"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s02",
+      "strong_phrases": [
+        "安全生产",
+        "粉尘爆炸"
+      ],
+      "keywords": [
+        "有限空间",
+        "消防",
+        "环境保护",
+        "劳动防护"
+      ],
+      "context_terms": [
+        "安全",
+        "防护"
+      ],
+      "exclude_terms": [
+        "爱岗敬业",
+        "职业道德"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s02",
+      "strong_phrases": [
+        "安全生产",
+        "粉尘爆炸"
+      ],
+      "keywords": [
+        "有限空间",
+        "消防",
+        "环境保护",
+        "劳动防护"
+      ],
+      "context_terms": [
+        "安全",
+        "防护"
+      ],
+      "exclude_terms": [
+        "爱岗敬业",
+        "职业道德"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s02",
+      "strong_phrases": [
+        "安全生产",
+        "粉尘爆炸"
+      ],
+      "keywords": [
+        "有限空间",
+        "消防",
+        "环境保护",
+        "劳动防护"
+      ],
+      "context_terms": [
+        "安全",
+        "防护"
+      ],
+      "exclude_terms": [
+        "爱岗敬业",
+        "职业道德"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s02",
+      "strong_phrases": [
+        "安全生产",
+        "粉尘爆炸"
+      ],
+      "keywords": [
+        "有限空间",
+        "消防",
+        "环境保护",
+        "劳动防护"
+      ],
+      "context_terms": [
+        "安全",
+        "防护"
+      ],
+      "exclude_terms": [
+        "爱岗敬业",
+        "职业道德"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s03",
+      "strong_phrases": [
+        "粮食流通管理条例",
+        "粮食安全保障法",
+        "安全生产法"
+      ],
+      "keywords": [
+        "法律法规",
+        "标准编号"
+      ],
+      "context_terms": [
+        "条例",
+        "法定"
+      ],
+      "exclude_terms": [
+        "设备名称",
+        "操作步骤",
+        "入库作业"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s03",
+      "strong_phrases": [
+        "粮食流通管理条例",
+        "粮食安全保障法",
+        "安全生产法"
+      ],
+      "keywords": [
+        "法律法规",
+        "标准编号"
+      ],
+      "context_terms": [
+        "条例",
+        "法定"
+      ],
+      "exclude_terms": [
+        "设备名称",
+        "操作步骤",
+        "入库作业"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s03",
+      "strong_phrases": [
+        "粮食流通管理条例",
+        "粮食安全保障法",
+        "安全生产法"
+      ],
+      "keywords": [
+        "法律法规",
+        "标准编号"
+      ],
+      "context_terms": [
+        "条例",
+        "法定"
+      ],
+      "exclude_terms": [
+        "设备名称",
+        "操作步骤",
+        "入库作业"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s03",
+      "strong_phrases": [
+        "粮食流通管理条例",
+        "粮食安全保障法",
+        "安全生产法"
+      ],
+      "keywords": [
+        "法律法规",
+        "标准编号"
+      ],
+      "context_terms": [
+        "条例",
+        "法定"
+      ],
+      "exclude_terms": [
+        "设备名称",
+        "操作步骤",
+        "入库作业"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-basic-c02",
+      "section_id": "warehouse-basic-c02-s03",
+      "strong_phrases": [
+        "粮食流通管理条例",
+        "粮食安全保障法",
+        "安全生产法"
+      ],
+      "keywords": [
+        "法律法规",
+        "标准编号"
+      ],
+      "context_terms": [
+        "条例",
+        "法定"
+      ],
+      "exclude_terms": [
+        "设备名称",
+        "操作步骤",
+        "入库作业"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c03",
+      "section_id": "warehouse-l5-c03-s01",
+      "strong_phrases": [
+        "入库前",
+        "仓房准备"
+      ],
+      "keywords": [
+        "接收入库",
+        "输送",
+        "计量",
+        "扦样",
+        "清洁卫生"
+      ],
+      "context_terms": [
+        "作业方案",
+        "应急预案"
+      ],
+      "exclude_terms": [
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态",
+        "鼠迹"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c03",
+      "section_id": "warehouse-l5-c03-s02",
+      "strong_phrases": [
+        "出入库作业",
+        "接收入库"
+      ],
+      "keywords": [
+        "输送",
+        "计量",
+        "扦样",
+        "平仓",
+        "出库"
+      ],
+      "context_terms": [
+        "作业流程",
+        "装卸"
+      ],
+      "exclude_terms": [
+        "入库前",
+        "清理",
+        "结算",
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c03",
+      "section_id": "warehouse-l5-c03-s03",
+      "strong_phrases": [
+        "出入库收尾",
+        "结算"
+      ],
+      "keywords": [
+        "清理",
+        "账卡",
+        "收尾"
+      ],
+      "context_terms": [
+        "作业完成",
+        "结算"
+      ],
+      "exclude_terms": [
+        "入库前",
+        "输送",
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c04",
+      "section_id": "warehouse-l5-c04-s01",
+      "strong_phrases": [
+        "粮温变化",
+        "测温电缆"
+      ],
+      "keywords": [
+        "测温点",
+        "温度梯度",
+        "检查记录"
+      ],
+      "context_terms": [
+        "测温",
+        "检查"
+      ],
+      "exclude_terms": [
+        "机械通风",
+        "通风降温",
+        "冷却机",
+        "控制方案"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c04",
+      "section_id": "warehouse-l5-c04-s02",
+      "strong_phrases": [
+        "水分测定",
+        "相对湿度"
+      ],
+      "keywords": [
+        "平衡水分",
+        "湿度计",
+        "水分检查"
+      ],
+      "context_terms": [
+        "测定",
+        "检查"
+      ],
+      "exclude_terms": [
+        "通风降水",
+        "调质",
+        "增湿控制",
+        "烘干"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c04",
+      "section_id": "warehouse-l5-c04-s03",
+      "strong_phrases": [
+        "气体检测仪",
+        "氧气检测"
+      ],
+      "keywords": [
+        "二氧化碳",
+        "磷化氢检测",
+        "取气",
+        "气体成分"
+      ],
+      "context_terms": [
+        "检测浓度",
+        "检查"
+      ],
+      "exclude_terms": [
+        "充氮",
+        "气调",
+        "熏蒸剂量",
+        "散气",
+        "密闭控制"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c04",
+      "section_id": "warehouse-l5-c04-s04",
+      "strong_phrases": [
+        "取样筛检",
+        "害虫识别"
+      ],
+      "keywords": [
+        "虫态",
+        "虫种",
+        "虫口密度",
+        "储粮害虫"
+      ],
+      "context_terms": [
+        "筛检",
+        "检查"
+      ],
+      "exclude_terms": [
+        "药剂",
+        "剂量",
+        "熏蒸",
+        "防护剂",
+        "综合治理",
+        "杀虫剂"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c04",
+      "section_id": "warehouse-l5-c04-s05",
+      "strong_phrases": [
+        "鼠迹",
+        "鼠雀检查"
+      ],
+      "keywords": [
+        "防鼠板",
+        "雀害",
+        "检查"
+      ],
+      "context_terms": [
+        "鼠类",
+        "设施检查"
+      ],
+      "exclude_terms": [
+        "储粮害虫",
+        "熏蒸",
+        "杀虫剂"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c05",
+      "section_id": "warehouse-l5-c05-s01",
+      "strong_phrases": [
+        "机械通风降温",
+        "控制储存粮油温度"
+      ],
+      "keywords": [
+        "降温",
+        "谷物冷却机",
+        "低温控制"
+      ],
+      "context_terms": [
+        "运行参数",
+        "控制方案"
+      ],
+      "exclude_terms": [
+        "测温点",
+        "温度计",
+        "粮温变化原因",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c05",
+      "section_id": "warehouse-l5-c05-s02",
+      "strong_phrases": [
+        "通风降水",
+        "控制储存粮油水分"
+      ],
+      "keywords": [
+        "烘干",
+        "安全水分",
+        "调质",
+        "增湿"
+      ],
+      "context_terms": [
+        "水分控制",
+        "降水方案"
+      ],
+      "exclude_terms": [
+        "水分仪",
+        "水分测定",
+        "湿度计",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c05",
+      "section_id": "warehouse-l5-c05-s03",
+      "strong_phrases": [
+        "充氮气调",
+        "控制粮堆气体成分"
+      ],
+      "keywords": [
+        "充氮",
+        "气调",
+        "密闭",
+        "氧浓度控制",
+        "二氧化碳气调"
+      ],
+      "context_terms": [
+        "控制方案",
+        "气密"
+      ],
+      "exclude_terms": [
+        "气体取样",
+        "气体检测仪",
+        "仪器检查",
+        "只测浓度"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c05",
+      "section_id": "warehouse-l5-c05-s04",
+      "strong_phrases": [
+        "磷化氢熏蒸",
+        "防治储粮害虫"
+      ],
+      "keywords": [
+        "硫酰氟",
+        "杀虫剂",
+        "防护剂",
+        "散气",
+        "综合治理"
+      ],
+      "context_terms": [
+        "剂量",
+        "防治方案"
+      ],
+      "exclude_terms": [
+        "识别",
+        "虫态",
+        "筛检",
+        "虫口密度",
+        "取样"
+      ]
+    },
+    {
+      "level": 5,
+      "chapter_id": "warehouse-l5-c05",
+      "section_id": "warehouse-l5-c05-s05",
+      "strong_phrases": [
+        "储粮鼠类防治",
+        "防鼠板"
+      ],
+      "keywords": [
+        "毒饵",
+        "鼠迹",
+        "雀害",
+        "防治设施"
+      ],
+      "context_terms": [
+        "防治方案",
+        "鼠类"
+      ],
+      "exclude_terms": [
+        "储粮昆虫",
+        "熏蒸剂",
+        "磷化氢"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c06",
+      "section_id": "warehouse-l4-c06-s01",
+      "strong_phrases": [
+        "入库前",
+        "仓房准备"
+      ],
+      "keywords": [
+        "接收入库",
+        "输送",
+        "计量",
+        "扦样",
+        "清洁卫生"
+      ],
+      "context_terms": [
+        "作业方案",
+        "应急预案"
+      ],
+      "exclude_terms": [
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态",
+        "鼠迹"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c06",
+      "section_id": "warehouse-l4-c06-s02",
+      "strong_phrases": [
+        "出入库作业",
+        "接收入库"
+      ],
+      "keywords": [
+        "输送",
+        "计量",
+        "扦样",
+        "平仓",
+        "出库"
+      ],
+      "context_terms": [
+        "作业流程",
+        "装卸"
+      ],
+      "exclude_terms": [
+        "入库前",
+        "清理",
+        "结算",
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c06",
+      "section_id": "warehouse-l4-c06-s03",
+      "strong_phrases": [
+        "出入库收尾",
+        "结算"
+      ],
+      "keywords": [
+        "清理",
+        "账卡",
+        "收尾"
+      ],
+      "context_terms": [
+        "作业完成",
+        "结算"
+      ],
+      "exclude_terms": [
+        "入库前",
+        "输送",
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c07",
+      "section_id": "warehouse-l4-c07-s01",
+      "strong_phrases": [
+        "粮温变化",
+        "测温电缆"
+      ],
+      "keywords": [
+        "测温点",
+        "温度梯度",
+        "检查记录"
+      ],
+      "context_terms": [
+        "测温",
+        "检查"
+      ],
+      "exclude_terms": [
+        "机械通风",
+        "通风降温",
+        "冷却机",
+        "控制方案"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c07",
+      "section_id": "warehouse-l4-c07-s02",
+      "strong_phrases": [
+        "水分测定",
+        "相对湿度"
+      ],
+      "keywords": [
+        "平衡水分",
+        "湿度计",
+        "水分检查"
+      ],
+      "context_terms": [
+        "测定",
+        "检查"
+      ],
+      "exclude_terms": [
+        "通风降水",
+        "调质",
+        "增湿控制",
+        "烘干"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c07",
+      "section_id": "warehouse-l4-c07-s03",
+      "strong_phrases": [
+        "气体检测仪",
+        "氧气检测"
+      ],
+      "keywords": [
+        "二氧化碳",
+        "磷化氢检测",
+        "取气",
+        "气体成分"
+      ],
+      "context_terms": [
+        "检测浓度",
+        "检查"
+      ],
+      "exclude_terms": [
+        "充氮",
+        "气调",
+        "熏蒸剂量",
+        "散气",
+        "密闭控制"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c07",
+      "section_id": "warehouse-l4-c07-s04",
+      "strong_phrases": [
+        "取样筛检",
+        "害虫识别"
+      ],
+      "keywords": [
+        "虫态",
+        "虫种",
+        "虫口密度",
+        "储粮害虫"
+      ],
+      "context_terms": [
+        "筛检",
+        "检查"
+      ],
+      "exclude_terms": [
+        "药剂",
+        "剂量",
+        "熏蒸",
+        "防护剂",
+        "综合治理",
+        "杀虫剂"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c08",
+      "section_id": "warehouse-l4-c08-s01",
+      "strong_phrases": [
+        "机械通风降温",
+        "控制储存粮油温度"
+      ],
+      "keywords": [
+        "降温",
+        "谷物冷却机",
+        "低温控制"
+      ],
+      "context_terms": [
+        "运行参数",
+        "控制方案"
+      ],
+      "exclude_terms": [
+        "测温点",
+        "温度计",
+        "粮温变化原因",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c08",
+      "section_id": "warehouse-l4-c08-s02",
+      "strong_phrases": [
+        "通风降水",
+        "控制储存粮油水分"
+      ],
+      "keywords": [
+        "烘干",
+        "安全水分",
+        "调质",
+        "增湿"
+      ],
+      "context_terms": [
+        "水分控制",
+        "降水方案"
+      ],
+      "exclude_terms": [
+        "水分仪",
+        "水分测定",
+        "湿度计",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c08",
+      "section_id": "warehouse-l4-c08-s03",
+      "strong_phrases": [
+        "充氮气调",
+        "控制粮堆气体成分"
+      ],
+      "keywords": [
+        "充氮",
+        "气调",
+        "密闭",
+        "氧浓度控制",
+        "二氧化碳气调"
+      ],
+      "context_terms": [
+        "控制方案",
+        "气密"
+      ],
+      "exclude_terms": [
+        "气体取样",
+        "气体检测仪",
+        "仪器检查",
+        "只测浓度"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c08",
+      "section_id": "warehouse-l4-c08-s04",
+      "strong_phrases": [
+        "磷化氢熏蒸",
+        "防治储粮害虫"
+      ],
+      "keywords": [
+        "硫酰氟",
+        "杀虫剂",
+        "防护剂",
+        "散气",
+        "综合治理"
+      ],
+      "context_terms": [
+        "剂量",
+        "防治方案"
+      ],
+      "exclude_terms": [
+        "识别",
+        "虫态",
+        "筛检",
+        "虫口密度",
+        "取样"
+      ]
+    },
+    {
+      "level": 4,
+      "chapter_id": "warehouse-l4-c08",
+      "section_id": "warehouse-l4-c08-s05",
+      "strong_phrases": [
+        "储粮鼠类防治",
+        "防鼠板"
+      ],
+      "keywords": [
+        "毒饵",
+        "鼠迹",
+        "雀害",
+        "防治设施"
+      ],
+      "context_terms": [
+        "防治方案",
+        "鼠类"
+      ],
+      "exclude_terms": [
+        "储粮昆虫",
+        "熏蒸剂",
+        "磷化氢"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c09",
+      "section_id": "warehouse-l3-c09-s01",
+      "strong_phrases": [
+        "入库前",
+        "仓房准备"
+      ],
+      "keywords": [
+        "接收入库",
+        "输送",
+        "计量",
+        "扦样",
+        "清洁卫生"
+      ],
+      "context_terms": [
+        "作业方案",
+        "应急预案"
+      ],
+      "exclude_terms": [
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态",
+        "鼠迹"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c09",
+      "section_id": "warehouse-l3-c09-s02",
+      "strong_phrases": [
+        "出入库作业",
+        "接收入库"
+      ],
+      "keywords": [
+        "输送",
+        "计量",
+        "扦样",
+        "平仓",
+        "出库"
+      ],
+      "context_terms": [
+        "作业流程",
+        "装卸"
+      ],
+      "exclude_terms": [
+        "入库前",
+        "清理",
+        "结算",
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c09",
+      "section_id": "warehouse-l3-c09-s03",
+      "strong_phrases": [
+        "出入库收尾",
+        "结算"
+      ],
+      "keywords": [
+        "清理",
+        "账卡",
+        "收尾"
+      ],
+      "context_terms": [
+        "作业完成",
+        "结算"
+      ],
+      "exclude_terms": [
+        "入库前",
+        "输送",
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c10",
+      "section_id": "warehouse-l3-c10-s01",
+      "strong_phrases": [
+        "粮温变化",
+        "测温电缆"
+      ],
+      "keywords": [
+        "测温点",
+        "温度梯度",
+        "检查记录"
+      ],
+      "context_terms": [
+        "测温",
+        "检查"
+      ],
+      "exclude_terms": [
+        "机械通风",
+        "通风降温",
+        "冷却机",
+        "控制方案"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c10",
+      "section_id": "warehouse-l3-c10-s02",
+      "strong_phrases": [
+        "水分测定",
+        "相对湿度"
+      ],
+      "keywords": [
+        "平衡水分",
+        "湿度计",
+        "水分检查"
+      ],
+      "context_terms": [
+        "测定",
+        "检查"
+      ],
+      "exclude_terms": [
+        "通风降水",
+        "调质",
+        "增湿控制",
+        "烘干"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c10",
+      "section_id": "warehouse-l3-c10-s03",
+      "strong_phrases": [
+        "气体检测仪",
+        "氧气检测"
+      ],
+      "keywords": [
+        "二氧化碳",
+        "磷化氢检测",
+        "取气",
+        "气体成分"
+      ],
+      "context_terms": [
+        "检测浓度",
+        "检查"
+      ],
+      "exclude_terms": [
+        "充氮",
+        "气调",
+        "熏蒸剂量",
+        "散气",
+        "密闭控制"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c10",
+      "section_id": "warehouse-l3-c10-s04",
+      "strong_phrases": [
+        "取样筛检",
+        "害虫识别"
+      ],
+      "keywords": [
+        "虫态",
+        "虫种",
+        "虫口密度",
+        "储粮害虫"
+      ],
+      "context_terms": [
+        "筛检",
+        "检查"
+      ],
+      "exclude_terms": [
+        "药剂",
+        "剂量",
+        "熏蒸",
+        "防护剂",
+        "综合治理",
+        "杀虫剂"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c10",
+      "section_id": "warehouse-l3-c10-s05",
+      "strong_phrases": [
+        "脂肪酸值",
+        "品尝评分"
+      ],
+      "keywords": [
+        "降落数值",
+        "过氧化值",
+        "储藏品质",
+        "储存品质判定"
+      ],
+      "context_terms": [
+        "品质检查",
+        "判定"
+      ],
+      "exclude_terms": [
+        "轮换处置",
+        "工艺设计",
+        "效益计算",
+        "投资"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s01",
+      "strong_phrases": [
+        "机械通风降温",
+        "控制储存粮油温度"
+      ],
+      "keywords": [
+        "降温",
+        "谷物冷却机",
+        "低温控制"
+      ],
+      "context_terms": [
+        "运行参数",
+        "控制方案"
+      ],
+      "exclude_terms": [
+        "测温点",
+        "温度计",
+        "粮温变化原因",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s02",
+      "strong_phrases": [
+        "通风降水",
+        "控制储存粮油水分"
+      ],
+      "keywords": [
+        "烘干",
+        "安全水分",
+        "调质",
+        "增湿"
+      ],
+      "context_terms": [
+        "水分控制",
+        "降水方案"
+      ],
+      "exclude_terms": [
+        "水分仪",
+        "水分测定",
+        "湿度计",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s03",
+      "strong_phrases": [
+        "充氮气调",
+        "控制粮堆气体成分"
+      ],
+      "keywords": [
+        "充氮",
+        "气调",
+        "密闭",
+        "氧浓度控制",
+        "二氧化碳气调"
+      ],
+      "context_terms": [
+        "控制方案",
+        "气密"
+      ],
+      "exclude_terms": [
+        "气体取样",
+        "气体检测仪",
+        "仪器检查",
+        "只测浓度"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s04",
+      "strong_phrases": [
+        "磷化氢熏蒸",
+        "防治储粮害虫"
+      ],
+      "keywords": [
+        "硫酰氟",
+        "杀虫剂",
+        "防护剂",
+        "散气",
+        "综合治理"
+      ],
+      "context_terms": [
+        "剂量",
+        "防治方案"
+      ],
+      "exclude_terms": [
+        "识别",
+        "虫态",
+        "筛检",
+        "虫口密度",
+        "取样"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s05",
+      "strong_phrases": [
+        "储粮鼠类防治",
+        "防鼠板"
+      ],
+      "keywords": [
+        "毒饵",
+        "鼠迹",
+        "雀害",
+        "防治设施"
+      ],
+      "context_terms": [
+        "防治方案",
+        "鼠类"
+      ],
+      "exclude_terms": [
+        "储粮昆虫",
+        "熏蒸剂",
+        "磷化氢"
+      ]
+    },
+    {
+      "level": 3,
+      "chapter_id": "warehouse-l3-c11",
+      "section_id": "warehouse-l3-c11-s06",
+      "strong_phrases": [
+        "倒仓通风",
+        "防治储粮发热霉变"
+      ],
+      "keywords": [
+        "局部处理",
+        "隔离",
+        "应急处置"
+      ],
+      "context_terms": [
+        "发热处理",
+        "霉变控制"
+      ],
+      "exclude_terms": [
+        "发热原因",
+        "霉菌",
+        "霉变鉴别",
+        "仅分析原因"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c01",
+      "section_id": "warehouse-l2-c01-s01",
+      "strong_phrases": [
+        "入库前",
+        "接收方案",
+        "仓房准备"
+      ],
+      "keywords": [
+        "接收入库",
+        "输送",
+        "计量",
+        "扦样",
+        "清洁卫生"
+      ],
+      "context_terms": [
+        "作业方案",
+        "应急预案"
+      ],
+      "exclude_terms": [
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态",
+        "鼠迹"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c02",
+      "section_id": "warehouse-l2-c02-s01",
+      "strong_phrases": [
+        "气体检测仪",
+        "氧气检测"
+      ],
+      "keywords": [
+        "二氧化碳",
+        "磷化氢检测",
+        "取气",
+        "气体成分"
+      ],
+      "context_terms": [
+        "检测浓度",
+        "检查"
+      ],
+      "exclude_terms": [
+        "充氮",
+        "气调",
+        "熏蒸剂量",
+        "散气",
+        "密闭控制"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c02",
+      "section_id": "warehouse-l2-c02-s02",
+      "strong_phrases": [
+        "取样筛检",
+        "害虫识别"
+      ],
+      "keywords": [
+        "虫态",
+        "虫种",
+        "虫口密度",
+        "储粮害虫"
+      ],
+      "context_terms": [
+        "筛检",
+        "检查"
+      ],
+      "exclude_terms": [
+        "药剂",
+        "剂量",
+        "熏蒸",
+        "防护剂",
+        "综合治理",
+        "杀虫剂"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c02",
+      "section_id": "warehouse-l2-c02-s03",
+      "strong_phrases": [
+        "脂肪酸值",
+        "品尝评分"
+      ],
+      "keywords": [
+        "降落数值",
+        "过氧化值",
+        "储藏品质",
+        "储存品质判定"
+      ],
+      "context_terms": [
+        "品质检查",
+        "判定"
+      ],
+      "exclude_terms": [
+        "轮换处置",
+        "工艺设计",
+        "效益计算",
+        "投资"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c02",
+      "section_id": "warehouse-l2-c02-s04",
+      "strong_phrases": [
+        "霉变原因",
+        "发热原因"
+      ],
+      "keywords": [
+        "霉菌",
+        "结露",
+        "霉变鉴别",
+        "异常粮情分析"
+      ],
+      "context_terms": [
+        "发热",
+        "分析原因"
+      ],
+      "exclude_terms": [
+        "倒仓",
+        "通风处置",
+        "局部处理",
+        "隔离",
+        "应急处置"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c03",
+      "section_id": "warehouse-l2-c03-s01",
+      "strong_phrases": [
+        "机械通风降温",
+        "控制储存粮油温度"
+      ],
+      "keywords": [
+        "降温",
+        "谷物冷却机",
+        "低温控制"
+      ],
+      "context_terms": [
+        "运行参数",
+        "控制方案"
+      ],
+      "exclude_terms": [
+        "测温点",
+        "温度计",
+        "粮温变化原因",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c03",
+      "section_id": "warehouse-l2-c03-s02",
+      "strong_phrases": [
+        "通风降水",
+        "控制储存粮油水分"
+      ],
+      "keywords": [
+        "烘干",
+        "安全水分",
+        "调质",
+        "增湿"
+      ],
+      "context_terms": [
+        "水分控制",
+        "降水方案"
+      ],
+      "exclude_terms": [
+        "水分仪",
+        "水分测定",
+        "湿度计",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c03",
+      "section_id": "warehouse-l2-c03-s03",
+      "strong_phrases": [
+        "充氮气调",
+        "控制粮堆气体成分"
+      ],
+      "keywords": [
+        "充氮",
+        "气调",
+        "密闭",
+        "氧浓度控制",
+        "二氧化碳气调"
+      ],
+      "context_terms": [
+        "控制方案",
+        "气密"
+      ],
+      "exclude_terms": [
+        "气体取样",
+        "气体检测仪",
+        "仪器检查",
+        "只测浓度"
+      ]
+    },
+    {
       "level": 2,
       "chapter_id": "warehouse-l2-c03",
       "section_id": "warehouse-l2-c03-s04",
-      "strong_phrases": ["磷化氢环流熏蒸", "储粮害虫防治方案"],
-      "keywords": ["熏蒸剂", "杀虫剂", "害虫", "防护剂"],
-      "context_terms": ["剂量", "浓度", "密闭", "散气"],
-      "exclude_terms": ["害虫识别", "虫态检查", "取样检查"]
+      "strong_phrases": [
+        "磷化氢环流熏蒸",
+        "磷化氢熏蒸",
+        "防治储粮害虫"
+      ],
+      "keywords": [
+        "硫酰氟",
+        "杀虫剂",
+        "防护剂",
+        "散气",
+        "综合治理"
+      ],
+      "context_terms": [
+        "剂量",
+        "防治方案"
+      ],
+      "exclude_terms": [
+        "识别",
+        "虫态",
+        "筛检",
+        "虫口密度",
+        "取样"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c03",
+      "section_id": "warehouse-l2-c03-s05",
+      "strong_phrases": [
+        "倒仓通风",
+        "防治储粮发热霉变"
+      ],
+      "keywords": [
+        "局部处理",
+        "隔离",
+        "应急处置"
+      ],
+      "context_terms": [
+        "发热处理",
+        "霉变控制"
+      ],
+      "exclude_terms": [
+        "发热原因",
+        "霉菌",
+        "霉变鉴别",
+        "仅分析原因"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c03",
+      "section_id": "warehouse-l2-c03-s06",
+      "strong_phrases": [
+        "储粮效益",
+        "经济效益"
+      ],
+      "keywords": [
+        "损耗",
+        "能耗",
+        "成本",
+        "费用",
+        "投资",
+        "收益"
+      ],
+      "context_terms": [
+        "效益分析",
+        "保管费用"
+      ],
+      "exclude_terms": [
+        "设备操作",
+        "品质检测",
+        "检测仪"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c04",
+      "section_id": "warehouse-l2-c04-s01",
+      "strong_phrases": [
+        "培训计划",
+        "课程计划"
+      ],
+      "keywords": [
+        "教案",
+        "授课",
+        "考核"
+      ],
+      "context_terms": [
+        "培训体系",
+        "理论"
+      ],
+      "exclude_terms": [
+        "现场纠错",
+        "现场指导",
+        "技术报告",
+        "摘要",
+        "结论"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c04",
+      "section_id": "warehouse-l2-c04-s02",
+      "strong_phrases": [
+        "现场指导",
+        "操作示范"
+      ],
+      "keywords": [
+        "纠正错误",
+        "质量评价",
+        "指导"
+      ],
+      "context_terms": [
+        "现场",
+        "操作质量"
+      ],
+      "exclude_terms": [
+        "课程计划",
+        "培训教案",
+        "摘要",
+        "技术报告"
+      ]
+    },
+    {
+      "level": 2,
+      "chapter_id": "warehouse-l2-c04",
+      "section_id": "warehouse-l2-c04-s03",
+      "strong_phrases": [
+        "专业技术报告",
+        "技术成果总结"
+      ],
+      "keywords": [
+        "摘要",
+        "关键词",
+        "数据分析",
+        "结论"
+      ],
+      "context_terms": [
+        "报告结构",
+        "成果"
+      ],
+      "exclude_terms": [
+        "日常记录",
+        "培训教案",
+        "课程计划",
+        "现场指导"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c01",
+      "section_id": "warehouse-l1-c01-s01",
+      "strong_phrases": [
+        "出入库作业组织",
+        "入库前",
+        "仓房准备"
+      ],
+      "keywords": [
+        "接收入库",
+        "输送",
+        "计量",
+        "扦样",
+        "清洁卫生"
+      ],
+      "context_terms": [
+        "作业方案",
+        "应急预案"
+      ],
+      "exclude_terms": [
+        "粮温",
+        "水分",
+        "熏蒸",
+        "虫态",
+        "鼠迹"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c02",
+      "section_id": "warehouse-l1-c02-s01",
+      "strong_phrases": [
+        "抗药性",
+        "取样筛检",
+        "害虫识别"
+      ],
+      "keywords": [
+        "虫态",
+        "虫种",
+        "虫口密度",
+        "储粮害虫"
+      ],
+      "context_terms": [
+        "筛检",
+        "检查"
+      ],
+      "exclude_terms": [
+        "药剂",
+        "剂量",
+        "熏蒸",
+        "防护剂",
+        "综合治理",
+        "杀虫剂"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c02",
+      "section_id": "warehouse-l1-c02-s02",
+      "strong_phrases": [
+        "脂肪酸值",
+        "品尝评分"
+      ],
+      "keywords": [
+        "降落数值",
+        "过氧化值",
+        "储藏品质",
+        "储存品质判定"
+      ],
+      "context_terms": [
+        "品质检查",
+        "判定"
+      ],
+      "exclude_terms": [
+        "轮换处置",
+        "工艺设计",
+        "效益计算",
+        "投资"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c03",
+      "section_id": "warehouse-l1-c03-s01",
+      "strong_phrases": [
+        "机械通风降温",
+        "控制储存粮油温度"
+      ],
+      "keywords": [
+        "降温",
+        "谷物冷却机",
+        "低温控制"
+      ],
+      "context_terms": [
+        "运行参数",
+        "控制方案"
+      ],
+      "exclude_terms": [
+        "测温点",
+        "温度计",
+        "粮温变化原因",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c03",
+      "section_id": "warehouse-l1-c03-s02",
+      "strong_phrases": [
+        "水分控制",
+        "通风降水",
+        "控制储存粮油水分"
+      ],
+      "keywords": [
+        "烘干",
+        "安全水分",
+        "调质",
+        "增湿"
+      ],
+      "context_terms": [
+        "水分控制",
+        "降水方案"
+      ],
+      "exclude_terms": [
+        "水分仪",
+        "水分测定",
+        "湿度计",
+        "检查记录"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c03",
+      "section_id": "warehouse-l1-c03-s03",
+      "strong_phrases": [
+        "综合治理",
+        "磷化氢熏蒸",
+        "防治储粮害虫"
+      ],
+      "keywords": [
+        "硫酰氟",
+        "杀虫剂",
+        "防护剂",
+        "散气",
+        "综合治理"
+      ],
+      "context_terms": [
+        "剂量",
+        "防治方案"
+      ],
+      "exclude_terms": [
+        "识别",
+        "虫态",
+        "筛检",
+        "虫口密度",
+        "取样"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c03",
+      "section_id": "warehouse-l1-c03-s04",
+      "strong_phrases": [
+        "储存品质指标",
+        "轮换时机"
+      ],
+      "keywords": [
+        "轮换处置",
+        "处置措施",
+        "储粮品质"
+      ],
+      "context_terms": [
+        "品质控制",
+        "轮换"
+      ],
+      "exclude_terms": [
+        "脂肪酸值",
+        "品尝评分",
+        "降落数值",
+        "过氧化值",
+        "仅判定"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c04",
+      "section_id": "warehouse-l1-c04-s01",
+      "strong_phrases": [
+        "谷物冷却机",
+        "低温储粮"
+      ],
+      "keywords": [
+        "冷源",
+        "工艺参数",
+        "冷却机"
+      ],
+      "context_terms": [
+        "工艺设计",
+        "运行参数"
+      ],
+      "exclude_terms": [
+        "普通机械通风",
+        "检查",
+        "测温"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c04",
+      "section_id": "warehouse-l1-c04-s02",
+      "strong_phrases": [
+        "增湿调质通风",
+        "调质通风"
+      ],
+      "keywords": [
+        "风量计算",
+        "工艺设计",
+        "增湿调质"
+      ],
+      "context_terms": [
+        "通风量",
+        "设计"
+      ],
+      "exclude_terms": [
+        "普通降水",
+        "湿度测定",
+        "水分检查"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c04",
+      "section_id": "warehouse-l1-c04-s03",
+      "strong_phrases": [
+        "氮气气调储粮",
+        "气密性"
+      ],
+      "keywords": [
+        "耗氮量",
+        "制氮机",
+        "工艺设计"
+      ],
+      "context_terms": [
+        "气调系统",
+        "设计"
+      ],
+      "exclude_terms": [
+        "气体浓度检测",
+        "气体检测仪",
+        "取样"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c04",
+      "section_id": "warehouse-l1-c04-s04",
+      "strong_phrases": [
+        "储粮效益",
+        "经济效益"
+      ],
+      "keywords": [
+        "损耗",
+        "能耗",
+        "成本",
+        "费用",
+        "投资",
+        "收益"
+      ],
+      "context_terms": [
+        "效益分析",
+        "保管费用"
+      ],
+      "exclude_terms": [
+        "设备操作",
+        "品质检测",
+        "检测仪"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c05",
+      "section_id": "warehouse-l1-c05-s01",
+      "strong_phrases": [
+        "培训体系",
+        "培训计划",
+        "课程计划"
+      ],
+      "keywords": [
+        "教案",
+        "授课",
+        "考核"
+      ],
+      "context_terms": [
+        "培训体系",
+        "理论"
+      ],
+      "exclude_terms": [
+        "现场纠错",
+        "现场指导",
+        "技术报告",
+        "摘要",
+        "结论"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c05",
+      "section_id": "warehouse-l1-c05-s02",
+      "strong_phrases": [
+        "指导技师",
+        "现场指导",
+        "操作示范"
+      ],
+      "keywords": [
+        "纠正错误",
+        "质量评价",
+        "指导"
+      ],
+      "context_terms": [
+        "现场",
+        "操作质量"
+      ],
+      "exclude_terms": [
+        "课程计划",
+        "培训教案",
+        "摘要",
+        "技术报告"
+      ]
+    },
+    {
+      "level": 1,
+      "chapter_id": "warehouse-l1-c05",
+      "section_id": "warehouse-l1-c05-s03",
+      "strong_phrases": [
+        "技术成果总结",
+        "专业技术报告"
+      ],
+      "keywords": [
+        "摘要",
+        "关键词",
+        "数据分析",
+        "结论"
+      ],
+      "context_terms": [
+        "报告结构",
+        "成果"
+      ],
+      "exclude_terms": [
+        "日常记录",
+        "培训教案",
+        "课程计划",
+        "现场指导"
+      ]
     }
   ]
 }

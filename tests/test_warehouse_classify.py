@@ -8,12 +8,92 @@ from grain_quiz.warehouse_classify import (
     WarehouseClassifier,
     WarehouseRule,
     WarehouseRuleSet,
+    classify_warehouse_question,
     load_warehouse_rules,
 )
 
 
 CATALOG = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
 RULES_PATH = Path("tools/warehouse_classification_rules.json")
+
+
+def _expected_rule_targets() -> set[tuple[int, str]]:
+    targets: set[tuple[int, str]] = set()
+    occupation = CATALOG.occupations["4-02-06-01"]
+    for level in (5, 4, 3, 2, 1):
+        for part in occupation.parts:
+            if level not in part.levels:
+                continue
+            for chapter in part.chapters:
+                for section in chapter.sections:
+                    if not section.id.endswith("-s00"):
+                        targets.add((level, section.id))
+    return targets
+
+
+def test_production_rules_cover_every_publishable_non_fallback_section() -> None:
+    rules = load_warehouse_rules(RULES_PATH, CATALOG)
+
+    assert {(rule.level, rule.section_id) for rule in rules.rules} == _expected_rule_targets()
+    assert len(rules.rules) == 92
+
+
+REPRESENTATIVE_ADVANCED_CASES = (
+    (2, "warehouse-l2-c01-s01", "粮食入库前应制定接收方案并检查仓房、输送设备和计量器具"),
+    (2, "warehouse-l2-c02-s01", "使用气体检测仪测定粮堆氧气和二氧化碳浓度"),
+    (2, "warehouse-l2-c02-s02", "通过取样筛检识别玉米象虫态并统计虫口密度"),
+    (2, "warehouse-l2-c02-s03", "检测脂肪酸值和品尝评分以判定粮油储藏品质"),
+    (2, "warehouse-l2-c02-s04", "粮堆发热伴随霉菌活动时应分析霉变原因"),
+    (2, "warehouse-l2-c03-s01", "根据粮温变化制定机械通风降温措施"),
+    (2, "warehouse-l2-c03-s02", "对高水分粮实施通风降水和水分控制"),
+    (2, "warehouse-l2-c03-s03", "采用充氮气调控制粮堆氧气浓度"),
+    (2, "warehouse-l2-c03-s04", "制定磷化氢环流熏蒸方案并控制剂量和散气"),
+    (2, "warehouse-l2-c03-s05", "对发热霉变粮进行倒仓通风和局部处理"),
+    (2, "warehouse-l2-c03-s06", "计算储粮损耗能耗和保管费用并分析储粮效益"),
+    (2, "warehouse-l2-c04-s01", "编制保管员培训计划教案并组织理论授课"),
+    (2, "warehouse-l2-c04-s02", "现场指导初级人员操作通风设备并纠正错误"),
+    (2, "warehouse-l2-c04-s03", "撰写粮食仓储专业技术报告并形成摘要数据和结论"),
+    (1, "warehouse-l1-c01-s01", "制定大型粮库粮油出入库作业组织方案和应急预案"),
+    (1, "warehouse-l1-c02-s01", "分析储粮害虫抗药性虫种虫态和虫口密度"),
+    (1, "warehouse-l1-c02-s02", "综合脂肪酸值降落数值和品尝评分判定储藏品质"),
+    (1, "warehouse-l1-c03-s01", "优化粮温控制和机械通风降温运行参数"),
+    (1, "warehouse-l1-c03-s02", "制定高水分粮水分控制和安全降水方案"),
+    (1, "warehouse-l1-c03-s03", "设计储粮害虫综合治理和抗药性防治方案"),
+    (1, "warehouse-l1-c03-s04", "依据储存品质指标确定轮换时机和处置措施"),
+    (1, "warehouse-l1-c04-s01", "设计谷物冷却机低温储粮工艺和冷源参数"),
+    (1, "warehouse-l1-c04-s02", "设计增湿调质通风工艺并计算通风量"),
+    (1, "warehouse-l1-c04-s03", "设计氮气气调储粮系统并计算气密性和耗氮量"),
+    (1, "warehouse-l1-c04-s04", "比较低温气调工艺投资运行费用和储粮效益"),
+    (1, "warehouse-l1-c05-s01", "建立高级保管员培训体系课程计划和考核标准"),
+    (1, "warehouse-l1-c05-s02", "指导技师解决复杂粮情控制问题并评价操作质量"),
+    (1, "warehouse-l1-c05-s03", "组织撰写仓储专业技术报告和技术成果总结"),
+)
+
+
+@pytest.mark.parametrize("level,section_id,stem", REPRESENTATIVE_ADVANCED_CASES)
+def test_production_rules_classify_every_l2_l1_section(level: int, section_id: str, stem: str) -> None:
+    result = classify_warehouse_question(level=level, stem=stem, options=(), explanation="")
+
+    assert result.status == "section"
+    assert result.section_id == section_id
+
+
+REPRESENTATIVE_EXISTING_CASES = (
+    (5, "warehouse-basic-c01-s01", "诚实守信爱岗敬业是职业道德基本规范"),
+    (4, "warehouse-basic-c02-s03", "安全生产法和粮食流通管理条例属于相关法律法规"),
+    (5, "warehouse-l5-c03-s01", "入库前检查仓房清洁卫生和输送设备"),
+    (4, "warehouse-l4-c07-s04", "取样筛检储粮害虫并识别虫态"),
+    (3, "warehouse-l3-c11-s04", "磷化氢熏蒸防治储粮害虫并检测浓度"),
+    (3, "warehouse-l3-c11-s01", "根据粮温变化实施机械通风降温"),
+)
+
+
+@pytest.mark.parametrize("level,section_id,stem", REPRESENTATIVE_EXISTING_CASES)
+def test_production_rules_classify_existing_and_shared_cases(level: int, section_id: str, stem: str) -> None:
+    result = classify_warehouse_question(level=level, stem=stem, options=(), explanation="")
+
+    assert result.status == "section"
+    assert result.section_id == section_id
 
 
 @pytest.fixture
@@ -122,9 +202,12 @@ def test_checked_in_l2_rules_artifact_loads_in_target_catalog(
     rules = load_warehouse_rules(RULES_PATH, catalog_with_l2_seed)
 
     assert rules.version == "2026-08-07.1"
-    assert rules.rules[0].level == 2
-    assert rules.rules[0].chapter_id == "warehouse-l2-c03"
-    assert rules.rules[0].section_id == "warehouse-l2-c03-s04"
+    target = next(
+        rule
+        for rule in rules.rules
+        if rule.level == 2 and rule.section_id == "warehouse-l2-c03-s04"
+    )
+    assert target.chapter_id == "warehouse-l2-c03"
 
 
 def test_duplicate_level_and_section_is_rejected(tmp_path: Path) -> None:
