@@ -15,6 +15,7 @@ import {
   saveActivePractice,
   startPractice,
 } from '../../services/practice-runtime';
+import { CERTIFICATES } from '../../data/certificates';
 import { appServices } from '../../services/app-services';
 import { PRACTICE_QUESTION_LIMITS, QUESTION_TYPES } from '../../types/domain';
 import type {
@@ -26,8 +27,6 @@ import type {
   QuestionType,
 } from '../../types/domain';
 
-const OCCUPATIONS = new Set<OccupationCode>(['4-02-06-01']);
-const LEVELS = new Set<CertificateLevel>([5, 4, 3, 2, 1]);
 const MODES = new Set<PracticeMode>([
   'chapter',
   'sequential',
@@ -106,7 +105,10 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
   const occupation = options['occupation'] as OccupationCode;
   const level = Number(options['level']) as CertificateLevel;
   const mode = options['mode'] as PracticeMode;
-  if (!OCCUPATIONS.has(occupation) || !LEVELS.has(level) || !MODES.has(mode)) return null;
+  const certificate = CERTIFICATES.find(
+    (item) => item.occupation === occupation && item.level === level,
+  );
+  if (!certificate || certificate.availability !== 'available' || !MODES.has(mode)) return null;
   try {
     let limit: PracticeQuestionLimit | undefined;
     const rawLimit = options['limit'];

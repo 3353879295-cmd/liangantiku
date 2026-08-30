@@ -3,12 +3,31 @@ import { dirname, extname, join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import CLASSIFICATION_MANIFEST from '../../data/warehouse_classification_manifest.json';
 import { RUNTIME_QUESTION_RECORDS } from '../miniprogram/data/questions/runtime-question-records';
 
 const miniappRoot = resolve(import.meta.dirname, '..', 'miniprogram');
 const projectRoot = resolve(miniappRoot, '..');
+const PUBLISHED_SOURCE_SHARDS = [
+  'warehouse_l5.jsonl',
+  'warehouse_l4.jsonl',
+  'warehouse_l3.jsonl',
+  'warehouse_l2.jsonl',
+  'warehouse_l1.jsonl',
+  'inspector_l5.jsonl',
+  'inspector_l4.jsonl',
+  'inspector_l3.jsonl',
+] as const;
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
+
+const loadPublishedSourceRecords = (): Array<Record<string, unknown>> =>
+  PUBLISHED_SOURCE_SHARDS.flatMap((filename) =>
+    readFileSync(resolve(projectRoot, '..', 'data', 'questions', filename), 'utf8')
+      .split(/\r?\n/u)
+      .filter(Boolean)
+      .map((line) => JSON.parse(line) as Record<string, unknown>),
+  );
 
 interface ComponentConfig {
   usingComponents?: Record<string, string>;
@@ -137,18 +156,12 @@ describe('WeChat mini program structure', () => {
     ]);
   });
 
-  it('ships the TDesign icon component into miniprogram_npm for runtime resolution', () => {
-    const bundledIcon = join(
-      miniappRoot,
-      'miniprogram_npm',
-      'tdesign-miniprogram',
-      'icon',
-      'icon.json',
-    );
+  it('registers the local icon component for runtime resolution', () => {
+    const localIcon = join(miniappRoot, 'components', 'app-icon', 'index.json');
+    const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
 
-    expect(existsSync(bundledIcon), 'TDesign icon bundle is missing from miniprogram_npm').toBe(
-      true,
-    );
+    expect(existsSync(localIcon), 'local icon component is missing').toBe(true);
+    expect(app.usingComponents).toMatchObject({ 't-icon': '/components/app-icon/index' });
   });
 
   it('ships the canonical and generated catalogs without the legacy library presenter', () => {
@@ -692,48 +705,81 @@ describe('WeChat mini program structure', () => {
     expect(emphasizedRule).toMatch(/grid-column:\s*1\s*\/\s*-1;/);
   });
 
-  it('ships the packed five-level verified warehouse question bank', () => {
-    const expectedCounts = {
-      1: 624,
-      2: 748,
-      3: 950,
-      4: 658,
-      5: 1130,
-    };
+  it('ships verified warehouse and inspector question banks that match every published source record', () => {
+    const expectedWarehouseCounts = Object.fromEntries(
+      Object.entries(CLASSIFICATION_MANIFEST.published_counts).map(([level, count]) => [
+        Number(level),
+        count,
+      ]),
+    ) as Record<number, number>;
+    const expectedInspectorCounts = { 5: 8, 4: 8, 3: 8 } as const;
+    const expectedTotal =
+      Object.values(expectedWarehouseCounts).reduce((total, count) => total + count, 0) +
+      Object.values(expectedInspectorCounts).reduce((total, count) => total + count, 0);
     const ids = new Set<string>();
+    const sourceRecords = loadPublishedSourceRecords();
+    const sourceIds = sourceRecords.map((record) => String(record.id));
+    const sourceById = new Map(sourceRecords.map((record) => [String(record.id), record]));
+
+    expect(sourceRecords).toHaveLength(expectedTotal);
+    expect(new Set(sourceIds).size).toBe(sourceRecords.length);
 
     for (const record of RUNTIME_QUESTION_RECORDS) {
-      expect(record.occupation).toBe('4-02-06-01');
+      expect(['4-02-06-01', '4-08-05-01']).toContain(record.occupation);
       expect(record.review_status).toBe('verified');
       expect(ids.has(record.id), `duplicate runtime id: ${record.id}`).toBe(false);
       ids.add(record.id);
+      const source = sourceById.get(record.id);
+      expect(source, `runtime id missing from data/questions: ${record.id}`).toBeDefined();
+      expect(record.id).toBe(source?.id);
+      expect(record.occupation).toBe(source?.occupation_code);
+      expect(record.direction).toBe(source?.direction);
+      expect(record.level).toBe(source?.level);
+      expect(record.module).toBe(source?.module);
+      expect(record.topic).toBe(source?.topic);
+      expect(record.chapter_id).toBe(source?.chapter_id);
+      expect(record.section_id).toBe(source?.section_id);
+      expect(record.type).toBe(source?.type);
+      expect(record.stem).toBe(source?.stem);
+      expect(record.options).toEqual(source?.options);
+      expect(record.answer).toEqual(source?.answer);
+      expect(record.explanation).toBe(source?.explanation);
+      expect(record.difficulty).toBe(source?.difficulty);
+      expect(record.keywords).toEqual(source?.keywords);
+      expect(record.source_ids).toEqual(source?.source_ids);
+      expect(record.standard_reference).toBe(source?.standard_reference);
+      expect(record.review_status).toBe(source?.review_status);
+      expect(record.content_version).toBe(source?.content_version);
     }
 
-    expect(ids.size).toBe(4_110);
+    expect(expectedTotal).toBe(3_629);
+    expect(ids.size).toBe(expectedTotal);
+    expect(new Set(sourceIds)).toEqual(ids);
     expect(
       Object.fromEntries(
         [1, 2, 3, 4, 5].map((level) => [
           level,
-          RUNTIME_QUESTION_RECORDS.filter((record) => record.level === level).length,
+          RUNTIME_QUESTION_RECORDS.filter(
+            (record) => record.occupation === '4-02-06-01' && record.level === level,
+          ).length,
         ]),
       ),
-    ).toEqual(expectedCounts);
+    ).toEqual(expectedWarehouseCounts);
+    expect(
+      Object.fromEntries(
+        [5, 4, 3].map((level) => [
+          level,
+          RUNTIME_QUESTION_RECORDS.filter(
+            (record) => record.occupation === '4-08-05-01' && record.level === level,
+          ).length,
+        ]),
+      ),
+    ).toEqual(expectedInspectorCounts);
     const runtimeModule = readFileSync(
       join(miniappRoot, 'data', 'questions', 'runtime-question-records.ts'),
       'utf8',
     );
     expect(runtimeModule).toContain("import { gunzipSync, strFromU8 } from 'fflate';");
     expect(runtimeModule).toContain('const packed = [');
-  });
-
-  it('does not expose the deferred inspector bank in active question flows', () => {
-    const questionListMarkup = readFileSync(
-      join(miniappRoot, 'pages', 'question-list', 'index.wxml'),
-      'utf8',
-    );
-    const practicePage = readFileSync(join(miniappRoot, 'pages', 'practice', 'index.ts'), 'utf8');
-
-    expect(questionListMarkup).not.toContain('4-08-05-01');
-    expect(practicePage).toContain("new Set<OccupationCode>(['4-02-06-01'])");
   });
 });

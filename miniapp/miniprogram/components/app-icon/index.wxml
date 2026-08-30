@@ -1,0 +1,2 @@
+<text wx:if="{{loading}}" class="app-icon app-icon--loading" style="{{styleText}}" aria-hidden="true"></text>
+<text wx:else class="app-icon" style="{{styleText}}" aria-hidden="true">{{glyph}}</text>

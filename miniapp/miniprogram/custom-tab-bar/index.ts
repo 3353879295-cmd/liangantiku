@@ -5,9 +5,9 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { text: '首页', value: '/pages/home/index', icon: 'home' },
-  { text: '实操', value: '/pages/practical/index', icon: 'tools' },
-  { text: '我的', value: '/pages/profile/index', icon: 'user' },
+  { text: '首页', value: '/pages/home/index', icon: '⌂' },
+  { text: '实操', value: '/pages/practical/index', icon: '⚒' },
+  { text: '我的', value: '/pages/profile/index', icon: '◉' },
 ];
 
 interface TabBarContext {
@@ -36,8 +36,12 @@ Component({
     },
   },
   methods: {
-    onChange(event: WechatMiniprogram.CustomEvent<{ value: string }>) {
-      this.setData({ value: event.detail.value });
+    onTabTap(event: WechatMiniprogram.BaseEvent) {
+      const value = event.currentTarget.dataset.value as string | undefined;
+      if (!value || value === this.data.value) return;
+
+      this.setData({ value });
+      void wx.switchTab({ url: value });
     },
   },
 });

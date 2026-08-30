@@ -6,7 +6,6 @@ import { makeQuestion } from './factories';
 interface HomePageData {
   selectedKey: CertificateKey;
   certificate: { questionCountText: string };
-  catalogChapters: unknown[];
   loading: boolean;
 }
 
@@ -53,20 +52,16 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('home page current catalog', () => {
-  it('loads the current catalog without depending on recent-practice records', async () => {
+describe('home page certificate loading', () => {
+  it('loads the selected certificate question count', async () => {
     const { appServices, context, definition } = await loadHomePage();
     vi.spyOn(appServices.questions, 'list').mockResolvedValue([
       makeQuestion({ id: 'HOME-CURRENT-Q1' }),
     ]);
-    vi.spyOn(appServices.questions, 'getByIds').mockRejectedValue(
-      new Error('recent-practice records are unavailable'),
-    );
-    vi.spyOn(appServices.progress, 'listRecentQuestionIds').mockReturnValue(['RECENT-Q1']);
-
     await expect(definition.loadCertificate.call(context, '4-02-06-01:5')).resolves.toBeUndefined();
 
     expect(context.data.loading).toBe(false);
+    expect(context.data.selectedKey).toBe('4-02-06-01:5');
     expect(context.data.certificate.questionCountText).toBe('1 题');
   });
 });

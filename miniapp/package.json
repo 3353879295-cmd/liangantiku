@@ -10,11 +10,12 @@
     "check:package": "vitest run tests/main-package-budget.test.ts",
     "test": "vitest run",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:package && npm run test",
-    "sync:questions": "node scripts/sync-question-bank.mjs"
+    "prepare:runtime-deps": "node scripts/prepare-miniprogram-runtime-deps.mjs",
+    "postinstall": "npm run prepare:runtime-deps",
+    "sync:questions": "node scripts/sync-question-bank.mjs && npm run prepare:runtime-deps"
   },
   "dependencies": {
-    "fflate": "^0.8.2",
-    "tdesign-miniprogram": "1.15.3"
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

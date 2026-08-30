@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "章节详情",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "app-topbar": "/components/app-topbar/index"
   }
 }

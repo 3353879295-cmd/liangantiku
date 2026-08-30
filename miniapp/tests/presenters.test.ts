@@ -117,30 +117,44 @@ describe('home question bank presentation', () => {
 });
 
 describe('library presenters', () => {
-  it('groups certificates under the active warehouse occupation only', () => {
+  it('groups certificates under warehouse and inspector occupations', () => {
     const groups = groupCertificates(CERTIFICATES);
 
-    expect(groups).toHaveLength(1);
-    expect(groups.map((group) => group.title)).toEqual(['储粮保管员']);
+    expect(groups.map(({ occupation, title }) => ({ occupation, title }))).toEqual([
+      { occupation: '4-02-06-01', title: '储粮保管员' },
+      { occupation: '4-08-05-01', title: '粮油质检员' },
+    ]);
   });
 
-  it('exposes all five available warehouse levels', () => {
+  it('exposes five levels for each occupation with its availability', () => {
     const groups = groupCertificates(CERTIFICATES);
 
-    expect(groups.map((group) => group.items.length)).toEqual([5]);
-    expect(groups[0]?.items.map((item) => item.levelName)).toEqual([
-      '初级',
-      '中级',
-      '高级',
-      '技师',
-      '高级技师',
-    ]);
-    expect(groups[0]?.items.map((item) => item.availability)).toEqual([
-      'available',
-      'available',
-      'available',
-      'available',
-      'available',
+    expect(
+      groups.map(({ occupation, items }) => ({
+        occupation,
+        levels: items.map(({ levelName, availability }) => ({ levelName, availability })),
+      })),
+    ).toEqual([
+      {
+        occupation: '4-02-06-01',
+        levels: [
+          { levelName: '初级', availability: 'available' },
+          { levelName: '中级', availability: 'available' },
+          { levelName: '高级', availability: 'available' },
+          { levelName: '技师', availability: 'available' },
+          { levelName: '高级技师', availability: 'available' },
+        ],
+      },
+      {
+        occupation: '4-08-05-01',
+        levels: [
+          { levelName: '初级', availability: 'available' },
+          { levelName: '中级', availability: 'available' },
+          { levelName: '高级', availability: 'available' },
+          { levelName: '技师', availability: 'coming-soon' },
+          { levelName: '高级技师', availability: 'coming-soon' },
+        ],
+      },
     ]);
   });
 

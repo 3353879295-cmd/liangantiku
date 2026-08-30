@@ -1,0 +1,28 @@
+.app-icon {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  color: currentcolor;
+  font-family: Arial, sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  vertical-align: -0.1em;
+}
+
+.app-icon--loading {
+  border: 0.12em solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: app-icon-spin 0.8s linear infinite;
+}
+
+@keyframes app-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

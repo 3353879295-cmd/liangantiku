@@ -1,6 +1,4 @@
 import { CERTIFICATES } from '../../data/certificates';
-import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
-import { presentCatalogParts } from '../../presenters/catalog-presenter';
 import { HOME_ACTIONS, presentHomeCertificate } from '../../presenters/home-presenter';
 import type { HomeAction } from '../../presenters/home-presenter';
 import { appServices, localDateKey } from '../../services/app-services';
@@ -10,14 +8,6 @@ interface HomeActionCard extends HomeAction {
   icon: string;
   note: string;
   emphasized: boolean;
-}
-
-interface HomeCatalogChapter {
-  id: string;
-  numberText: string;
-  title: string;
-  metaText: string;
-  progressText: string;
 }
 
 const defaultCertificateKey = (): CertificateKey => '4-02-06-01:5';
@@ -53,7 +43,6 @@ Page({
     resumeText: '选择题库，开始今天的第一次练习',
     resumeActionText: '去学习',
     actions,
-    catalogChapters: [] as HomeCatalogChapter[],
     loading: true,
   },
 
@@ -95,7 +84,6 @@ Page({
     this.setData({
       selectedKey: certificate.key,
       certificate: presentHomeCertificate(CERTIFICATES, certificate.key, 0),
-      catalogChapters: [] as HomeCatalogChapter[],
       loading: true,
     });
 
@@ -105,27 +93,8 @@ Page({
     });
     if (this.data.selectedKey !== certificate.key) return;
 
-    const parts = presentCatalogParts({
-      catalog: KNOWLEDGE_CATALOG,
-      occupation: certificate.occupation,
-      level: certificate.level,
-      questions,
-      getProgress: (ids) => appServices.progress.getQuestionProgress(ids),
-    });
-    const catalogChapters = parts
-      .flatMap(({ chapters }) => chapters)
-      .slice(0, 3)
-      .map((chapter) => ({
-        id: chapter.id,
-        numberText: chapter.numberText,
-        title: chapter.title,
-        metaText: chapter.metaText,
-        progressText: chapter.progressText,
-      }));
-
     this.setData({
       certificate: presentHomeCertificate(CERTIFICATES, certificate.key, questions.length),
-      catalogChapters,
       loading: false,
     });
   },
@@ -166,10 +135,6 @@ Page({
       return;
     }
     void wx.navigateTo({ url: route });
-  },
-
-  onOpenCatalog() {
-    void wx.navigateTo({ url: '/pages/library/index' });
   },
 
   onOpenMember() {

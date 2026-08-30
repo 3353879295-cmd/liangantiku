@@ -96,6 +96,93 @@ def test_production_rules_classify_existing_and_shared_cases(level: int, section
     assert result.section_id == section_id
 
 
+@pytest.mark.parametrize(
+    "level,section_id,stem",
+    (
+        (5, "warehouse-basic-c02-s02", "C类火灾场所应选择适用的灭火器"),
+        (5, "warehouse-l5-c04-s01", "使用电子测温仪检查储粮温度和粮温变化"),
+        (5, "warehouse-l5-c04-s04", "通过取样筛检识别储粮害虫和虫口密度"),
+        (5, "warehouse-l5-c05-s04", "采用磷化氢环流熏蒸防治储粮害虫"),
+        (5, "warehouse-l5-c05-s02", "通过通风降水控制储存粮油水分"),
+        (2, "warehouse-l2-c02-s03", "根据脂肪酸值和品尝评分判定储存品质"),
+        (2, "warehouse-l2-c02-s01", "使用气体检测仪检测粮堆氧气和二氧化碳浓度"),
+        (2, "warehouse-l2-c04-s01", "编制保管员培训计划和培训教案"),
+        (1, "warehouse-l1-c04-s03", "设计充氮气调储粮系统并校核气密性"),
+    ),
+)
+def test_production_rules_cover_high_frequency_multiterm_clusters(
+    level: int, section_id: str, stem: str
+) -> None:
+    result = classify_warehouse_question(
+        level=level,
+        stem=stem,
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "section"
+    assert result.section_id == section_id
+
+
+@pytest.mark.parametrize(
+    "question_id,section_id",
+    (
+        # Gas concentration measurement must outrank the generic "报警"
+        # safety term; the paired fire case below protects that boundary.
+        ("WH-L5-001104", "warehouse-l5-c04-s03"),
+        ("WH-L5-000005", "warehouse-basic-c02-s02"),
+        ("WH-L5-000257", "warehouse-l5-c03-s02"),
+        ("WH-L4-000451", "warehouse-l4-c08-s01"),
+        ("WH-L2-000228", "warehouse-l2-c01-s01"),
+        ("WH-L2-000143", "warehouse-l2-c01-s01"),
+        ("WH-L2-000059", "warehouse-basic-c02-s01"),
+        ("WH-L1-000542", "warehouse-l1-c01-s01"),
+        ("WH-L5-000457", "warehouse-l5-c03-s03"),
+        ("WH-L4-000258", "warehouse-l4-c07-s01"),
+        ("WH-L4-000254", "warehouse-l4-c07-s01"),
+        ("WH-L3-000107", "warehouse-basic-c02-s01"),
+        ("WH-L3-000422", "warehouse-l3-c09-s02"),
+    ),
+)
+def test_semantic_priority_regressions(question_id: str, section_id: str) -> None:
+    level = int(question_id.split("-")[1][1:])
+    source_path = Path(f"data/questions/warehouse_l{level}.jsonl")
+    record = next(
+        json.loads(line)
+        for line in source_path.read_text(encoding="utf-8").splitlines()
+        if line and json.loads(line)["id"] == question_id
+    )
+    result = classify_warehouse_question(
+        level=level,
+        stem=record["stem"],
+        options=tuple(option["text"] for option in record["options"]),
+        explanation=record.get("explanation", ""),
+    )
+
+    assert result.status == "section"
+    assert result.section_id == section_id
+
+
+@pytest.mark.parametrize(
+    "level,stem",
+    (
+        (5, "储粮害虫"),
+        (5, "检测"),
+        (5, "水分"),
+        (2, "输送机"),
+    ),
+)
+def test_common_terms_without_context_remain_pending(level: int, stem: str) -> None:
+    result = classify_warehouse_question(
+        level=level,
+        stem=stem,
+        options=(),
+        explanation="",
+    )
+
+    assert result.status == "pending"
+
+
 @pytest.fixture
 def catalog_with_l2_seed(tmp_path: Path) -> KnowledgeCatalog:
     catalog = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
@@ -201,7 +288,7 @@ def test_checked_in_l2_rules_artifact_loads_in_target_catalog(
 ) -> None:
     rules = load_warehouse_rules(RULES_PATH, catalog_with_l2_seed)
 
-    assert rules.version == "2026-08-07.1"
+    assert rules.version == "2026-08-10.1"
     target = next(
         rule
         for rule in rules.rules

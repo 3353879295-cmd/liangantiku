@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "教材目录",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "app-topbar": "/components/app-topbar/index"
   }
 }

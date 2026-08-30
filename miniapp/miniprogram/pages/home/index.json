@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "粮安题库",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "certificate-selector": "/components/certificate-selector/index"
   }
 }

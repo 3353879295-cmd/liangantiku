@@ -12,7 +12,9 @@ const catalog: unknown = {
           "levels": [
             5,
             4,
-            3
+            3,
+            2,
+            1
           ],
           "chapters": [
             {
@@ -32,6 +34,12 @@ const catalog: unknown = {
                   "number": 2,
                   "title": "粮油仓储业从业人员职业守则",
                   "page": 6
+                },
+                {
+                  "id": "warehouse-basic-c01-s00",
+                  "number": 3,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -58,6 +66,12 @@ const catalog: unknown = {
                   "number": 3,
                   "title": "相关法律法规基础知识",
                   "page": 75
+                },
+                {
+                  "id": "warehouse-basic-c02-s00",
+                  "number": 4,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             }
@@ -94,6 +108,12 @@ const catalog: unknown = {
                   "number": 3,
                   "title": "粮油出入库收尾工作",
                   "page": 131
+                },
+                {
+                  "id": "warehouse-l5-c03-s00",
+                  "number": 4,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -132,6 +152,12 @@ const catalog: unknown = {
                   "number": 5,
                   "title": "检查鼠雀",
                   "page": 165
+                },
+                {
+                  "id": "warehouse-l5-c04-s00",
+                  "number": 6,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -170,6 +196,12 @@ const catalog: unknown = {
                   "number": 5,
                   "title": "储粮鼠类防治",
                   "page": 188
+                },
+                {
+                  "id": "warehouse-l5-c05-s00",
+                  "number": 6,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             }
@@ -206,6 +238,12 @@ const catalog: unknown = {
                   "number": 3,
                   "title": "粮油出入库收尾",
                   "page": 226
+                },
+                {
+                  "id": "warehouse-l4-c06-s00",
+                  "number": 4,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -238,6 +276,12 @@ const catalog: unknown = {
                   "number": 4,
                   "title": "检查储粮害虫",
                   "page": 244
+                },
+                {
+                  "id": "warehouse-l4-c07-s00",
+                  "number": 5,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -276,6 +320,12 @@ const catalog: unknown = {
                   "number": 5,
                   "title": "储粮鼠类防治",
                   "page": 297
+                },
+                {
+                  "id": "warehouse-l4-c08-s00",
+                  "number": 6,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             }
@@ -312,6 +362,12 @@ const catalog: unknown = {
                   "number": 3,
                   "title": "粮油出入库收尾",
                   "page": 328
+                },
+                {
+                  "id": "warehouse-l3-c09-s00",
+                  "number": 4,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -350,6 +406,12 @@ const catalog: unknown = {
                   "number": 5,
                   "title": "检查储油质量",
                   "page": 355
+                },
+                {
+                  "id": "warehouse-l3-c10-s00",
+                  "number": 6,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             },
@@ -394,33 +456,325 @@ const catalog: unknown = {
                   "number": 6,
                   "title": "防治储粮发热霉变",
                   "page": 402
+                },
+                {
+                  "id": "warehouse-l3-c11-s00",
+                  "number": 7,
+                  "title": "本章综合考查",
+                  "page": null
                 }
               ]
             }
           ]
         },
         {
-          "id": "warehouse-import",
-          "number": 99,
-          "title": "保管员资料整理题库",
+          "id": "warehouse-l2",
+          "number": 5,
+          "title": "技师粮油仓储管理员",
           "levels": [
-            5,
-            4,
-            3,
-            2,
+            2
+          ],
+          "chapters": [
+            {
+              "id": "warehouse-l2-c01",
+              "number": 1,
+              "title": "粮油出入库管理",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l2-c01-s01",
+                  "number": 1,
+                  "title": "粮油出入库准备",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c01-s00",
+                  "number": 2,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l2-c02",
+              "number": 2,
+              "title": "粮情检查",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l2-c02-s01",
+                  "number": 1,
+                  "title": "粮堆气体成分",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c02-s02",
+                  "number": 2,
+                  "title": "储粮虫害",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c02-s03",
+                  "number": 3,
+                  "title": "粮油储藏品质",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c02-s04",
+                  "number": 4,
+                  "title": "发热与霉变",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c02-s00",
+                  "number": 5,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l2-c03",
+              "number": 3,
+              "title": "粮情控制",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l2-c03-s01",
+                  "number": 1,
+                  "title": "储粮温度",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c03-s02",
+                  "number": 2,
+                  "title": "储粮水分",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c03-s03",
+                  "number": 3,
+                  "title": "粮堆气体成分",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c03-s04",
+                  "number": 4,
+                  "title": "储粮虫害",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c03-s05",
+                  "number": 5,
+                  "title": "储粮发热与霉变",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c03-s06",
+                  "number": 6,
+                  "title": "储粮效益分析",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c03-s00",
+                  "number": 7,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l2-c04",
+              "number": 4,
+              "title": "培训指导",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l2-c04-s01",
+                  "number": 1,
+                  "title": "培训",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c04-s02",
+                  "number": 2,
+                  "title": "指导",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c04-s03",
+                  "number": 3,
+                  "title": "专业技术报告",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l2-c04-s00",
+                  "number": 4,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warehouse-l1",
+          "number": 6,
+          "title": "高级技师粮油仓储管理员",
+          "levels": [
             1
           ],
           "chapters": [
             {
-              "id": "warehouse-import-c01",
+              "id": "warehouse-l1-c01",
               "number": 1,
-              "title": "保管员综合理论",
+              "title": "粮油出入库管理",
               "page": null,
               "sections": [
                 {
-                  "id": "warehouse-import-c01-s01",
+                  "id": "warehouse-l1-c01-s01",
                   "number": 1,
-                  "title": "资料整理题目",
+                  "title": "粮油出入库准备",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c01-s00",
+                  "number": 2,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l1-c02",
+              "number": 2,
+              "title": "粮情检查",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l1-c02-s01",
+                  "number": 1,
+                  "title": "储粮虫害",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c02-s02",
+                  "number": 2,
+                  "title": "粮油储藏品质",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c02-s00",
+                  "number": 3,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l1-c03",
+              "number": 3,
+              "title": "粮情控制",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l1-c03-s01",
+                  "number": 1,
+                  "title": "储粮温度",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c03-s02",
+                  "number": 2,
+                  "title": "储粮水分",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c03-s03",
+                  "number": 3,
+                  "title": "储粮虫害",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c03-s04",
+                  "number": 4,
+                  "title": "储粮品质",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c03-s00",
+                  "number": 5,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l1-c04",
+              "number": 4,
+              "title": "粮油储藏工艺设计",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l1-c04-s01",
+                  "number": 1,
+                  "title": "低温储粮",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c04-s02",
+                  "number": 2,
+                  "title": "储粮调质通风",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c04-s03",
+                  "number": 3,
+                  "title": "气调储粮",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c04-s04",
+                  "number": 4,
+                  "title": "储粮效益分析",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c04-s00",
+                  "number": 5,
+                  "title": "本章综合考查",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "warehouse-l1-c05",
+              "number": 5,
+              "title": "培训指导",
+              "page": null,
+              "sections": [
+                {
+                  "id": "warehouse-l1-c05-s01",
+                  "number": 1,
+                  "title": "培训",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c05-s02",
+                  "number": 2,
+                  "title": "指导",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c05-s03",
+                  "number": 3,
+                  "title": "专业技术报告",
+                  "page": null
+                },
+                {
+                  "id": "warehouse-l1-c05-s00",
+                  "number": 4,
+                  "title": "本章综合考查",
                   "page": null
                 }
               ]

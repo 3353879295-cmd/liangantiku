@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "练习结果",
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon",
     "app-topbar": "/components/app-topbar/index",
     "stat-card": "/components/stat-card/index",
     "empty-state": "/components/empty-state/index",

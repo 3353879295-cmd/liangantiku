@@ -39,6 +39,10 @@
       {
         "value": "miniprogram_npm/tdesign-miniprogram/.wechatide.ib.json",
         "type": "file"
+      },
+      {
+        "value": "miniprogram_npm/tdesign-miniprogram",
+        "type": "folder"
       }
     ],
     "include": []

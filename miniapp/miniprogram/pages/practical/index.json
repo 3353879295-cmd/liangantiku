@@ -1,6 +1,3 @@
 {
-  "navigationBarTitleText": "实操技能",
-  "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon"
-  }
+  "navigationBarTitleText": "实操技能"
 }

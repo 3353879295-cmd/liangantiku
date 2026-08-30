@@ -1,5 +1,6 @@
 .home-page {
   padding-top: 30rpx;
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 .user-bar,
@@ -155,6 +156,21 @@
   grid-column: 1 / -1;
   min-height: 112rpx;
   background: var(--color-primary);
+}
+
+.action-card--chapter {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.action-card--favorite {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.action-card--random {
+  grid-column: 1 / -1;
+  grid-row: 2;
 }
 
 .action-card__icon {

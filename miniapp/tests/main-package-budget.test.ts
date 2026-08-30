@@ -1,17 +1,23 @@
-import { readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-const MAIN_PACKAGE_LIMIT_BYTES = 2 * 1024 * 1024;
+const MAIN_PACKAGE_LIMIT_BYTES = 1.5 * 1024 * 1024;
 const miniprogramRoot = resolve(import.meta.dirname, '..', 'miniprogram');
+const projectConfigPath = resolve(import.meta.dirname, '..', 'project.config.json');
+const packageJsonPath = resolve(import.meta.dirname, '..', 'package.json');
 
-const measureFiles = (directory: string): { bytes: number; files: number } =>
+const measureFiles = (
+  directory: string,
+  ignoredDirectories: ReadonlySet<string>,
+): { bytes: number; files: number } =>
   readdirSync(directory, { withFileTypes: true }).reduce(
     (total, entry) => {
       const path = join(directory, entry.name);
       if (entry.isDirectory()) {
-        const nested = measureFiles(path);
+        if (ignoredDirectories.has(path)) return total;
+        const nested = measureFiles(path, ignoredDirectories);
         return {
           bytes: total.bytes + nested.bytes,
           files: total.files + nested.files,
@@ -27,10 +33,24 @@ const measureFiles = (directory: string): { bytes: number; files: number } =>
   );
 
 describe('main package release budget', () => {
-  it('keeps the actual miniprogram file tree within the 2 MiB upload limit', () => {
-    const measurement = measureFiles(miniprogramRoot);
+  it('keeps the uploadable main package strictly below the 1.5 MiB limit', () => {
+    const projectConfig = JSON.parse(readFileSync(projectConfigPath, 'utf8')) as {
+      packOptions?: { ignore?: { type: string; value: string }[] };
+    };
+    const ignoredDirectories = new Set(
+      (projectConfig.packOptions?.ignore ?? [])
+        .filter((entry) => entry.type === 'folder')
+        .map((entry) => resolve(miniprogramRoot, entry.value)),
+    );
+    const retiredTdesignBundle = resolve(miniprogramRoot, 'miniprogram_npm', 'tdesign-miniprogram');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+      dependencies?: Record<string, string>;
+    };
+    const measurement = measureFiles(miniprogramRoot, ignoredDirectories);
 
     expect(measurement.files).toBeGreaterThan(0);
-    expect(measurement.bytes).toBeLessThanOrEqual(MAIN_PACKAGE_LIMIT_BYTES);
+    expect(measurement.bytes).toBeLessThan(MAIN_PACKAGE_LIMIT_BYTES);
+    expect(ignoredDirectories).toContain(retiredTdesignBundle);
+    expect(packageJson.dependencies?.['tdesign-miniprogram']).toBeUndefined();
   });
 });

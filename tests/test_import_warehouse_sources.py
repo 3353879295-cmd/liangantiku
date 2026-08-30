@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
+import sys
+from types import SimpleNamespace
 
+import pytest
+
+from grain_quiz.catalog import load_knowledge_catalog
+from grain_quiz.warehouse_classify import WarehouseClassifier, load_warehouse_rules
 
 def _load_importer():
     path = Path(__file__).resolve().parents[1] / "tools" / "import_warehouse_sources.py"
@@ -10,11 +17,54 @@ def _load_importer():
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load importer at {path}")
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
 
 IMPORTER = _load_importer()
+
+
+def _baseline_question(question_id: str, stem: str) -> dict[str, object]:
+    return {
+        "id": question_id,
+        "occupation_code": "4-02-06-01",
+        "occupation_name": "粮油仓储管理员",
+        "direction": "粮油保管员",
+        "level": 2,
+        "module": "资料整理题库",
+        "topic": "技师资料",
+        "chapter_id": "warehouse-import-c01",
+        "section_id": "warehouse-import-c01-s01",
+        "type": "single",
+        "stem": stem,
+        "options": [
+            {"key": "A", "text": "选项甲"},
+            {"key": "B", "text": "选项乙"},
+            {"key": "C", "text": "选项丙"},
+            {"key": "D", "text": "选项丁"},
+        ],
+        "answer": ["A"],
+        "explanation": "答案为：A。",
+        "difficulty": "medium",
+        "keywords": ["粮油保管"],
+        "source_ids": ["SRC-0001"],
+        "standard_reference": "用户提供的保管员学习资料",
+        "source_note": "来源文件：测试资料.docx",
+        "review_status": "verified",
+        "valid_from": "2026-08-06",
+        "valid_until": None,
+        "duplicate_group": None,
+        "content_version": 1,
+        "created_at": "2026-08-06T17:00:00+08:00",
+        "updated_at": "2026-08-06T17:00:00+08:00",
+    }
+
+
+def _production_classifier() -> WarehouseClassifier:
+    catalog = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
+    rules = load_warehouse_rules(Path("tools/warehouse_classification_rules.json"), catalog)
+    return WarehouseClassifier(rules)
 
 
 def test_section_heading_is_not_imported_as_a_question_and_keeps_its_question_type():
@@ -185,3 +235,224 @@ def test_standard_number_inside_question_is_not_split_as_a_new_question():
     blocks = IMPORTER._parse_blocks([line])
 
     assert blocks == [("综合理论", [line])]
+
+
+def test_classification_preserves_baseline_ids_when_a_middle_question_is_pending():
+    baseline = [
+        _baseline_question("WH-L2-000001", "磷化氢环流熏蒸并检测浓度"),
+        _baseline_question("WH-L2-000002", "无法从语义判断章节"),
+        _baseline_question("WH-L2-000003", "编制保管员培训计划和教案"),
+    ]
+    result = IMPORTER.classify_baseline_records(
+        baseline,
+        classifier=_production_classifier(),
+        catalog=load_knowledge_catalog(Path("data/knowledge_catalog.json")),
+        effective_at="2026-08-07T18:00:00+08:00",
+    )
+
+    assert [item["id"] for item in result.published] == [
+        "WH-L2-000001",
+        "WH-L2-000003",
+    ]
+    assert [item["question_id"] for item in result.review] == ["WH-L2-000002"]
+
+
+def test_classification_changes_only_allowed_metadata_fields():
+    before = _baseline_question("WH-L2-000001", "磷化氢环流熏蒸并检测浓度")
+    result = IMPORTER.classify_baseline_records(
+        [before],
+        classifier=_production_classifier(),
+        catalog=load_knowledge_catalog(Path("data/knowledge_catalog.json")),
+        effective_at="2026-08-07T18:00:00+08:00",
+    )
+    after = result.published[0]
+    immutable = {
+        "id", "level", "stem", "options", "answer", "explanation",
+        "source_ids", "source_note", "standard_reference", "created_at",
+    }
+
+    assert {field: after[field] for field in immutable} == {
+        field: before[field] for field in immutable
+    }
+    assert after["content_version"] == before["content_version"] + 1
+    assert after["updated_at"] == "2026-08-07T18:00:00+08:00"
+
+
+def test_pending_records_are_not_published_and_keep_top_three_candidates():
+    result = IMPORTER.classify_baseline_records(
+        [_baseline_question("WH-L2-000002", "无法从语义判断章节")],
+        classifier=_production_classifier(),
+        catalog=load_knowledge_catalog(Path("data/knowledge_catalog.json")),
+        effective_at="2026-08-07T18:00:00+08:00",
+    )
+
+    assert result.published == []
+    assert result.review[0]["reason"] in {"ambiguous", "low_score", "no_rule"}
+    assert len(result.review[0]["candidates"]) <= 3
+
+
+def test_generic_single_character_evidence_remains_pending():
+    class PendingClassifier:
+        def classify(self, **kwargs):
+            from grain_quiz.warehouse_classify import ClassificationResult
+
+            return ClassificationResult("pending", None, None, (), "no_rule")
+
+    result = IMPORTER.classify_baseline_records(
+        [_baseline_question("WH-L2-000009", "水")],
+        classifier=PendingClassifier(),
+        catalog=load_knowledge_catalog(Path("data/knowledge_catalog.json")),
+        effective_at="2026-08-07T18:00:00+08:00",
+    )
+
+    assert result.published == []
+    assert result.review[0]["reason"] == "no_rule"
+
+
+def test_classified_record_preserves_immutable_baseline_fields():
+    baseline = _baseline_question("WH-L2-000010", "磷化氢环流熏蒸并检测浓度")
+    result = IMPORTER.classify_baseline_records(
+        [baseline],
+        classifier=_production_classifier(),
+        catalog=load_knowledge_catalog(Path("data/knowledge_catalog.json")),
+        effective_at="2026-08-07T18:00:00+08:00",
+    )
+
+    assert result.published
+    for field in IMPORTER.IMMUTABLE_FIELDS:
+        assert result.published[0][field] == baseline[field]
+
+
+def _classification_result(*, published: int, pending: int):
+    return SimpleNamespace(
+        level=2,
+        baseline_count=published + pending,
+        published=[{"id": f"published-{index}"} for index in range(published)],
+        review=[
+            {"question_id": f"pending-{index}", "reason": "low_score"}
+            for index in range(pending)
+        ],
+        audit=[],
+    )
+
+
+def test_output_files_are_unchanged_when_coverage_is_below_80_percent(tmp_path: Path):
+    output_dir = tmp_path / "questions"
+    output_dir.mkdir()
+    target = output_dir / "warehouse_l2.jsonl"
+    review = tmp_path / "review.jsonl"
+    audit = tmp_path / "audit.jsonl"
+    report = tmp_path / "report.json"
+    manifest = tmp_path / "manifest.json"
+    target.write_text("sentinel\n", encoding="utf-8")
+    review.write_text("old-review\n", encoding="utf-8")
+    audit.write_text("old-audit\n", encoding="utf-8")
+    report.write_text('{"old":"report"}\n', encoding="utf-8")
+    manifest.write_text('{"old":"manifest"}\n', encoding="utf-8")
+
+    with pytest.raises(IMPORTER.ClassificationCoverageError, match="80%"):
+        IMPORTER.write_classification_outputs(
+            results={2: _classification_result(published=1, pending=4)},
+            output_dir=output_dir,
+            review_path=review,
+            audit_path=audit,
+            report_path=report,
+            manifest_path=manifest,
+            minimum_coverage=0.80,
+        )
+
+    assert target.read_text(encoding="utf-8") == "sentinel\n"
+    assert review.read_text(encoding="utf-8") == "old-review\n"
+    assert audit.read_text(encoding="utf-8") == "old-audit\n"
+    assert report.read_text(encoding="utf-8") == '{"old":"report"}\n'
+    assert manifest.read_text(encoding="utf-8") == '{"old":"manifest"}\n'
+
+
+def test_output_rolls_back_all_artifacts_when_report_replace_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    output_dir = tmp_path / "questions"
+    output_dir.mkdir()
+    target = output_dir / "warehouse_l2.jsonl"
+    manifest = tmp_path / "manifest.json"
+    review = tmp_path / "review.jsonl"
+    audit = tmp_path / "audit.jsonl"
+    report = tmp_path / "report.json"
+    target.write_text("old-question\n", encoding="utf-8")
+    manifest.write_text('{"old":true}\n', encoding="utf-8")
+    review.write_text("old-review\n", encoding="utf-8")
+    audit.write_text("old-audit\n", encoding="utf-8")
+    report.write_text('{"old":"report"}\n', encoding="utf-8")
+    original_replace = IMPORTER._replace_staged
+
+    def fail_report(source: Path, destination: Path) -> None:
+        if destination == report:
+            raise OSError("simulated report replacement failure")
+        original_replace(source, destination)
+
+    monkeypatch.setattr(IMPORTER, "_replace_staged", fail_report)
+
+    with pytest.raises(OSError, match="report replacement"):
+        IMPORTER.write_classification_outputs(
+            results={2: _classification_result(published=2, pending=0)},
+            output_dir=output_dir,
+            review_path=review,
+            audit_path=audit,
+            report_path=report,
+            manifest_path=manifest,
+            minimum_coverage=0.80,
+        )
+
+    assert target.read_text(encoding="utf-8") == "old-question\n"
+    assert manifest.read_text(encoding="utf-8") == '{"old":true}\n'
+    assert review.read_text(encoding="utf-8") == "old-review\n"
+    assert audit.read_text(encoding="utf-8") == "old-audit\n"
+    assert report.read_text(encoding="utf-8") == '{"old":"report"}\n'
+
+
+def test_output_files_are_unchanged_when_backup_creation_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    output_dir = tmp_path / "questions"
+    output_dir.mkdir()
+    target = output_dir / "warehouse_l2.jsonl"
+    manifest = tmp_path / "manifest.json"
+    review = tmp_path / "review.jsonl"
+    audit = tmp_path / "audit.jsonl"
+    report = tmp_path / "report.json"
+    targets = {
+        target: "old-question\n",
+        manifest: '{"old":true}\n',
+        review: "old-review\n",
+        audit: "old-audit\n",
+        report: '{"old":"report"}\n',
+    }
+    for path, contents in targets.items():
+        path.write_text(contents, encoding="utf-8")
+
+    original_copy2 = IMPORTER.shutil.copy2
+    copy_count = 0
+
+    def fail_third_backup(source: Path, destination: Path):
+        nonlocal copy_count
+        copy_count += 1
+        if copy_count == 3:
+            raise OSError("simulated backup failure")
+        return original_copy2(source, destination)
+
+    monkeypatch.setattr(IMPORTER.shutil, "copy2", fail_third_backup)
+
+    with pytest.raises(OSError, match="backup failure"):
+        IMPORTER.write_classification_outputs(
+            results={2: _classification_result(published=2, pending=0)},
+            output_dir=output_dir,
+            review_path=review,
+            audit_path=audit,
+            report_path=report,
+            manifest_path=manifest,
+            minimum_coverage=0.80,
+        )
+
+    assert copy_count == 3
+    for path, contents in targets.items():
+        assert path.read_text(encoding="utf-8") == contents

@@ -1,14 +1,53 @@
-:host {
-  --td-brand-color: #b8ec32;
-  --td-tab-bar-active-color: #b8ec32;
-  --td-tab-bar-color: #272d23;
-  --td-tab-bar-bg-color: #fff;
-  --td-tab-bar-border-color: transparent;
-  --td-tab-bar-round-shadow: none;
+.app-tab-bar__placeholder {
+  height: calc(112rpx + env(safe-area-inset-bottom));
 }
 
 .app-tab-bar {
-  border: 1rpx solid rgb(17 18 15 / 7%);
-  box-shadow: none;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 99;
+  border-top: 1rpx solid rgb(17 18 15 / 7%);
+  background: #fff;
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+}
+
+.app-tab-bar__items {
+  display: flex;
+  height: 112rpx;
+  align-items: stretch;
+}
+
+.app-tab-bar__item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  box-sizing: border-box;
+  color: #272d23;
+}
+
+.app-tab-bar__item--active {
+  color: #b8ec32;
+}
+
+.app-tab-bar__icon {
+  width: 42rpx;
+  height: 42rpx;
+  font-size: 38rpx;
+  font-weight: 600;
+  line-height: 42rpx;
+  text-align: center;
+}
+
+.app-tab-bar__label {
+  font-size: 22rpx;
+  line-height: 28rpx;
+}
+
+.app-tab-bar__safe-area {
+  height: env(safe-area-inset-bottom);
 }

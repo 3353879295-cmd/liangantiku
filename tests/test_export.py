@@ -102,6 +102,9 @@ def test_export_json_shards_are_sorted_and_verified_only(tmp_path: Path):
         "warehouse_l3.json": 0,
         "warehouse_l2.json": 0,
         "warehouse_l1.json": 0,
+        "inspector_l5.json": 0,
+        "inspector_l4.json": 1,
+        "inspector_l3.json": 0,
     }
     for filename in counts:
         records = json.loads((tmp_path / filename).read_text(encoding="utf-8"))
@@ -147,6 +150,34 @@ def test_export_json_shards_preserves_case_questions(tmp_path: Path):
     records = json.loads((tmp_path / "warehouse_l3.json").read_text(encoding="utf-8"))
     assert records[0]["type"] == "case"
     assert records[0]["answer"] == ["C"]
+
+
+def test_export_json_shards_includes_verified_inspector_levels(tmp_path: Path):
+    questions = [
+        Question.model_validate(
+            question_data(
+                id=f"QI-L{level}-000001",
+                occupation_code="4-08-05-01",
+                level=level,
+            )
+        )
+        for level in (5, 4, 3)
+    ]
+
+    counts = export_json_shards(questions, tmp_path)
+
+    assert {
+        filename: counts[filename]
+        for filename in ("inspector_l5.json", "inspector_l4.json", "inspector_l3.json")
+    } == {
+        "inspector_l5.json": 1,
+        "inspector_l4.json": 1,
+        "inspector_l3.json": 1,
+    }
+    inspector_records = json.loads(
+        (tmp_path / "inspector_l3.json").read_text(encoding="utf-8")
+    )
+    assert inspector_records[0]["occupation"] == "4-08-05-01"
 
 
 @pytest.mark.skipif(

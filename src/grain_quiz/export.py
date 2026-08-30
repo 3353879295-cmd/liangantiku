@@ -22,6 +22,9 @@ _SHARDS = (
     ("warehouse_l3.json", "4-02-06-01", 3),
     ("warehouse_l2.json", "4-02-06-01", 2),
     ("warehouse_l1.json", "4-02-06-01", 1),
+    ("inspector_l5.json", "4-08-05-01", 5),
+    ("inspector_l4.json", "4-08-05-01", 4),
+    ("inspector_l3.json", "4-08-05-01", 3),
 )
 
 
@@ -86,7 +89,7 @@ def _resolve_node() -> str:
 
 
 def export_json_shards(questions: list[Question], output_dir: Path) -> dict[str, int]:
-    """Export all six verified-only runtime shards in stable ID order."""
+    """Export all verified-only runtime shards in stable ID order."""
     output_dir.mkdir(parents=True, exist_ok=True)
     verified = [
         question

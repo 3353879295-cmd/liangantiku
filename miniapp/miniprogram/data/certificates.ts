@@ -21,25 +21,34 @@ export const certificateKey = (
 ): CertificateKey => `${occupation}:${level}`;
 
 const LEVELS = [
-  [5, '初级', 'available'],
-  [4, '中级', 'available'],
-  [3, '高级', 'available'],
-  [2, '技师', 'available'],
-  [1, '高级技师', 'available'],
-] as const satisfies ReadonlyArray<readonly [CertificateLevel, string, CertificateAvailability]>;
+  [5, '初级'],
+  [4, '中级'],
+  [3, '高级'],
+  [2, '技师'],
+  [1, '高级技师'],
+] as const satisfies ReadonlyArray<readonly [CertificateLevel, string]>;
 
-const OCCUPATIONS: Array<readonly [OccupationCode, string, string]> = [
-  ['4-02-06-01', '粮油仓储管理员', '保管员'],
-];
+const OCCUPATIONS = [
+  ['4-02-06-01', '粮油仓储管理员', '保管员', new Set<CertificateLevel>([5, 4, 3, 2, 1])],
+  ['4-08-05-01', '粮油质量检验员', '质检员', new Set<CertificateLevel>([5, 4, 3])],
+] as const satisfies ReadonlyArray<
+  readonly [OccupationCode, string, string, ReadonlySet<CertificateLevel>]
+>;
 
-export const CERTIFICATES: Certificate[] = OCCUPATIONS.flatMap(([occupation, title, shortTitle]) =>
-  LEVELS.map(([level, levelName, availability]) => ({
-    key: certificateKey(occupation, level),
-    occupation,
-    level,
-    levelName,
-    availability,
-    title: `${title} · ${levelName}`,
-    shortTitle: `${shortTitle}${levelName}`,
-  })),
+const availabilityFor = (
+  level: CertificateLevel,
+  availableLevels: ReadonlySet<CertificateLevel>,
+): CertificateAvailability => (availableLevels.has(level) ? 'available' : 'coming-soon');
+
+export const CERTIFICATES: Certificate[] = OCCUPATIONS.flatMap(
+  ([occupation, title, shortTitle, availableLevels]) =>
+    LEVELS.map(([level, levelName]) => ({
+      key: certificateKey(occupation, level),
+      occupation,
+      level,
+      levelName,
+      availability: availabilityFor(level, availableLevels),
+      title: `${title} · ${levelName}`,
+      shortTitle: `${shortTitle}${levelName}`,
+    })),
 );

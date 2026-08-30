@@ -11,7 +11,53 @@ if (!firstShard) {
   throw new Error('The question bank contract must define at least one shard');
 }
 
-const verifiedRecord = (id: string) => ({ id, review_status: 'verified' });
+const verifiedRecord = (id: string, level = 5, occupation = '4-02-06-01') => ({
+  id,
+  occupation,
+  level,
+  chapter_id: occupation === '4-08-05-01' ? 'inspector-c01' : `warehouse-l${level}-c03`,
+  section_id: occupation === '4-08-05-01' ? 'inspector-c01-s01' : `warehouse-l${level}-c03-s01`,
+  stem: `题干 ${id}`,
+  options: [{ key: 'A', text: '选项' }],
+  answer: ['A'],
+  review_status: 'verified',
+});
+
+const catalogPart = (id: string, levels: number[], chapterId: string, sectionId: string) => ({
+  id,
+  number: 1,
+  title: id,
+  levels,
+  chapters: [
+    {
+      id: chapterId,
+      number: 1,
+      title: chapterId,
+      page: null,
+      sections: [{ id: sectionId, number: 1, title: sectionId, page: null }],
+    },
+  ],
+});
+
+const createCatalog = () => ({
+  occupations: {
+    '4-02-06-01': {
+      title: '粮油仓储管理员',
+      parts: [5, 4, 3, 2, 1].map((level) =>
+        catalogPart(
+          `warehouse-l${level}`,
+          [level],
+          `warehouse-l${level}-c03`,
+          `warehouse-l${level}-c03-s01`,
+        ),
+      ),
+    },
+    '4-08-05-01': {
+      title: '粮油质量检验员',
+      parts: [catalogPart('inspector', [5, 4, 3], 'inspector-c01', 'inspector-c01-s01')],
+    },
+  },
+});
 
 const createFixture = () => {
   const root = mkdtempSync(join(tmpdir(), 'grain-sync-'));
@@ -19,24 +65,19 @@ const createFixture = () => {
   const target = join(root, 'target');
   mkdirSync(source);
   for (const filename of SHARDS) {
-    writeFileSync(join(source, filename), JSON.stringify([verifiedRecord(`${filename}-1`)]));
+    const level = Number(filename.match(/l([1-5])/u)?.[1]);
+    const occupation = filename.startsWith('inspector_') ? '4-08-05-01' : '4-02-06-01';
+    writeFileSync(
+      join(source, filename),
+      JSON.stringify([verifiedRecord(`${filename}-1`, level, occupation)]),
+    );
   }
-  writeFileSync(
-    join(source, 'knowledge_catalog.json'),
-    JSON.stringify({
-      occupations: {
-        '4-02-06-01': {
-          title: '粮油仓储管理员',
-          parts: [],
-        },
-      },
-    }),
-  );
+  writeFileSync(join(source, 'knowledge_catalog.json'), JSON.stringify(createCatalog()));
   return { source, target };
 };
 
 describe('question bank sync', () => {
-  it('packs all five verified shards into the runtime module', () => {
+  it('packs every verified release shard into the runtime module', () => {
     const { source, target } = createFixture();
 
     const counts = syncQuestionBank(source, target, { minimumPerShard: 1 });
@@ -57,7 +98,7 @@ describe('question bank sync', () => {
     const { source, target } = createFixture();
     writeFileSync(
       join(source, firstShard),
-      JSON.stringify([{ id: 'pending-1', review_status: 'pending' }]),
+      JSON.stringify([{ ...verifiedRecord('pending-1'), review_status: 'pending' }]),
     );
 
     expect(() => syncQuestionBank(source, target, { minimumPerShard: 1 })).toThrow(/verified/);
@@ -67,5 +108,62 @@ describe('question bank sync', () => {
     const { source, target } = createFixture();
 
     expect(() => syncQuestionBank(source, target, { minimumPerShard: 2 })).toThrow(/at least 2/);
+  });
+
+  it('rejects duplicate ids before generating runtime files', () => {
+    const { source, target } = createFixture();
+    writeFileSync(
+      join(source, SHARDS[1] ?? firstShard),
+      JSON.stringify([verifiedRecord(`${firstShard}-1`, 4)]),
+    );
+
+    expect(() => syncQuestionBank(source, target, { minimumPerShard: 1 })).toThrow(
+      /duplicate runtime question id/,
+    );
+  });
+
+  it('rejects duplicate content with different ids before generating runtime files', () => {
+    const { source, target } = createFixture();
+    const record = verifiedRecord('original-1');
+    writeFileSync(
+      join(source, firstShard),
+      JSON.stringify([record, { ...record, id: 'duplicate-content-1' }]),
+    );
+
+    expect(() => syncQuestionBank(source, target, { minimumPerShard: 1 })).toThrow(
+      /duplicate runtime question content: duplicate-content-1/,
+    );
+  });
+
+  it('rejects warehouse records whose chapter or section is not on their catalog path', () => {
+    const { source, target } = createFixture();
+    writeFileSync(
+      join(source, firstShard),
+      JSON.stringify([
+        {
+          ...verifiedRecord('warehouse-invalid-path'),
+          chapter_id: 'warehouse-l5-c99',
+          section_id: 'warehouse-l5-c99-s01',
+        },
+      ]),
+    );
+
+    expect(() => syncQuestionBank(source, target, { minimumPerShard: 1 })).toThrow(/catalog path/);
+  });
+
+  it('rejects warehouse records whose section belongs to a different occupation path', () => {
+    const { source, target } = createFixture();
+    writeFileSync(
+      join(source, firstShard),
+      JSON.stringify([
+        {
+          ...verifiedRecord('warehouse-cross-occupation-path'),
+          chapter_id: 'inspector-c01',
+          section_id: 'inspector-c01-s01',
+        },
+      ]),
+    );
+
+    expect(() => syncQuestionBank(source, target, { minimumPerShard: 1 })).toThrow(/catalog path/);
   });
 });

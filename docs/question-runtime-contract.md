@@ -1,23 +1,25 @@
 # 小程序题库运行时契约
 
-Python `grain_quiz.cli validate/build --catalog` 是知识目录完整结构的严格校验边界，`build` 是题目与知识目录数据的唯一发布端。小程序同步脚本只对 `dist/json` 发布产物做基础传输检查：目录文件必须存在、可解析为 JSON 对象且包含顶层 `occupations`，六个固定 JSON 分片必须存在、可解析为数组、满足最低题量且只含 `verified` 记录。脚本会先读取并检查全部输入，任何检查失败都发生在写入小程序目标文件之前；它不重复验证目录内部的 part、chapter、section 完整结构。
+`grain_quiz.cli validate/build --catalog` 是知识目录完整结构的严格校验边界，`build` 是题目与知识目录数据的唯一发布端。小程序同步脚本只对 `dist/json` 发布产物做传输与一致性检查：目录文件必须存在、可解析为 JSON 对象且包含顶层 `occupations`，五个仓储 JSON 分片与三个质检员 JSON 分片必须存在、可解析为数组、满足最低题量、只含 `verified` 记录，并且题目 ID、职业、等级、题干、选项、答案和章节路径必须与 `data/questions` 发布源一致。脚本会先读取并检查全部输入，任何检查失败都发生在写入小程序目标文件之前。
 
 ## 固定分片
 
-| 文件                | 职业           | 等级        | 当前题量 |
-| ------------------- | -------------- | ----------- | -------: |
-| `warehouse_l5.json` | 粮油仓储管理员 | 五级 / 初级 |       20 |
-| `warehouse_l4.json` | 粮油仓储管理员 | 四级 / 中级 |        8 |
-| `warehouse_l3.json` | 粮油仓储管理员 | 三级 / 高级 |        9 |
-| `inspector_l5.json` | 粮油质量检验员 | 五级 / 初级 |        8 |
-| `inspector_l4.json` | 粮油质量检验员 | 四级 / 中级 |        8 |
-| `inspector_l3.json` | 粮油质量检验员 | 三级 / 高级 |        8 |
+| 文件                | 职业           | 等级        | 题量来源 |
+| ------------------- | -------------- | ----------- | -------- |
+| `warehouse_l5.json` | 粮油仓储管理员 | 五级 / 初级 | manifest |
+| `warehouse_l4.json` | 粮油仓储管理员 | 四级 / 中级 | manifest |
+| `warehouse_l3.json` | 粮油仓储管理员 | 三级 / 高级 | manifest |
+| `warehouse_l2.json` | 粮油仓储管理员 | 技师        | manifest |
+| `warehouse_l1.json` | 粮油仓储管理员 | 高级技师    | manifest |
+| `inspector_l5.json` | 粮油质量检验员 | 五级 / 初级 | 源题库   |
+| `inspector_l4.json` | 粮油质量检验员 | 四级 / 中级 | 源题库   |
+| `inspector_l3.json` | 粮油质量检验员 | 三级 / 高级 | 源题库   |
 
-当前总量为 61 道已审核起步题，其中包含一道人工作业情境案例题。题量是发布版本信息，不应被业务逻辑写死；训练组卷按实际分片数量安全截取。
+仓储题库基线为 4,110 道：自动分类发布 3,605 道，其余 505 道保留在 review/pending 清单，不进入运行时，自动分类覆盖率为 87.7129%。质检员初级、中级、高级各发布 8 道已审核题目；技师和高级技师暂不生成分片，在界面显示“待补充”。仓储题量以 `data/warehouse_classification_manifest.json` 为准，所有职业的训练组卷均按实际分片数量安全截取。
 
 ## 知识目录
 
-`data/knowledge_catalog.json` 是目录层级与稳定 ID 的唯一人工维护源。仓储目录由 4 个部分、11 章、44 节组成；粮油质检员使用独立的 1 个部分、8 章、16 节目录。两个职业按各自的 `chapter_id` 和 `section_id` 隔离；不同目录项即使标题相同，也必须按 ID 查找，不能按标题合并。
+`data/knowledge_catalog.json` 是目录层级与稳定 ID 的唯一人工维护源。粮油仓储管理员目录由 6 个部分、20 章和 92 个可评分小节组成；每章另有仅用于章节级回退的 `s00` 综合小节。质检员使用独立的 8 章目录，运行时按职业和等级隔离。不同目录项即使标题相同，也必须按 ID 查找，不能按标题合并。
 
 构建将规范目录复制到 `dist/json/knowledge_catalog.json`，同步再生成 `miniapp/miniprogram/data/questions/runtime-knowledge-catalog.ts`。`miniapp/miniprogram/data/knowledge-catalog.ts` 只负责向界面暴露这份生成目录，三者都不应绕过规范源手工维护。
 
@@ -35,27 +37,11 @@ Repository 是 `snake_case` 到小程序 `camelCase` 的唯一转换边界：
 - `content_version` → `contentVersion`
 - `topic` 同时映射为 `knowledgePoint`
 
-目录生成映射为 `knowledge_catalog.json` → `runtime-knowledge-catalog.ts`。
+目录生成映射为 `knowledge_catalog.json` → `runtime-knowledge-catalog.ts`。前端扩展的 `case` 题型遵守相同的选项和答案键结构。未通过 Python 发布门禁的内容只能标记为 `sample`，不得伪装成正式题库。
 
-前端扩展的 `case` 题型遵守相同的选项和答案键结构。未通过 Python 发布门禁的内容只能标记为 `sample`，不得伪装成正式题库。
+## 发布流程
 
-## 发布规则
-
-1. 在 `data/questions/*.jsonl` 维护题目，在 `data/sources.json` 维护公开来源，在 `data/knowledge_catalog.json` 维护目录。
-2. 从仓库根目录执行下面的完整验证、构建、同步命令。
-3. 在 `miniapp/` 执行 `npm run sync:questions`。
-4. 执行 `npm run verify`，再进入微信开发者工具编译。
-
-```powershell
-$env:PYTHONPATH=(Resolve-Path 'src').Path
-python -m pytest -q
-python -m grain_quiz.cli validate --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --catalog data/knowledge_catalog.json
-python -m grain_quiz.cli build --questions data/questions --sources data/sources.json --taxonomy data/taxonomy.json --catalog data/knowledge_catalog.json --output dist
-Set-Location miniapp
-npm run sync:questions
-npm run verify
-```
-
-如需在内容修订后检查近似重复题，可在构建前另行运行 `grain-quiz dedupe --questions data/questions --threshold 92`；它不替代上述发布门禁。
-
-增加 `--review-workbook` 时生成的 `dist/question-bank.xlsx` 用于人工审核；它不是前端运行时输入。发布脚本只覆盖自己管理的已知文件，不递归删除输出目录。
+1. 更新 `data/questions/*.jsonl`、`data/knowledge_catalog.json` 和分类 manifest。
+2. 运行 Python validate/build，确认 `dist/json` 与 manifest 计数一致。
+3. 运行 `miniapp` 的 `npm run sync:questions`，同步脚本再次校验 ID 与内容字段。
+4. 运行 `npm run verify`，再进入微信开发者工具编译；本地验证不代表云端已发布。

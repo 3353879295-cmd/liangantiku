@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -11,9 +11,33 @@ export const SHARDS = [
   'warehouse_l3.json',
   'warehouse_l2.json',
   'warehouse_l1.json',
+  'inspector_l5.json',
+  'inspector_l4.json',
+  'inspector_l3.json',
 ];
 
-const loadShard = (sourceDir, filename, minimumPerShard) => {
+const countsForShard = (records) => (Array.isArray(records) ? records.length : 0);
+
+const isVisibleCatalogPath = (catalog, record) => {
+  const occupation = catalog.occupations?.[record.occupation];
+  if (!occupation || !Array.isArray(occupation.parts)) {
+    return false;
+  }
+  return occupation.parts.some(
+    (part) =>
+      Array.isArray(part?.levels) &&
+      part.levels.includes(record.level) &&
+      Array.isArray(part.chapters) &&
+      part.chapters.some(
+        (chapter) =>
+          chapter?.id === record.chapter_id &&
+          Array.isArray(chapter.sections) &&
+          chapter.sections.some((section) => section?.id === record.section_id),
+      ),
+  );
+};
+
+const loadShard = (sourceDir, filename, minimumPerShard, catalog, seenIds, seenFingerprints) => {
   const sourcePath = join(sourceDir, filename);
   let records;
   try {
@@ -28,6 +52,47 @@ const loadShard = (sourceDir, filename, minimumPerShard) => {
   if (records.some((record) => record?.review_status !== 'verified')) {
     throw new Error(`${filename} must contain verified questions only`);
   }
+  const shardMatch = filename.match(/(warehouse|inspector)_l([1-5])\.json$/u);
+  const expectedOccupation = shardMatch?.[1] === 'inspector' ? '4-08-05-01' : '4-02-06-01';
+  const expectedLevel = shardMatch ? Number(shardMatch[2]) : null;
+  for (const record of records) {
+    if (!record || typeof record !== 'object' || typeof record.id !== 'string') {
+      throw new Error(`${filename} contains a record without an id`);
+    }
+    if (record.occupation !== expectedOccupation || record.level !== expectedLevel) {
+      throw new Error(`${filename} contains a record with an invalid occupation or level`);
+    }
+    if (!isVisibleCatalogPath(catalog, record)) {
+      throw new Error(`${filename} record ${record.id} is not assigned to a visible catalog path`);
+    }
+    for (const field of ['stem', 'chapter_id', 'section_id', 'options', 'answer']) {
+      if (!(field in record)) {
+        throw new Error(`${filename} record ${record.id} is missing ${field}`);
+      }
+    }
+    if (
+      record.chapter_id === 'warehouse-import-c01' ||
+      record.section_id === 'warehouse-import-c01-s01'
+    ) {
+      throw new Error(`${filename} contains an unclassified import placeholder`);
+    }
+    if (seenIds.has(record.id)) {
+      throw new Error(`duplicate runtime question id: ${record.id}`);
+    }
+    const fingerprint = JSON.stringify({
+      level: record.level,
+      stem: record.stem,
+      options: record.options,
+      answer: record.answer,
+      chapter_id: record.chapter_id,
+      section_id: record.section_id,
+    });
+    if (seenFingerprints.has(fingerprint)) {
+      throw new Error(`duplicate runtime question content: ${record.id}`);
+    }
+    seenIds.add(record.id);
+    seenFingerprints.add(fingerprint);
+  }
   return records;
 };
 
@@ -41,9 +106,28 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } =
     throw new Error('knowledge_catalog.json must contain occupations');
   }
 
+  const seenIds = new Set();
+  const seenFingerprints = new Set();
   const loaded = Object.fromEntries(
-    SHARDS.map((filename) => [filename, loadShard(sourceDir, filename, minimumPerShard)]),
+    SHARDS.map((filename) => [
+      filename,
+      loadShard(sourceDir, filename, minimumPerShard, catalog, seenIds, seenFingerprints),
+    ]),
   );
+  const manifestCandidates = [
+    join(sourceDir, 'warehouse_classification_manifest.json'),
+    resolve(sourceDir, '..', '..', 'data', 'warehouse_classification_manifest.json'),
+  ];
+  const manifestPath = manifestCandidates.find((candidate) => existsSync(candidate));
+  if (manifestPath) {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    for (const [level, count] of Object.entries(manifest.published_counts ?? {})) {
+      const filename = `warehouse_l${level}.json`;
+      if (countsForShard(loaded[filename]) !== count) {
+        throw new Error(`${filename} count does not match classification manifest`);
+      }
+    }
+  }
   mkdirSync(targetDir, { recursive: true });
 
   const counts = {};

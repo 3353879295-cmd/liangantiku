@@ -39,7 +39,7 @@
     <view
       wx:for="{{actions}}"
       wx:key="id"
-      class="action-card {{item.emphasized ? 'action-card--emphasized' : ''}}"
+      class="action-card action-card--{{item.id}} {{item.emphasized ? 'action-card--emphasized' : ''}}"
       data-id="{{item.id}}"
       bind:tap="onAction"
     >
@@ -54,27 +54,4 @@
     </view>
   </view>
 
-  <view class="section-heading">
-    <view>
-      <view class="section-title">当前目录</view>
-      <text class="catalog-context">{{certificate.bankTitle}}</text>
-    </view>
-    <view class="section-link" bind:tap="onOpenCatalog">完整目录</view>
-  </view>
-  <view class="catalog-card" bind:tap="onOpenCatalog">
-    <view wx:if="{{catalogChapters.length}}">
-      <view wx:for="{{catalogChapters}}" wx:key="id" class="catalog-row">
-        <view class="catalog-row__number">{{item.numberText}}</view>
-        <view class="catalog-row__copy">
-          <view class="catalog-row__title">{{item.title}}</view>
-          <text class="catalog-row__meta">{{item.metaText}} · 完成 {{item.progressText}}</text>
-        </view>
-        <t-icon name="chevron-right" size="30rpx" />
-      </view>
-    </view>
-    <view wx:else class="catalog-empty">
-      <view class="catalog-empty__mark"><t-icon name="info-circle" size="28rpx" /></view>
-      <text>{{loading ? '正在加载当前目录' : '当前等级目录待补充'}}</text>
-    </view>
-  </view>
 </view>

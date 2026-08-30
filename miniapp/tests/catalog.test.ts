@@ -4,13 +4,18 @@ import KNOWLEDGE_CATALOG from '../../data/knowledge_catalog.json';
 import { CERTIFICATES, certificateKey } from '../miniprogram/data/certificates';
 
 describe('certificate catalog', () => {
-  it('contains all five active warehouse certificate levels', () => {
-    expect(CERTIFICATES.map((item) => item.key)).toEqual([
-      '4-02-06-01:5',
-      '4-02-06-01:4',
-      '4-02-06-01:3',
-      '4-02-06-01:2',
-      '4-02-06-01:1',
+  it('exposes warehouse and inspector levels with their released availability', () => {
+    expect(CERTIFICATES.map(({ key, availability }) => ({ key, availability }))).toEqual([
+      { key: '4-02-06-01:5', availability: 'available' },
+      { key: '4-02-06-01:4', availability: 'available' },
+      { key: '4-02-06-01:3', availability: 'available' },
+      { key: '4-02-06-01:2', availability: 'available' },
+      { key: '4-02-06-01:1', availability: 'available' },
+      { key: '4-08-05-01:5', availability: 'available' },
+      { key: '4-08-05-01:4', availability: 'available' },
+      { key: '4-08-05-01:3', availability: 'available' },
+      { key: '4-08-05-01:2', availability: 'coming-soon' },
+      { key: '4-08-05-01:1', availability: 'coming-soon' },
     ]);
     expect(certificateKey('4-02-06-01', 1)).toBe('4-02-06-01:1');
   });
@@ -33,10 +38,25 @@ describe('certificate catalog', () => {
     expect(partsFor(2).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l2']);
     expect(partsFor(1).map((part) => part.id)).toEqual(['warehouse-basic', 'warehouse-l1']);
     expect(chapterTitlesFor(2)).toEqual(
-      expect.arrayContaining(['职业道德', '基础知识', '粮油出入库管理', '粮情检查', '粮情控制', '培训指导']),
+      expect.arrayContaining([
+        '职业道德',
+        '基础知识',
+        '粮油出入库管理',
+        '粮情检查',
+        '粮情控制',
+        '培训指导',
+      ]),
     );
     expect(chapterTitlesFor(1)).toEqual(
-      expect.arrayContaining(['职业道德', '基础知识', '粮油出入库管理', '粮情检查', '粮情控制', '粮油储藏工艺设计', '培训指导']),
+      expect.arrayContaining([
+        '职业道德',
+        '基础知识',
+        '粮油出入库管理',
+        '粮情检查',
+        '粮情控制',
+        '粮油储藏工艺设计',
+        '培训指导',
+      ]),
     );
     expect(chapterIdsFor(4).every((id) => !id.startsWith('warehouse-l5-'))).toBe(true);
     expect(chapterIdsFor(3).every((id) => !id.startsWith('warehouse-l5-'))).toBe(true);

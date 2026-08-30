@@ -23,6 +23,9 @@
     "navigationBarBackgroundColor": "#F4F6EE",
     "navigationBarTextStyle": "black"
   },
+  "usingComponents": {
+    "t-icon": "/components/app-icon/index"
+  },
   "tabBar": {
     "custom": true,
     "color": "#272D23",

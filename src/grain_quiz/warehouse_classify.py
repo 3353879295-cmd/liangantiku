@@ -278,6 +278,27 @@ class WarehouseClassifier:
 
     def __init__(self, rules: WarehouseRuleSet):
         self.rules = rules
+        self._compiled_terms = {
+            rule: {
+                "strong_phrases": tuple(
+                    (normalize_classification_text(term), term)
+                    for term in rule.strong_phrases
+                ),
+                "keywords": tuple(
+                    (normalize_classification_text(term), term)
+                    for term in rule.keywords
+                ),
+                "context_terms": tuple(
+                    (normalize_classification_text(term), term)
+                    for term in rule.context_terms
+                ),
+                "exclude_terms": tuple(
+                    (normalize_classification_text(term), term)
+                    for term in rule.exclude_terms
+                ),
+            }
+            for rule in rules.rules
+        }
 
     def classify(
         self,
@@ -382,18 +403,17 @@ class WarehouseClassifier:
         matched: dict[str, str] = {}
         primary_hit = False
         counted_by_field = [set() for _ in fields]
+        compiled = self._compiled_terms[rule]
 
         for field_index, (field, field_weight) in enumerate(fields):
             counted = counted_by_field[field_index]
-            for term in rule.strong_phrases:
-                normalized = normalize_classification_text(term)
+            for normalized, term in compiled["strong_phrases"]:
                 if normalized in field and normalized not in counted:
                     score += self.rules.strong_phrase_weight * field_weight
                     counted.add(normalized)
                     matched.setdefault(normalized, term)
                     primary_hit = True
-            for term in rule.keywords:
-                normalized = normalize_classification_text(term)
+            for normalized, term in compiled["keywords"]:
                 if normalized in field and normalized not in counted:
                     score += self.rules.keyword_weight * field_weight
                     counted.add(normalized)
@@ -403,8 +423,7 @@ class WarehouseClassifier:
         if primary_hit:
             for field_index, (field, field_weight) in enumerate(fields):
                 counted = counted_by_field[field_index]
-                for term in rule.context_terms:
-                    normalized = normalize_classification_text(term)
+                for normalized, term in compiled["context_terms"]:
                     if normalized in field and normalized not in counted:
                         score += self.rules.context_term_weight * field_weight
                         counted.add(normalized)
@@ -412,8 +431,7 @@ class WarehouseClassifier:
 
         for field_index, (field, field_weight) in enumerate(fields):
             counted = counted_by_field[field_index]
-            for term in rule.exclude_terms:
-                normalized = normalize_classification_text(term)
+            for normalized, term in compiled["exclude_terms"]:
                 if normalized in field and normalized not in counted:
                     score += self.rules.exclude_term_weight * field_weight
                     counted.add(normalized)
