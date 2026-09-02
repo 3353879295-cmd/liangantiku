@@ -110,6 +110,14 @@ const createStore = (
 const context = { APPID: 'wx-test', OPENID: 'openid-test' };
 const bootstrap = { action: 'bootstrap', schemaVersion: 1 };
 
+const fillQuestionTotalsPastResponseLimit = (store: ReturnType<typeof createStore>) => {
+  const questionTotals: Record<string, { attempts: number; correct_attempts: number }> = {};
+  for (let index = 0; index < 10_000; index += 1) {
+    questionTotals[`Q${index}-${'x'.repeat(96)}`] = { attempts: 1, correct_attempts: 1 };
+  }
+  store.progress.get('progress_hashed')!.question_totals = questionTotals;
+};
+
 describe('accountSync handler', () => {
   it('derives the stable SHA-256 account key from app ID and open ID', () => {
     expect(createAccountKey('wx-test', 'openid-test')).toBe(
@@ -165,6 +173,41 @@ describe('accountSync handler', () => {
         },
       },
     });
+  });
+
+  it('rejects an oversized bootstrap snapshot without exposing progress content', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    fillQuestionTotalsPastResponseLimit(store);
+
+    await expect(handler(bootstrap, context)).resolves.toEqual({
+      ok: false,
+      error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' },
+    });
+  });
+
+  it('rolls back a mutation whose snapshot would exceed the response limit', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    fillQuestionTotalsPastResponseLimit(store);
+    const before = structuredClone(store.progress.get('progress_hashed')!);
+
+    await expect(
+      handler(
+        {
+          action: 'setFavorite',
+          schemaVersion: 1,
+          expectedRevision: 0,
+          questionId: 'Q1',
+          favorite: true,
+        },
+        context,
+      ),
+    ).resolves.toEqual({ ok: false, error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' } });
+
+    expect(store.progress.get('progress_hashed')).toEqual(before);
   });
 
   it('rejects caller-supplied identity, unknown fields and actions', async () => {

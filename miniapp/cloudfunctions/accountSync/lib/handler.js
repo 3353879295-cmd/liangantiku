@@ -1,4 +1,5 @@
 const { AccountSyncError, toErrorResponse } = require('./errors');
+const { Buffer } = require('node:buffer');
 const { createHash } = require('node:crypto');
 const {
   validateEvent,
@@ -8,6 +9,8 @@ const {
   validateSession,
   validatePractice,
 } = require('./validation');
+
+const MAX_SNAPSHOT_RESPONSE_BYTES = 900 * 1024;
 
 const emptyAccount = () => ({
   schema_version: 1,
@@ -141,6 +144,14 @@ const toSnapshot = (account, progress, now) => ({
   },
 });
 
+const snapshotResponse = (account, progress, now) => {
+  const response = { ok: true, data: toSnapshot(account, progress, now) };
+  if (Buffer.byteLength(JSON.stringify(response), 'utf8') > MAX_SNAPSHOT_RESPONSE_BYTES) {
+    throw new AccountSyncError('ACCOUNT_SYNC_UNAVAILABLE');
+  }
+  return response;
+};
+
 const createHandler =
   ({ store, hash, now = () => new Date().toISOString(), inTransaction = false }) =>
   async (event, context) => {
@@ -180,7 +191,7 @@ const createHandler =
           progress = emptyProgress();
           await store.createProgress(progressId, progress);
         }
-        return { ok: true, data: toSnapshot(account, progress, now) };
+        return snapshotResponse(account, progress, now);
       }
       if (request.action === 'deleteAccount') {
         if (!account) return { ok: true, data: { schemaVersion: 1, done: true, stage: 'done' } };
@@ -215,7 +226,7 @@ const createHandler =
         await store.saveProgress(progressId, progress);
         account = { ...account, learning_clear_state: 'idle' };
         await store.saveAccount(accountId, account);
-        return { ok: true, data: toSnapshot(account, progress, now) };
+        return snapshotResponse(account, progress, now);
       }
       if (account.status === 'deleting') throw new AccountSyncError('ACCOUNT_DELETING');
       if (account.status !== 'active' || account.learning_clear_state !== 'idle') {
@@ -395,7 +406,7 @@ const createHandler =
           await store.saveProgress(progressId, progress);
         }
       }
-      return { ok: true, data: toSnapshot(account, progress, now) };
+      return snapshotResponse(account, progress, now);
     } catch (error) {
       if (inTransaction) throw error;
       return toErrorResponse(error);
