@@ -66,4 +66,38 @@ describe('account-scoped progress storage', () => {
     expect(repository.load('guest').data.summary.answered).toBe(3);
     expect(repository.load('account').data.summary.answered).toBe(7);
   });
+
+  it('keeps cloud cache revisions and profile metadata when account progress is saved', () => {
+    const storage = new MemoryStorageAdapter();
+    const repository = new ProgressRepository(storage);
+    const account = createEmptyProgress();
+    repository.saveAccountCache({
+      cacheVersion: 1,
+      schemaVersion: 1,
+      profileRevision: 3,
+      progressRevision: 8,
+      syncedAt: '2026-09-02T00:00:00.000Z',
+      profile: {
+        nickname: '云端用户',
+        avatarUrl: '',
+        selectedCertificateKey: '4-02-06-01:5',
+        dailyGoal: 20,
+        answerTheme: 'light',
+        answerRevealMode: 'immediate',
+      },
+      progress: account,
+    });
+    account.summary.answered = 2;
+    repository.save('account', account);
+
+    const cache = repository.loadAccountCache();
+    expect(cache).toMatchObject({
+      profileRevision: 3,
+      progressRevision: 8,
+      profile: { nickname: '云端用户' },
+    });
+    expect(cache?.progress.summary.answered).toBe(2);
+    if (cache) cache.progress.summary.answered = 99;
+    expect(repository.loadAccountCache()?.progress.summary.answered).toBe(2);
+  });
 });

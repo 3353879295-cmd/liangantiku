@@ -1,0 +1,136 @@
+import { describe, expect, it } from 'vitest';
+
+import { ACCOUNT_OUTBOX_KEY, SyncOutbox } from '../miniprogram/storage/sync-outbox';
+import type { StorageAdapter } from '../miniprogram/types/domain';
+
+class MemoryStorage implements StorageAdapter {
+  values = new Map<string, unknown>();
+  get<T>(key: string): T | null {
+    return (this.values.get(key) as T | undefined) ?? null;
+  }
+  set<T>(key: string, value: T): void {
+    this.values.set(key, structuredClone(value));
+  }
+  remove(key: string): void {
+    this.values.delete(key);
+  }
+}
+
+describe('SyncOutbox', () => {
+  it('persists commands, restores them as pending, and keeps a stable id on coalesce', () => {
+    const storage = new MemoryStorage();
+    let id = 0;
+    const outbox = new SyncOutbox(
+      storage,
+      () => 10,
+      () => `id-${++id}`,
+    );
+    const first = outbox.enqueue({
+      action: 'updateProfile',
+      nickname: '甲',
+      avatarUrl: '',
+      schemaVersion: 1,
+      expectedRevision: 0,
+    });
+    const second = outbox.enqueue({
+      action: 'updateProfile',
+      nickname: '乙',
+      avatarUrl: '',
+      schemaVersion: 1,
+      expectedRevision: 0,
+    });
+    expect(second.id).toBe(first.id);
+    expect(outbox.list()).toHaveLength(1);
+    expect(outbox.takeNext()?.state).toBe('sending');
+    const restored = new SyncOutbox(storage);
+    expect(restored.list()[0]).toMatchObject({ id: first.id, state: 'pending', nickname: '乙' });
+    expect(storage.get(ACCOUNT_OUTBOX_KEY)).not.toBeNull();
+  });
+
+  it('does not merge practice records and rebases each revision domain independently', () => {
+    const outbox = new SyncOutbox(
+      new MemoryStorage(),
+      () => 1,
+      () => crypto.randomUUID(),
+    );
+    outbox.enqueue({
+      action: 'recordPractice',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      sessionId: 's1',
+      mode: 'random',
+      answers: [],
+    });
+    outbox.enqueue({
+      action: 'recordPractice',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      sessionId: 's2',
+      mode: 'random',
+      answers: [],
+    });
+    outbox.enqueue({
+      action: 'updatePreferences',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      selectedCertificateKey: '4-02-06-01:5',
+      dailyGoal: 20,
+      answerTheme: 'light',
+      answerRevealMode: 'immediate',
+    });
+    outbox.enqueue({
+      action: 'updateProfile',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      nickname: '甲',
+      avatarUrl: '',
+    });
+    outbox.rebase(4, 9);
+    const commands = outbox.list();
+    expect(commands.filter((item) => item.action === 'recordPractice')).toHaveLength(2);
+    expect(commands.map((item) => item.expectedRevision)).toEqual([9, 10, 4, 5]);
+  });
+
+  it('does not replace a command already being sent', () => {
+    let number = 0;
+    const outbox = new SyncOutbox(
+      new MemoryStorage(),
+      () => 1,
+      () => `id-${++number}`,
+    );
+    const first = outbox.enqueue({
+      action: 'saveActiveSession',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      session: null,
+    });
+    expect(outbox.takeNext()?.id).toBe(first.id);
+    const later = outbox.enqueue({
+      action: 'saveActiveSession',
+      schemaVersion: 1,
+      expectedRevision: 1,
+      session: null,
+    });
+    expect(later.id).not.toBe(first.id);
+    expect(outbox.list()).toHaveLength(2);
+  });
+
+  it('rejects a persisted command whose action is outside the sync whitelist', () => {
+    const storage = new MemoryStorage();
+    storage.set(ACCOUNT_OUTBOX_KEY, {
+      schemaVersion: 1,
+      commands: [
+        {
+          id: 'forged',
+          action: 'deleteAccount',
+          schemaVersion: 1,
+          expectedRevision: 0,
+          createdAt: 1,
+          state: 'pending',
+        },
+      ],
+    });
+
+    expect(new SyncOutbox(storage).list()).toEqual([]);
+  });
+});
