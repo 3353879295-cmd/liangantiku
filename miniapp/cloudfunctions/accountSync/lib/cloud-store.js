@@ -60,6 +60,42 @@ class CloudStore {
         data: { ...value, updated_at: this.serverDate() },
       });
   }
+
+  async getRecord(id) {
+    const result = await this.database.collection('user_practice_records').doc(id).get();
+    return result.data || null;
+  }
+
+  async createRecord(id, value) {
+    await this.database
+      .collection('user_practice_records')
+      .doc(id)
+      .set({ data: { ...value, submitted_at: this.serverDate() } });
+  }
+
+  async listRecordIdsForAccount(accountKey) {
+    const result = await this.database
+      .collection('user_practice_records')
+      .where({ account_key: accountKey })
+      .orderBy('submitted_at', 'asc')
+      .limit(50)
+      .get();
+    return (result.data || []).map((record) => record._id);
+  }
+
+  async removeRecords(ids) {
+    await Promise.all(
+      ids.map((id) => this.database.collection('user_practice_records').doc(id).remove()),
+    );
+  }
+
+  async removeProgress(id) {
+    await this.database.collection('user_progress').doc(id).remove();
+  }
+
+  async removeAccount(id) {
+    await this.database.collection('user_accounts').doc(id).remove();
+  }
 }
 
 module.exports = { CloudStore };

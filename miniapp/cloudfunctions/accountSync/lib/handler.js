@@ -1,10 +1,12 @@
 const { AccountSyncError, toErrorResponse } = require('./errors');
+const { createHash } = require('node:crypto');
 const {
   validateEvent,
   validateProfile,
   validatePreferences,
   validateQuestionState,
   validateSession,
+  validatePractice,
 } = require('./validation');
 
 const emptyAccount = () => ({
@@ -31,6 +33,9 @@ const emptyProgress = () => ({
   recent_question_ids: [],
   active_session: null,
 });
+
+const createPracticeRecordId = (accountKey, sessionId) =>
+  `record_${createHash('sha256').update(`${accountKey}:${sessionId}`).digest('hex')}`;
 
 const fromStoredSession = (session) =>
   session && {
@@ -177,7 +182,41 @@ const createHandler =
         }
         return { ok: true, data: toSnapshot(account, progress, now) };
       }
+      if (request.action === 'deleteAccount') {
+        if (!account) return { ok: true, data: { schemaVersion: 1, done: true, stage: 'done' } };
+        if (account.status !== 'deleting') {
+          await store.saveAccount(accountId, { ...account, status: 'deleting' });
+          return { ok: true, data: { schemaVersion: 1, done: false, stage: 'records' } };
+        }
+        const recordIds = await store.listRecordIdsForAccount(key);
+        if (recordIds.length > 0) {
+          await store.removeRecords(recordIds);
+          return { ok: true, data: { schemaVersion: 1, done: false, stage: 'records' } };
+        }
+        if (progress) await store.removeProgress(progressId);
+        await store.removeAccount(accountId);
+        return { ok: true, data: { schemaVersion: 1, done: true, stage: 'done' } };
+      }
       if (!account || !progress) throw new AccountSyncError('ACCOUNT_SYNC_UNAVAILABLE');
+      if (request.action === 'clearLearningData') {
+        if (account.status === 'deleting') throw new AccountSyncError('ACCOUNT_DELETING');
+        if (account.learning_clear_state !== 'clearing') {
+          await store.saveAccount(accountId, { ...account, learning_clear_state: 'clearing' });
+          return { ok: false, error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' } };
+        }
+        const recordIds = await store.listRecordIdsForAccount(key);
+        if (recordIds.length > 0) {
+          await store.removeRecords(recordIds);
+          if ((await store.listRecordIdsForAccount(key)).length > 0) {
+            return { ok: false, error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' } };
+          }
+        }
+        progress = emptyProgress();
+        await store.saveProgress(progressId, progress);
+        account = { ...account, learning_clear_state: 'idle' };
+        await store.saveAccount(accountId, account);
+        return { ok: true, data: toSnapshot(account, progress, now) };
+      }
       if (account.status === 'deleting') throw new AccountSyncError('ACCOUNT_DELETING');
       if (account.status !== 'active' || account.learning_clear_state !== 'idle') {
         throw new AccountSyncError('ACCOUNT_DELETING');
@@ -268,6 +307,93 @@ const createHandler =
           };
           await store.saveProgress(progressId, progress);
         }
+      } else if (request.action === 'recordPractice') {
+        validatePractice(request);
+        const recordId = createPracticeRecordId(key, request.sessionId);
+        if (!store.getRecord || !(await store.getRecord(recordId))) {
+          if (request.expectedRevision !== progress.revision)
+            throw new AccountSyncError('REVISION_CONFLICT');
+          const summary = { ...progress.summary };
+          const questionTotals = { ...progress.question_totals };
+          const dailyTotals = { ...progress.daily_totals };
+          const wrongQuestions = { ...progress.wrong_questions };
+          let recentQuestionIds = [...progress.recent_question_ids];
+          for (const answer of request.answers) {
+            summary.answered += 1;
+            summary.correct += answer.correct ? 1 : 0;
+            summary.duration_ms += answer.durationMs;
+            const total = questionTotals[answer.questionId] || { attempts: 0, correct_attempts: 0 };
+            questionTotals[answer.questionId] = {
+              attempts: total.attempts + 1,
+              correct_attempts: total.correct_attempts + (answer.correct ? 1 : 0),
+            };
+            const day = dailyTotals[answer.at] || { answered: 0, correct: 0, duration_ms: 0 };
+            dailyTotals[answer.at] = {
+              answered: day.answered + 1,
+              correct: day.correct + (answer.correct ? 1 : 0),
+              duration_ms: day.duration_ms + answer.durationMs,
+            };
+            summary.first_answered_at =
+              summary.first_answered_at === null || answer.at < summary.first_answered_at
+                ? answer.at
+                : summary.first_answered_at;
+            const wrong = wrongQuestions[answer.questionId];
+            if (!answer.correct) {
+              wrongQuestions[answer.questionId] = wrong
+                ? {
+                    ...wrong,
+                    error_count: wrong.error_count + 1,
+                    last_wrong_at: answer.at,
+                    mastered: false,
+                    last_retry_correct: false,
+                  }
+                : {
+                    question_id: answer.questionId,
+                    error_count: 1,
+                    first_wrong_at: answer.at,
+                    last_wrong_at: answer.at,
+                    mastered: false,
+                    last_retry_correct: false,
+                  };
+            } else if (wrong) {
+              wrongQuestions[answer.questionId] = { ...wrong, last_retry_correct: true };
+            }
+            recentQuestionIds = [
+              answer.questionId,
+              ...recentQuestionIds.filter((questionId) => questionId !== answer.questionId),
+            ].slice(0, 100);
+          }
+          if (store.createRecord)
+            await store.createRecord(recordId, {
+              schema_version: 1,
+              account_key: key,
+              session_id: request.sessionId,
+              mode: request.mode,
+              answers: request.answers.map((answer) => ({
+                question_id: answer.questionId,
+                correct: answer.correct,
+                duration_ms: answer.durationMs,
+                answered_at: answer.at,
+              })),
+              answered: request.answers.length,
+              correct: request.answers.filter((answer) => answer.correct).length,
+              duration_ms: request.answers.reduce((total, answer) => total + answer.durationMs, 0),
+            });
+          progress = {
+            ...progress,
+            summary,
+            question_totals: questionTotals,
+            wrong_questions: wrongQuestions,
+            daily_totals: dailyTotals,
+            recent_question_ids: recentQuestionIds,
+            active_session:
+              progress.active_session && progress.active_session.id === request.sessionId
+                ? null
+                : progress.active_session,
+            revision: progress.revision + 1,
+          };
+          await store.saveProgress(progressId, progress);
+        }
       }
       return { ok: true, data: toSnapshot(account, progress, now) };
     } catch (error) {
@@ -276,4 +402,4 @@ const createHandler =
     }
   };
 
-module.exports = { createHandler, emptyAccount, emptyProgress };
+module.exports = { createHandler, emptyAccount, emptyProgress, createPracticeRecordId };

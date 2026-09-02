@@ -15,6 +15,9 @@ const ACTION_FIELDS = {
   saveActiveSession: ['action', 'schemaVersion', 'expectedRevision', 'session'],
   setFavorite: ['action', 'schemaVersion', 'expectedRevision', 'questionId', 'favorite'],
   markMastered: ['action', 'schemaVersion', 'expectedRevision', 'questionId', 'mastered'],
+  recordPractice: ['action', 'schemaVersion', 'expectedRevision', 'sessionId', 'mode', 'answers'],
+  clearLearningData: ['action', 'schemaVersion'],
+  deleteAccount: ['action', 'schemaVersion'],
 };
 const AVATAR_PATHS = new Set([
   '/assets/avatars/granary.svg',
@@ -29,14 +32,25 @@ const invalid = () => {
 };
 const isRevision = (value) => Number.isInteger(value) && value >= 0;
 const isQuestionId = (value) =>
-  typeof value === 'string' && /^(?:Q\d+|[A-Z]{2,}(?:-[A-Z0-9]+)+)$/.test(value);
+  typeof value === 'string' &&
+  value.length <= 64 &&
+  /^(?:Q\d+|[A-Z]{2,}(?:-[A-Z0-9]+)+)$/.test(value);
+const isDate = (value) => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+};
 
 const validateEvent = (event) => {
   if (!isRecord(event) || typeof event.action !== 'string') invalid();
   if (event.schemaVersion !== 1) throw new AccountSyncError('SCHEMA_INCOMPATIBLE');
   const allowed = ACTION_FIELDS[event.action];
   if (!allowed || Object.keys(event).some((key) => !allowed.includes(key))) invalid();
-  if (event.action !== 'bootstrap' && !isRevision(event.expectedRevision)) invalid();
+  if (
+    !['bootstrap', 'clearLearningData', 'deleteAccount'].includes(event.action) &&
+    !isRevision(event.expectedRevision)
+  )
+    invalid();
   return event;
 };
 
@@ -126,10 +140,37 @@ const validateSession = (event) => {
   }
 };
 
+const validatePractice = (event) => {
+  const answerFields = new Set(['questionId', 'correct', 'durationMs', 'at']);
+  if (
+    !['chapter', 'sequential', 'random', 'mock', 'wrong', 'favorite'].includes(event.mode) ||
+    typeof event.sessionId !== 'string' ||
+    !event.sessionId.trim() ||
+    event.sessionId.length > 128 ||
+    !Array.isArray(event.answers) ||
+    event.answers.length === 0 ||
+    event.answers.length > 100 ||
+    !event.answers.every(
+      (answer) =>
+        isRecord(answer) &&
+        Object.keys(answer).length === answerFields.size &&
+        Object.keys(answer).every((key) => answerFields.has(key)) &&
+        isQuestionId(answer.questionId) &&
+        typeof answer.correct === 'boolean' &&
+        Number.isInteger(answer.durationMs) &&
+        answer.durationMs >= 0 &&
+        answer.durationMs <= 86_400_000 &&
+        isDate(answer.at),
+    )
+  )
+    invalid();
+};
+
 module.exports = {
   validateEvent,
   validateProfile,
   validatePreferences,
   validateQuestionState,
   validateSession,
+  validatePractice,
 };

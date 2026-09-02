@@ -12,13 +12,41 @@ const { createHandler } = require('../cloudfunctions/accountSync/lib/handler.js'
   }) => (event: unknown, context?: unknown) => Promise<unknown>;
 };
 
-const createStore = (options: { failCreateProgress?: boolean } = {}) => {
+const createStore = (
+  options: { failCreateProgress?: boolean; failRemoveRecordsOnce?: boolean } = {},
+) => {
   const accounts = new Map<string, Record<string, unknown>>();
   const progress = new Map<string, Record<string, unknown>>();
+  const records = new Map<string, Record<string, unknown>>();
   let queue = Promise.resolve();
+  let shouldFailRecordRemoval = options.failRemoveRecordsOnce === true;
   const store = {
     accounts,
     progress,
+    records,
+    getRecord(id: string) {
+      return Promise.resolve(records.get(id) ?? null);
+    },
+    createRecord(id: string, value: Record<string, unknown>) {
+      records.set(id, { ...value, submitted_at: 'SERVER_DATE' });
+      return Promise.resolve();
+    },
+    listRecordIdsForAccount(accountKey: string) {
+      return Promise.resolve(
+        [...records.entries()]
+          .filter(([, record]) => record.account_key === accountKey)
+          .slice(0, 50)
+          .map(([id]) => id),
+      );
+    },
+    removeRecords(ids: string[]) {
+      if (shouldFailRecordRemoval) {
+        shouldFailRecordRemoval = false;
+        return Promise.reject(new Error('database details'));
+      }
+      ids.forEach((id) => records.delete(id));
+      return Promise.resolve();
+    },
     getAccount(id: string) {
       return Promise.resolve(accounts.get(id) ?? null);
     },
@@ -42,6 +70,14 @@ const createStore = (options: { failCreateProgress?: boolean } = {}) => {
       progress.set(id, value);
       return Promise.resolve();
     },
+    removeProgress(id: string) {
+      progress.delete(id);
+      return Promise.resolve();
+    },
+    removeAccount(id: string) {
+      accounts.delete(id);
+      return Promise.resolve();
+    },
   };
   return {
     ...store,
@@ -49,13 +85,16 @@ const createStore = (options: { failCreateProgress?: boolean } = {}) => {
       const result = queue.then(async () => {
         const accountBackup = new Map(accounts);
         const progressBackup = new Map(progress);
+        const recordBackup = new Map(records);
         try {
           return await work(store);
         } catch (error) {
           accounts.clear();
           progress.clear();
+          records.clear();
           for (const [id, value] of accountBackup) accounts.set(id, value);
           for (const [id, value] of progressBackup) progress.set(id, value);
+          for (const [id, value] of recordBackup) records.set(id, value);
           throw error;
         }
       });
@@ -261,5 +300,238 @@ describe('accountSync handler', () => {
 
     expect([first, second].filter((response) => (response as { ok: boolean }).ok)).toHaveLength(1);
     expect([first, second]).toContainEqual({ ok: false, error: { code: 'REVISION_CONFLICT' } });
+  });
+
+  it('records a completed practice exactly once by its stable session ID', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    store.progress.get('progress_hashed')!.active_session = {
+      id: 'session-1',
+      mode: 'random',
+      question_ids: ['Q1', 'Q2'],
+      current_index: 1,
+      answers: {},
+      status: 'active',
+      started_at: 1,
+      updated_at: 2,
+      answer_reveal_mode: 'immediate',
+    };
+    const request = {
+      action: 'recordPractice',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      sessionId: 'session-1',
+      mode: 'random',
+      answers: [
+        { questionId: 'Q1', correct: false, durationMs: 100, at: '2026-09-02' },
+        { questionId: 'Q2', correct: true, durationMs: 200, at: '2026-09-03' },
+      ],
+    };
+    expect(await handler(request, context)).toMatchObject({
+      ok: true,
+      data: { progressRevision: 1 },
+    });
+    expect(await handler(request, context)).toMatchObject({
+      ok: true,
+      data: { progressRevision: 1 },
+    });
+    expect(store.progress.get('progress_hashed')).toMatchObject({
+      summary: { answered: 2, correct: 1, duration_ms: 300, first_answered_at: '2026-09-02' },
+      question_totals: {
+        Q1: { attempts: 1, correct_attempts: 0 },
+        Q2: { attempts: 1, correct_attempts: 1 },
+      },
+      wrong_questions: {
+        Q1: {
+          question_id: 'Q1',
+          error_count: 1,
+          first_wrong_at: '2026-09-02',
+          last_wrong_at: '2026-09-02',
+          mastered: false,
+          last_retry_correct: false,
+        },
+      },
+      daily_totals: {
+        '2026-09-02': { answered: 1, correct: 0, duration_ms: 100 },
+        '2026-09-03': { answered: 1, correct: 1, duration_ms: 200 },
+      },
+      recent_question_ids: ['Q2', 'Q1'],
+      active_session: null,
+    });
+    expect([...store.records.values()][0]).toMatchObject({
+      schema_version: 1,
+      account_key: 'hashed',
+      session_id: 'session-1',
+      answered: 2,
+      correct: 1,
+      duration_ms: 300,
+      submitted_at: expect.any(String),
+    });
+  });
+
+  it('isolates equal practice session IDs by account and accepts stale retries idempotently', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: (_appId: string, openId: string) => openId });
+    const firstContext = { APPID: 'wx-test', OPENID: 'first' };
+    const secondContext = { APPID: 'wx-test', OPENID: 'second' };
+    const request = {
+      action: 'recordPractice',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      sessionId: 'same',
+      mode: 'random',
+      answers: [{ questionId: 'Q1', correct: true, durationMs: 1, at: '2026-09-02' }],
+    };
+    await handler(bootstrap, firstContext);
+    await handler(bootstrap, secondContext);
+    await handler(request, firstContext);
+    await handler(request, secondContext);
+    await expect(handler(request, firstContext)).resolves.toMatchObject({
+      ok: true,
+      data: { progressRevision: 1 },
+    });
+    expect(store.records.size).toBe(2);
+  });
+
+  it('rejects malformed completed-practice data before creating any record', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    await expect(
+      handler(
+        {
+          action: 'recordPractice',
+          schemaVersion: 1,
+          expectedRevision: 0,
+          sessionId: 'session-invalid',
+          mode: 'random',
+          answers: [{ questionId: 'Q1', correct: true, durationMs: 1, at: '2026-02-30' }],
+        },
+        context,
+      ),
+    ).resolves.toEqual({ ok: false, error: { code: 'INVALID_REQUEST' } });
+    expect(store.records.size).toBe(0);
+  });
+
+  it('rejects oversized session IDs and arbitrary completed-practice answer fields', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    const baseRequest = {
+      action: 'recordPractice',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      mode: 'random',
+      answers: [{ questionId: 'Q1', correct: true, durationMs: 1, at: '2026-09-02' }],
+    };
+
+    await expect(handler({ ...baseRequest, sessionId: 's'.repeat(129) }, context)).resolves.toEqual(
+      { ok: false, error: { code: 'INVALID_REQUEST' } },
+    );
+    await expect(
+      handler(
+        {
+          ...baseRequest,
+          sessionId: 'session-extra-field',
+          answers: [{ ...baseRequest.answers[0], accountKey: 'forged' }],
+        },
+        context,
+      ),
+    ).resolves.toEqual({ ok: false, error: { code: 'INVALID_REQUEST' } });
+    expect(store.records.size).toBe(0);
+  });
+
+  it('clears learning records in resumable batches and leaves the account unavailable while clearing', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    for (let index = 0; index < 51; index += 1) {
+      store.records.set(`record_${index}`, { account_key: 'hashed' });
+    }
+    await expect(
+      handler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' },
+    });
+    expect(store.accounts.get('account_hashed')!.learning_clear_state).toBe('clearing');
+    expect(store.records.size).toBe(51);
+    await expect(
+      handler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' },
+    });
+    expect(store.records.size).toBe(1);
+    await expect(
+      handler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { progressRevision: 0, progress: { recentQuestionIds: [] } },
+    });
+    expect(store.accounts.get('account_hashed')!.learning_clear_state).toBe('idle');
+    expect(store.records.size).toBe(0);
+  });
+
+  it('deletes accounts in a retryable records-progress-account sequence', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    store.records.set('record_1', { account_key: 'hashed' });
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: true,
+      data: { schemaVersion: 1, done: false, stage: 'records' },
+    });
+    expect(store.accounts.get('account_hashed')!.status).toBe('deleting');
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: true,
+      data: { schemaVersion: 1, done: false, stage: 'records' },
+    });
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: true,
+      data: { schemaVersion: 1, done: true, stage: 'done' },
+    });
+    expect(store.accounts.size).toBe(0);
+    expect(store.progress.size).toBe(0);
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: true,
+      data: { schemaVersion: 1, done: true, stage: 'done' },
+    });
+  });
+
+  it('keeps clearing and deleting markers after a batch failure so retries can continue safely', async () => {
+    const clearStore = createStore({ failRemoveRecordsOnce: true });
+    const clearHandler = createHandler({ store: clearStore, hash: () => 'hashed' });
+    await clearHandler(bootstrap, context);
+    clearStore.records.set('record_clear', { account_key: 'hashed' });
+    await clearHandler({ action: 'clearLearningData', schemaVersion: 1 }, context);
+    await expect(
+      clearHandler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toEqual({ ok: false, error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' } });
+    expect(clearStore.accounts.get('account_hashed')!.learning_clear_state).toBe('clearing');
+    await expect(
+      clearHandler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toMatchObject({ ok: true });
+
+    const deleteStore = createStore({ failRemoveRecordsOnce: true });
+    const deleteHandler = createHandler({ store: deleteStore, hash: () => 'hashed' });
+    await deleteHandler(bootstrap, context);
+    deleteStore.records.set('record_delete', { account_key: 'hashed' });
+    await deleteHandler({ action: 'deleteAccount', schemaVersion: 1 }, context);
+    await expect(
+      deleteHandler({ action: 'deleteAccount', schemaVersion: 1 }, context),
+    ).resolves.toEqual({
+      ok: false,
+      error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' },
+    });
+    expect(deleteStore.accounts.get('account_hashed')!.status).toBe('deleting');
+    await deleteHandler({ action: 'deleteAccount', schemaVersion: 1 }, context);
+    await expect(
+      deleteHandler({ action: 'deleteAccount', schemaVersion: 1 }, context),
+    ).resolves.toEqual({
+      ok: true,
+      data: { schemaVersion: 1, done: true, stage: 'done' },
+    });
   });
 });
