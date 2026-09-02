@@ -40,6 +40,24 @@ const snapshot = (profileRevision = 0, progressRevision = 0): AccountSyncSnapsho
 });
 
 describe('CloudSyncService', () => {
+  it('holds progress commands while a durable learning clear is pending but keeps profile writes', () => {
+    const storage = new MemoryStorage();
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    const service = new CloudSyncService(
+      { call: () => Promise.resolve(snapshot()) },
+      repository,
+      new SyncOutbox(storage),
+      { getScope: () => 'account', isClearPending: () => true },
+    );
+    expect(service.enqueue({ action: 'setFavorite', questionId: 'Q1', favorite: true })).toBe(
+      false,
+    );
+    expect(
+      service.enqueue({ action: 'updateProfile', nickname: '资料仍可改', avatarUrl: '' }),
+    ).toBe(true);
+  });
+
   it('never calls cloud functions in guest scope', async () => {
     const calls: unknown[] = [];
     const client: AccountSyncCaller = {

@@ -7,6 +7,7 @@ import type { CloudSyncService } from './cloud-sync-service';
 import type { ProgressService } from './progress-service';
 
 export const AUTH_PREFERENCE_KEY = 'grain-practice:auth-preference';
+export const ACCOUNT_CLEAR_PENDING_KEY = 'grain-practice:account-clear-pending';
 export type AuthPreference = 'undecided' | 'guest' | 'account';
 export type AuthStatus = 'checking' | 'guest' | 'authenticated' | 'error';
 
@@ -62,6 +63,38 @@ export class AuthService {
     this.state.preference = preference;
   }
 
+  isLearningClearPending(): boolean {
+    return this.storage.get<unknown>(ACCOUNT_CLEAR_PENDING_KEY) === true;
+  }
+
+  private setLearningClearPending(pending: boolean): void {
+    if (pending) this.storage.set(ACCOUNT_CLEAR_PENDING_KEY, true);
+    else this.storage.remove(ACCOUNT_CLEAR_PENDING_KEY);
+  }
+
+  private async continueLearningClear(): Promise<boolean> {
+    try {
+      const snapshot = await this.client.call({
+        action: 'clearLearningData',
+        schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,
+      });
+      this.sync.replaceAfterLearningClear(snapshot);
+      this.setLearningClearPending(false);
+      this.progress.refreshAccountSnapshot();
+      this.enterAuthenticated();
+      // Profile commands made while clearing can now safely resume.
+      void this.sync.process();
+      return true;
+    } catch {
+      this.state = {
+        ...this.state,
+        status: 'authenticated',
+        notice: '学习数据清除未完成，请稍后重试。',
+      };
+      return false;
+    }
+  }
+
   private enterGuest(temporaryGuest: boolean, notice: string | null = null): void {
     this.progress.switchScope('guest');
     this.state = {
@@ -98,6 +131,10 @@ export class AuthService {
       return this.getState();
     }
     this.progress.switchScope('account');
+    if (this.isLearningClearPending()) {
+      await this.continueLearningClear();
+      return this.getState();
+    }
     const recovered = await this.sync.bootstrap();
     if (recovered) this.enterAuthenticated();
     else {
@@ -117,6 +154,10 @@ export class AuthService {
   }
 
   async login(): Promise<boolean> {
+    if (this.state.status === 'authenticated') return true;
+    // Existing account preference means this is account recovery (including
+    // temporary guest and failed automatic recovery), never a fresh login.
+    if (this.state.preference === 'account') return this.retry();
     const previousScope = this.progress.getScope();
     // An explicit new login must never revive a stale local account projection.
     this.repository.remove('account');
@@ -125,6 +166,7 @@ export class AuthService {
     const recovered = await this.sync.bootstrap();
     if (recovered) {
       this.savePreference('account');
+      if (this.isLearningClearPending()) return this.continueLearningClear();
       this.enterAuthenticated();
       return true;
     }
@@ -141,6 +183,7 @@ export class AuthService {
   async retry(): Promise<boolean> {
     if (this.state.preference !== 'account') return false;
     this.progress.switchScope('account');
+    if (this.isLearningClearPending()) return this.continueLearningClear();
     const recovered = await this.sync.bootstrap();
     if (recovered) this.enterAuthenticated();
     else
@@ -155,12 +198,17 @@ export class AuthService {
 
   async retryBackground(): Promise<void> {
     if (this.state.status !== 'authenticated') return;
+    if (this.isLearningClearPending()) {
+      await this.continueLearningClear();
+      return;
+    }
     await this.sync.retry();
     this.progress.refreshAccountSnapshot();
   }
 
   async logout(discardFailed = false): Promise<LogoutResult> {
     if (this.state.status !== 'authenticated') return { needsDecision: false };
+    if (this.isLearningClearPending() && !discardFailed) return { needsDecision: true };
     await this.sync.process();
     const pending = this.sync.getState().pendingCount;
     if (pending > 0 && !discardFailed) return { needsDecision: true };
@@ -179,25 +227,11 @@ export class AuthService {
     }
     // Do not silently discard profile/settings (or any other recoverable
     // command).  Clearing can begin only after the durable queue converges.
+    if (this.isLearningClearPending()) return this.continueLearningClear();
     await this.sync.process();
     if (this.sync.getState().pendingCount > 0) return false;
-    try {
-      const snapshot = await this.client.call({
-        action: 'clearLearningData',
-        schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,
-      });
-      this.repository.saveAccountCache({ cacheVersion: 1, ...snapshot });
-      this.progress.refreshAccountSnapshot();
-      this.enterAuthenticated();
-      return true;
-    } catch {
-      this.state = {
-        ...this.state,
-        status: 'authenticated',
-        notice: '学习数据清除未完成，请稍后重试。',
-      };
-      return false;
-    }
+    this.setLearningClearPending(true);
+    return this.continueLearningClear();
   }
 
   async deleteAccount(): Promise<boolean> {
@@ -212,6 +246,7 @@ export class AuthService {
         if (!result.done) continue;
         this.repository.remove('account');
         this.outbox.clear();
+        this.setLearningClearPending(false);
         this.savePreference('guest');
         this.enterGuest(false);
         return true;

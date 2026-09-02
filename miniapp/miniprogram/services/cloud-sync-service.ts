@@ -24,6 +24,8 @@ export interface AccountSyncCaller {
 
 export interface CloudSyncOptions {
   getScope: () => ProgressScope;
+  /** Prevent learning writes while the server is resumably clearing them. */
+  isClearPending?: () => boolean;
   maxAttempts?: number;
   sleep?: (milliseconds: number) => Promise<void>;
 }
@@ -134,6 +136,9 @@ export class CloudSyncService {
 
   enqueue(command: AccountSyncCommandInput): boolean {
     if (!this.assertAccountScope()) return false;
+    const isProfileCommand =
+      command.action === 'updateProfile' || command.action === 'updatePreferences';
+    if (this.options.isClearPending?.() && !isProfileCommand) return false;
     const cache = this.cache();
     if (!cache) return false;
     const domain =
@@ -147,6 +152,13 @@ export class CloudSyncService {
     this.outbox.rebase(cache.profileRevision, cache.progressRevision);
     this.refreshState('pending');
     return true;
+  }
+
+  /** Replace the completed clear snapshot and safely rebase deferred profile writes. */
+  replaceAfterLearningClear(snapshot: AccountSyncSnapshot): void {
+    this.saveSnapshot(snapshot);
+    this.outbox.rebase(snapshot.profileRevision, snapshot.progressRevision);
+    this.refreshState(this.outbox.size === 0 ? 'idle' : 'pending', null);
   }
 
   async bootstrap(): Promise<boolean> {

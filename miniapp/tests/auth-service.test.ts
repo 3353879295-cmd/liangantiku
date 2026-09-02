@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { AuthService, AUTH_PREFERENCE_KEY } from '../miniprogram/services/auth-service';
+import {
+  ACCOUNT_CLEAR_PENDING_KEY,
+  AuthService,
+  AUTH_PREFERENCE_KEY,
+} from '../miniprogram/services/auth-service';
 import {
   CloudSyncService,
   type AccountSyncCaller,
@@ -61,6 +65,40 @@ const createAuth = (preference: 'undecided' | 'guest' | 'account' = 'undecided')
 };
 
 describe('AuthService', () => {
+  it('treats account-preference login as lossless recovery and authenticated login as a no-op', async () => {
+    const storage = new MemoryStorage();
+    storage.set(AUTH_PREFERENCE_KEY, 'account');
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    const outbox = new SyncOutbox(storage);
+    outbox.enqueue({
+      action: 'updateProfile',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      nickname: '缓存资料',
+      avatarUrl: '',
+    });
+    const progress = new ProgressService(repository, 'account');
+    let online = false;
+    const call = vi.fn(() =>
+      online ? Promise.resolve(snapshot()) : Promise.reject(new Error('offline')),
+    );
+    const client = { call } as unknown as AccountSyncClient;
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+      maxAttempts: 1,
+    });
+    const auth = new AuthService(storage, progress, repository, outbox, sync, client);
+    await expect(auth.login()).resolves.toBe(false);
+    expect(repository.loadAccountCache()).not.toBeNull();
+    expect(outbox.size).toBe(1);
+    online = true;
+    await expect(auth.login()).resolves.toBe(true);
+    const calls = call.mock.calls.length;
+    await expect(auth.login()).resolves.toBe(true);
+    expect(call).toHaveBeenCalledTimes(calls);
+  });
+
   it('single-flights startup recovery and does not bootstrap again after completion', async () => {
     const storage = new MemoryStorage();
     storage.set(AUTH_PREFERENCE_KEY, 'account');
@@ -191,6 +229,67 @@ describe('AuthService', () => {
     expect(repository.loadAccountCache()).not.toBeNull();
     expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
     expect(call).not.toHaveBeenCalledWith(expect.objectContaining({ action: 'clearLearningData' }));
+  });
+
+  it('persists a failed cloud clear, blocks new learning commands, and resumes it after restart', async () => {
+    const storage = new MemoryStorage();
+    storage.set(AUTH_PREFERENCE_KEY, 'account');
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    const progress = new ProgressService(repository, 'account');
+    const outbox = new SyncOutbox(storage);
+    let clearFails = true;
+    const call = vi.fn((request: { action: string }) =>
+      request.action === 'clearLearningData' && clearFails
+        ? Promise.reject(Object.assign(new Error('clearing'), { code: 'ACCOUNT_SYNC_UNAVAILABLE' }))
+        : Promise.resolve(snapshot()),
+    );
+    const client = { call } as unknown as AccountSyncClient;
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+      isClearPending: () => storage.get(ACCOUNT_CLEAR_PENDING_KEY) === true,
+    });
+    const auth = new AuthService(storage, progress, repository, outbox, sync, client);
+    progress.setAccountMutationListener((command) => {
+      void sync.enqueue(command);
+    });
+    await expect(auth.clearLearningData()).resolves.toBe(false);
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBe(true);
+    progress.toggleFavorite('Q1', 1);
+    expect(outbox.size).toBe(0);
+
+    clearFails = false;
+    const restarted = new AuthService(storage, progress, repository, outbox, sync, client);
+    await restarted.initialize();
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBeNull();
+    expect(call).toHaveBeenCalledWith({ action: 'clearLearningData', schemaVersion: 1 });
+  });
+
+  it('allows a user to discard local recovery and exit while retaining an unfinished cloud clear marker', async () => {
+    const storage = new MemoryStorage();
+    storage.set(AUTH_PREFERENCE_KEY, 'account');
+    storage.set(ACCOUNT_CLEAR_PENDING_KEY, true);
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    const progress = new ProgressService(repository, 'account');
+    const outbox = new SyncOutbox(storage);
+    const client = {
+      call: vi.fn(() => Promise.resolve(snapshot())),
+    } as unknown as AccountSyncClient;
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+    });
+    const auth = new AuthService(storage, progress, repository, outbox, sync, client);
+    // Simulate the already-authenticated account page where clearing was interrupted.
+    await auth.retry();
+    storage.set(ACCOUNT_CLEAR_PENDING_KEY, true);
+    await expect(auth.logout()).resolves.toEqual({ needsDecision: true });
+    await expect(auth.logout(true)).resolves.toEqual({ needsDecision: false });
+    expect(repository.loadAccountCache()).toBeNull();
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('guest');
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBe(true);
+    await expect(auth.login()).resolves.toBe(true);
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBeNull();
   });
 
   it('requires an explicit decision before discarding pending logout data', async () => {
