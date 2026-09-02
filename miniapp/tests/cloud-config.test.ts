@@ -16,6 +16,7 @@ describe('cloud initialization', () => {
       getStorageSync: vi.fn(),
       setStorageSync: vi.fn(),
       removeStorageSync: vi.fn(),
+      onNetworkStatusChange: vi.fn(),
     });
 
     await import('../miniprogram/app');

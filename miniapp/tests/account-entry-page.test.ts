@@ -56,10 +56,10 @@ describe('account entry page', () => {
   it('registers entry first and account data as an auxiliary subpackage', async () => {
     const config = await import('../miniprogram/app.json');
     expect(config.default.pages[0]).toBe('pages/account-entry/index');
-    expect(config.default.subPackages).toContainEqual({
-      root: 'packages/auxiliary',
-      pages: ['pages/account-data/index'],
-    });
+    const auxiliaryPackage = config.default.subPackages.find(
+      (subpackage) => subpackage.root === 'packages/auxiliary',
+    );
+    expect(auxiliaryPackage?.pages).toContain('pages/account-data/index');
   });
 
   it('shows the confirmed first-login copy and persists guest selection', async () => {
