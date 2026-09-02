@@ -1,4 +1,4 @@
-import { appServices } from '../../services/app-services';
+import { appServices } from '../../../../services/app-services';
 
 const avatarOptions = [
   { id: 'wheat', label: '麦穗', url: '/assets/avatars/wheat.svg' },

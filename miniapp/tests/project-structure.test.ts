@@ -35,6 +35,10 @@ interface ComponentConfig {
 
 interface AppConfig extends ComponentConfig {
   pages: string[];
+  subPackages?: Array<{
+    root: string;
+    pages: string[];
+  }>;
   tabBar?: {
     custom?: boolean;
     list?: Array<{ pagePath: string; text: string }>;
@@ -198,7 +202,7 @@ describe('WeChat mini program structure', () => {
 
   it('renders chapter detail status and gates chapter practice on real availability', () => {
     const detailMarkup = readFileSync(
-      join(miniappRoot, 'pages', 'chapter-detail', 'index.wxml'),
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'chapter-detail', 'index.wxml'),
       'utf8',
     );
 
@@ -217,7 +221,10 @@ describe('WeChat mini program structure', () => {
 
   it('guards real practice setup counts and actions until repository loading finishes', () => {
     for (const page of ['random-settings', 'mock-info']) {
-      const markup = readFileSync(join(miniappRoot, 'pages', page, 'index.wxml'), 'utf8');
+      const markup = readFileSync(
+        join(miniappRoot, 'packages', 'auxiliary', 'pages', page, 'index.wxml'),
+        'utf8',
+      );
       const loadingGuardIndex = markup.indexOf('wx:if="{{loading}}"');
       const loadedContentIndex = markup.indexOf('<block wx:else>');
 
@@ -229,14 +236,17 @@ describe('WeChat mini program structure', () => {
     }
 
     const randomMarkup = readFileSync(
-      join(miniappRoot, 'pages', 'random-settings', 'index.wxml'),
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'random-settings', 'index.wxml'),
       'utf8',
     );
     const randomLoadedContent = randomMarkup.indexOf('<block wx:else>');
     expect(randomMarkup.indexOf('{{bankQuestionCount}}')).toBeGreaterThan(randomLoadedContent);
     expect(randomMarkup.indexOf('{{summaryText}}')).toBeGreaterThan(randomLoadedContent);
 
-    const mockMarkup = readFileSync(join(miniappRoot, 'pages', 'mock-info', 'index.wxml'), 'utf8');
+    const mockMarkup = readFileSync(
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'mock-info', 'index.wxml'),
+      'utf8',
+    );
     const mockLoadedContent = mockMarkup.indexOf('<block wx:else>');
     expect(mockMarkup.indexOf('{{questionCount}}')).toBeGreaterThan(mockLoadedContent);
     expect(mockMarkup.indexOf('{{questionCountText}}')).toBeGreaterThan(mockLoadedContent);
@@ -255,9 +265,17 @@ describe('WeChat mini program structure', () => {
   it('has a complete file set for every registered page and local component', () => {
     const app = readJson<AppConfig>(join(miniappRoot, 'app.json'));
     const visitedComponents = new Set<string>();
+    const subPackagePages = (app.subPackages ?? []).flatMap((subpackage) =>
+      subpackage.pages.map((page) => join(subpackage.root, page)),
+    );
 
-    expect(app.pages).toHaveLength(16);
+    expect(app.pages).toHaveLength(9);
     for (const page of app.pages) {
+      const pagePath = join(miniappRoot, page);
+      assertUnitFiles(pagePath);
+      assertComponentsResolve(`${pagePath}.json`, visitedComponents);
+    }
+    for (const page of subPackagePages) {
       const pagePath = join(miniappRoot, page);
       assertUnitFiles(pagePath);
       assertComponentsResolve(`${pagePath}.json`, visitedComponents);
@@ -270,13 +288,23 @@ describe('WeChat mini program structure', () => {
       { pagePath: 'pages/profile/index', text: '我的' },
     ]);
     expect(app.pages).toContain('pages/library/index');
-    expect(app.pages).toContain('pages/chapter-detail/index');
-    expect(app.pages).toContain('pages/random-settings/index');
-    expect(app.pages).toContain('pages/mock-info/index');
-    expect(app.pages).toContain('pages/learning-report/index');
-    expect(app.pages).toContain('pages/member/index');
-    expect(app.pages).toContain('pages/edit-profile/index');
-    expect(app.pages).toContain('pages/learning-settings/index');
+    expect(app.pages).toContain('pages/account-entry/index');
+    expect(app.subPackages).toEqual([
+      {
+        root: 'packages/auxiliary',
+        pages: [
+          'pages/account-data/index',
+          'pages/chapter-detail/index',
+          'pages/random-settings/index',
+          'pages/mock-info/index',
+          'pages/practical-detail/index',
+          'pages/learning-report/index',
+          'pages/member/index',
+          'pages/edit-profile/index',
+          'pages/learning-settings/index',
+        ],
+      },
+    ]);
     for (const item of app.tabBar?.list ?? []) {
       expect(app.pages).toContain(item.pagePath);
     }
@@ -384,7 +412,14 @@ describe('WeChat mini program structure', () => {
       assertLocalImagePath(practicalSourcePath, assetPath);
     }
 
-    const avatarSourcePath = join(miniappRoot, 'pages', 'edit-profile', 'index.ts');
+    const avatarSourcePath = join(
+      miniappRoot,
+      'packages',
+      'auxiliary',
+      'pages',
+      'edit-profile',
+      'index.ts',
+    );
     const avatarSource = readFileSync(avatarSourcePath, 'utf8');
     const avatarAssets = [...avatarSource.matchAll(/\burl:\s*'([^']+)'/g)].map(
       (match) => match[1] ?? '',
@@ -529,24 +564,24 @@ describe('WeChat mini program structure', () => {
   });
 
   it('registers the shared topbar locally on every current secondary page', () => {
-    const secondaryPages = [
-      'library',
-      'chapter-detail',
-      'random-settings',
-      'mock-info',
-      'practice',
-      'answer-sheet',
-      'report',
-      'question-list',
-      'practical-detail',
-      'learning-report',
-      'member',
-      'edit-profile',
-      'learning-settings',
+    const secondaryPagePaths = [
+      ...['library', 'practice', 'answer-sheet', 'report', 'question-list'].map((page) =>
+        join(miniappRoot, 'pages', page, 'index.json'),
+      ),
+      ...[
+        'chapter-detail',
+        'random-settings',
+        'mock-info',
+        'practical-detail',
+        'learning-report',
+        'member',
+        'edit-profile',
+        'learning-settings',
+      ].map((page) => join(miniappRoot, 'packages', 'auxiliary', 'pages', page, 'index.json')),
     ];
 
-    for (const page of secondaryPages) {
-      const config = readJson<ComponentConfig>(join(miniappRoot, 'pages', page, 'index.json'));
+    for (const configPath of secondaryPagePaths) {
+      const config = readJson<ComponentConfig>(configPath);
       expect(config.usingComponents?.['app-topbar']).toBe('/components/app-topbar/index');
     }
 
@@ -586,7 +621,7 @@ describe('WeChat mini program structure', () => {
 
   it('shows both answer reveal choices in learning settings', () => {
     const markup = readFileSync(
-      join(miniappRoot, 'pages', 'learning-settings', 'index.wxml'),
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'learning-settings', 'index.wxml'),
       'utf8',
     );
 
@@ -604,16 +639,22 @@ describe('WeChat mini program structure', () => {
   });
 
   it('wires profile secondary pages to existing services and truthful platform capabilities', () => {
-    const editSource = readFileSync(join(miniappRoot, 'pages', 'edit-profile', 'index.ts'), 'utf8');
+    const editSource = readFileSync(
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'edit-profile', 'index.ts'),
+      'utf8',
+    );
     const settingsSource = readFileSync(
-      join(miniappRoot, 'pages', 'learning-settings', 'index.ts'),
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'learning-settings', 'index.ts'),
       'utf8',
     );
     const reportSource = readFileSync(
-      join(miniappRoot, 'pages', 'learning-report', 'index.ts'),
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'learning-report', 'index.ts'),
       'utf8',
     );
-    const memberMarkup = readFileSync(join(miniappRoot, 'pages', 'member', 'index.wxml'), 'utf8');
+    const memberMarkup = readFileSync(
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'member', 'index.wxml'),
+      'utf8',
+    );
 
     expect(editSource).toContain('appServices.progress.updatePreferences');
     expect(editSource).toContain('/assets/avatars/');
@@ -674,7 +715,7 @@ describe('WeChat mini program structure', () => {
     expect(practicalMarkup).not.toContain('name="{{skill.icon}}"');
 
     const detailMarkup = readFileSync(
-      join(miniappRoot, 'pages', 'practical-detail', 'index.wxml'),
+      join(miniappRoot, 'packages', 'auxiliary', 'pages', 'practical-detail', 'index.wxml'),
       'utf8',
     );
     expect(detailMarkup).toContain('<app-topbar');

@@ -43,7 +43,7 @@ const loadLearningSettingsPage = async () => {
     showToast,
   });
 
-  await import('../miniprogram/pages/learning-settings/index');
+  await import('../miniprogram/packages/auxiliary/pages/learning-settings/index');
   const { appServices } = await import('../miniprogram/services/app-services');
   if (!definition) throw new Error('learning-settings Page was not registered');
 

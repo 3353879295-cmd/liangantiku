@@ -1,8 +1,8 @@
-import { getPracticalSkill } from '../../data/practical-skills';
-import { appServices } from '../../services/app-services';
-import { startPracticeFromQuestions } from '../../services/practice-runtime';
-import type { PracticalSkill } from '../../data/practical-skills';
-import type { Question } from '../../types/domain';
+import { getPracticalSkill } from '../../../../data/practical-skills';
+import { appServices } from '../../../../services/app-services';
+import { startPracticeFromQuestions } from '../../../../services/practice-runtime';
+import type { PracticalSkill } from '../../../../data/practical-skills';
+import type { Question } from '../../../../types/domain';
 
 Page({
   data: {

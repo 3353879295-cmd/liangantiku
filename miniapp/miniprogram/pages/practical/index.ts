@@ -22,6 +22,7 @@ Page({
 
   onOpenSkill(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset['id']);
-    if (id) void wx.navigateTo({ url: `/pages/practical-detail/index?id=${id}` });
+    if (id)
+      void wx.navigateTo({ url: `/packages/auxiliary/pages/practical-detail/index?id=${id}` });
   },
 });

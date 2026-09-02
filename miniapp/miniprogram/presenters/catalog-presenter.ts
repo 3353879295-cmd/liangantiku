@@ -109,7 +109,7 @@ export const parseChapterRoute = (
 
 export const buildChapterDetailRoute = (input: BuildChapterDetailRouteInput): string | null => {
   if (input.loading || !input.chapterIds.includes(input.chapterId)) return null;
-  return `/pages/chapter-detail/index?occupation=${input.occupation}&level=${input.level}&chapterId=${encodeURIComponent(input.chapterId)}`;
+  return `/packages/auxiliary/pages/chapter-detail/index?occupation=${input.occupation}&level=${input.level}&chapterId=${encodeURIComponent(input.chapterId)}`;
 };
 
 export const buildChapterPracticeRoute = (input: BuildChapterPracticeRouteInput): string | null => {

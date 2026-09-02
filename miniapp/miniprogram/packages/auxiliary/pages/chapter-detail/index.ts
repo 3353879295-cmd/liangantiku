@@ -1,13 +1,13 @@
-import { CERTIFICATES } from '../../data/certificates';
-import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
+import { CERTIFICATES } from '../../../../data/certificates';
+import { KNOWLEDGE_CATALOG } from '../../../../data/knowledge-catalog';
 import {
   buildChapterPracticeRoute,
   parseChapterRoute as parseCatalogChapterRoute,
   presentCatalogParts,
-} from '../../presenters/catalog-presenter';
-import type { CatalogChapterViewModel } from '../../presenters/catalog-presenter';
-import { appServices } from '../../services/app-services';
-import type { CertificateLevel, OccupationCode } from '../../types/domain';
+} from '../../../../presenters/catalog-presenter';
+import type { CatalogChapterViewModel } from '../../../../presenters/catalog-presenter';
+import { appServices } from '../../../../services/app-services';
+import type { CertificateLevel, OccupationCode } from '../../../../types/domain';
 
 export const parseChapterRoute = (options: Record<string, string | undefined>) =>
   parseCatalogChapterRoute(KNOWLEDGE_CATALOG, options);

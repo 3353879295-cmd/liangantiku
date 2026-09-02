@@ -100,8 +100,8 @@ describe('home question bank presentation', () => {
   it('exposes exactly the five home learning routes with independent saved-question pages', () => {
     expect(HOME_ACTIONS).toEqual([
       { id: 'chapter', title: '章节刷题', route: '/pages/library/index' },
-      { id: 'random', title: '随机练习', route: '/pages/random-settings/index' },
-      { id: 'mock', title: '模拟考试', route: '/pages/mock-info/index' },
+      { id: 'random', title: '随机练习', route: '/packages/auxiliary/pages/random-settings/index' },
+      { id: 'mock', title: '模拟考试', route: '/packages/auxiliary/pages/mock-info/index' },
       {
         id: 'wrong',
         title: '错题本',

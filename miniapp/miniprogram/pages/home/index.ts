@@ -138,6 +138,6 @@ Page({
   },
 
   onOpenMember() {
-    void wx.navigateTo({ url: '/pages/member/index' });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/member/index' });
   },
 });

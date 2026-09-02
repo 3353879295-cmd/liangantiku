@@ -1,6 +1,6 @@
-import { presentRevealModes } from '../../presenters/learning-settings-presenter';
-import { appServices } from '../../services/app-services';
-import type { AnswerRevealMode, AnswerTheme } from '../../types/domain';
+import { presentRevealModes } from '../../../../presenters/learning-settings-presenter';
+import { appServices } from '../../../../services/app-services';
+import type { AnswerRevealMode, AnswerTheme } from '../../../../types/domain';
 
 const goalValues = [10, 20, 30, 50] as const;
 const themeValues = new Set<AnswerTheme>(['light', 'night']);

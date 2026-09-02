@@ -1,10 +1,13 @@
-import { CERTIFICATES } from '../../data/certificates';
-import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
-import { buildChapterDetailRoute, presentCatalogParts } from '../../presenters/catalog-presenter';
-import { presentLearningReport } from '../../presenters/profile-presenter';
-import type { LearningReportViewModel } from '../../presenters/profile-presenter';
-import { appServices, localDateKey } from '../../services/app-services';
-import type { CertificateKey, CertificateLevel, OccupationCode } from '../../types/domain';
+import { CERTIFICATES } from '../../../../data/certificates';
+import { KNOWLEDGE_CATALOG } from '../../../../data/knowledge-catalog';
+import {
+  buildChapterDetailRoute,
+  presentCatalogParts,
+} from '../../../../presenters/catalog-presenter';
+import { presentLearningReport } from '../../../../presenters/profile-presenter';
+import type { LearningReportViewModel } from '../../../../presenters/profile-presenter';
+import { appServices, localDateKey } from '../../../../services/app-services';
+import type { CertificateKey, CertificateLevel, OccupationCode } from '../../../../types/domain';
 
 const getCertificate = (key: CertificateKey) =>
   CERTIFICATES.find((certificate) => certificate.key === key) ?? CERTIFICATES[0];

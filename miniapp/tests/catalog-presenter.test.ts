@@ -374,7 +374,9 @@ describe('catalog chapter routes', () => {
         chapterId: 'chapter/id',
         chapterIds: ['chapter/id'],
       }),
-    ).toBe('/pages/chapter-detail/index?occupation=4-02-06-01&level=5&chapterId=chapter%2Fid');
+    ).toBe(
+      '/packages/auxiliary/pages/chapter-detail/index?occupation=4-02-06-01&level=5&chapterId=chapter%2Fid',
+    );
     expect(
       routeFunctions.buildChapterDetailRoute?.({
         loading: false,

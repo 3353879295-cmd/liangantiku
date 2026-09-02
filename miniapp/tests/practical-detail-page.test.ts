@@ -46,7 +46,7 @@ const loadPracticalDetailPage = async () => {
 
   const practiceRuntime = await import('../miniprogram/services/practice-runtime');
   const startPractice = vi.spyOn(practiceRuntime, 'startPracticeFromQuestions');
-  await import('../miniprogram/pages/practical-detail/index');
+  await import('../miniprogram/packages/auxiliary/pages/practical-detail/index');
   const { appServices } = await import('../miniprogram/services/app-services');
   if (!definition) throw new Error('practical-detail Page was not registered');
 

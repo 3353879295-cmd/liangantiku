@@ -50,19 +50,19 @@ Page({
   },
 
   onOpenEditProfile() {
-    void wx.navigateTo({ url: '/pages/edit-profile/index' });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/edit-profile/index' });
   },
 
   onOpenMember() {
-    void wx.navigateTo({ url: '/pages/member/index' });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/member/index' });
   },
 
   onOpenLearningReport() {
-    void wx.navigateTo({ url: '/pages/learning-report/index' });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/learning-report/index' });
   },
 
   onOpenLearningSettings() {
-    void wx.navigateTo({ url: '/pages/learning-settings/index' });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/learning-settings/index' });
   },
 
   onLoginAndSync() {

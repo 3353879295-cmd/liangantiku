@@ -1,11 +1,11 @@
-import { CERTIFICATES } from '../../data/certificates';
+import { CERTIFICATES } from '../../../../data/certificates';
 import {
   buildRandomPracticeRoute,
   presentRandomPracticeSetup,
-} from '../../presenters/practice-setup-presenter';
-import type { RandomPracticeSetupViewModel } from '../../presenters/practice-setup-presenter';
-import { appServices } from '../../services/app-services';
-import type { CertificateKey, Question } from '../../types/domain';
+} from '../../../../presenters/practice-setup-presenter';
+import type { RandomPracticeSetupViewModel } from '../../../../presenters/practice-setup-presenter';
+import { appServices } from '../../../../services/app-services';
+import type { CertificateKey, Question } from '../../../../types/domain';
 
 const getCertificate = (key: CertificateKey) =>
   CERTIFICATES.find((certificate) => certificate.key === key) ?? CERTIFICATES[0];
