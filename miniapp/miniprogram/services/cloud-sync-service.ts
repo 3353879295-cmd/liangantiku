@@ -192,6 +192,12 @@ export class CloudSyncService {
 
   async process(): Promise<void> {
     if (!this.assertAccountScope()) return;
+    // Profile updates are retained locally during a resumable learning clear,
+    // but must not race the server's clearing/deleting write barrier.
+    if (this.options.isClearPending?.()) {
+      this.refreshState(this.outbox.size === 0 ? 'idle' : 'pending', null);
+      return;
+    }
     if (this.processing) return this.processing;
     this.processing = this.drain().finally(() => {
       this.processing = null;

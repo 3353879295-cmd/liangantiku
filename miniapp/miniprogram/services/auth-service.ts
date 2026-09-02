@@ -80,10 +80,9 @@ export class AuthService {
       });
       this.sync.replaceAfterLearningClear(snapshot);
       this.setLearningClearPending(false);
+      await this.sync.process();
       this.progress.refreshAccountSnapshot();
       this.enterAuthenticated();
-      // Profile commands made while clearing can now safely resume.
-      void this.sync.process();
       return true;
     } catch {
       this.state = {

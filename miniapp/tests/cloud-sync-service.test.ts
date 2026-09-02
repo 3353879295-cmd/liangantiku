@@ -58,6 +58,36 @@ describe('CloudSyncService', () => {
     ).toBe(true);
   });
 
+  it('defers retained profile commands until clearing completes, then sends exactly once', async () => {
+    const storage = new MemoryStorage();
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    let clearing = true;
+    const calls: unknown[] = [];
+    const service = new CloudSyncService(
+      {
+        call: (request) => {
+          calls.push(request);
+          const next = snapshot(1, 0);
+          next.profile.nickname = '清除后资料';
+          return Promise.resolve(next);
+        },
+      },
+      repository,
+      new SyncOutbox(storage),
+      { getScope: () => 'account', isClearPending: () => clearing },
+    );
+    service.enqueue({ action: 'updateProfile', nickname: '清除后资料', avatarUrl: '' });
+    await service.process();
+    expect(calls).toEqual([]);
+    expect(service.getState()).toMatchObject({ status: 'pending', pendingCount: 1 });
+
+    clearing = false;
+    await service.process();
+    expect(calls).toEqual([expect.objectContaining({ action: 'updateProfile' })]);
+    expect(repository.loadAccountCache()?.profile.nickname).toBe('清除后资料');
+  });
+
   it('never calls cloud functions in guest scope', async () => {
     const calls: unknown[] = [];
     const client: AccountSyncCaller = {
