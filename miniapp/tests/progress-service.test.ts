@@ -13,6 +13,7 @@ import {
 import { createEmptyProgress } from '../miniprogram/storage/migrations';
 import type { StorageAdapter } from '../miniprogram/types/domain';
 import type { PersistedPracticeSession } from '../miniprogram/storage/migrations';
+import type { AccountSyncCommandInput } from '../miniprogram/types/account-sync';
 import { makeQuestion } from './factories';
 
 class MemoryStorageAdapter implements StorageAdapter {
@@ -38,6 +39,76 @@ const createService = () => {
 };
 
 describe('ProgressService', () => {
+  it('emits only final account-domain mutations after optimistic account writes', () => {
+    const { service } = createService();
+    const commands: AccountSyncCommandInput[] = [];
+    service.setAccountMutationListener((command) => commands.push(command));
+    service.updatePreferences({ nickname: '云端麦穗', dailyGoal: 30 });
+    service.toggleFavorite('guest-q', 1);
+    expect(commands).toEqual([]);
+
+    service.switchScope('account');
+    service.updatePreferences({ nickname: '云端麦穗', dailyGoal: 30 });
+    service.toggleFavorite('account-q', 2);
+    expect(commands).toEqual([
+      { action: 'updateProfile', nickname: '云端麦穗', avatarUrl: '' },
+      expect.objectContaining({ action: 'updatePreferences', dailyGoal: 30 }),
+      { action: 'setFavorite', questionId: 'account-q', favorite: true },
+    ]);
+  });
+
+  it('sends complete account targets for sessions, practice, favorites and mastery after persisting', () => {
+    const { repository, service } = createService();
+    service.switchScope('account');
+    const observed: AccountSyncCommandInput[] = [];
+    service.setAccountMutationListener((command) => {
+      expect(repository.load('account').data).toEqual(expect.any(Object));
+      observed.push(command);
+    });
+    service.saveSession({
+      id: 'active-1',
+      mode: 'random',
+      answerRevealMode: 'immediate',
+      questionIds: ['Q1'],
+      currentIndex: 0,
+      answers: {},
+      status: 'submitted',
+      startedAt: 1,
+      updatedAt: 2,
+    });
+    service.recordPracticeResults(
+      'practice-1',
+      [{ questionId: 'Q1', correct: false, durationMs: 5, at: '2026-09-02' }],
+      'mock',
+    );
+    service.toggleFavorite('Q1', 1);
+    service.markMastered('Q1');
+    expect(observed).toEqual([
+      { action: 'saveActiveSession', session: null },
+      {
+        action: 'recordPractice',
+        sessionId: 'practice-1',
+        mode: 'mock',
+        answers: [{ questionId: 'Q1', correct: false, durationMs: 5, at: '2026-09-02' }],
+      },
+      { action: 'setFavorite', questionId: 'Q1', favorite: true },
+      { action: 'markMastered', questionId: 'Q1', mastered: true },
+    ]);
+  });
+
+  it('refreshes account reads from a cloud-replaced cache without emitting mutations', () => {
+    const { repository, service } = createService();
+    service.switchScope('account');
+    service.replaceSnapshot(createEmptyProgress());
+    const commands: AccountSyncCommandInput[] = [];
+    service.setAccountMutationListener((command) => commands.push(command));
+    const cloud = createEmptyProgress();
+    cloud.summary.answered = 9;
+    repository.save('account', cloud);
+    service.refreshAccountSnapshot();
+    expect(service.getDashboard('2026-09-02').answered).toBe(9);
+    expect(commands).toEqual([]);
+  });
   it('can replace the active account snapshot without reading guest progress', () => {
     const { repository, service } = createService();
     service.recordAnswer({

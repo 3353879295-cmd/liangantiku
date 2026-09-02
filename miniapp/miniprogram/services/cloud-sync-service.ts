@@ -150,9 +150,11 @@ export class CloudSyncService {
       // A persisted outbox belongs to the cached account revision. Replaying it
       // first lets the server report a genuine cross-device conflict instead of
       // silently rebasing stale local writes onto a newer cloud snapshot.
-      if (this.outbox.size > 0) await this.process();
-      if (this.state.status === 'conflict') return true;
-      if (this.state.status === 'failed') return false;
+      if (this.outbox.size > 0) {
+        await this.process();
+        if (this.state.status === 'conflict') return true;
+        if (this.state.status === 'failed') return false;
+      }
       const finalSnapshot = await this.client.call({
         action: 'bootstrap',
         schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,

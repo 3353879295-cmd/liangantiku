@@ -6,7 +6,12 @@ import type {
   WrongQuestionRecord,
 } from '../storage/migrations';
 import type { ProgressRepository } from '../storage/progress-repository';
-import type { AccountProgressSnapshot, ProgressScope } from '../types/account-sync';
+import type {
+  AccountProgressSnapshot,
+  AccountSyncCommandInput,
+  ProgressScope,
+} from '../types/account-sync';
+import type { PracticeMode } from '../types/domain';
 
 export interface RecordAnswerInput {
   questionId: string;
@@ -14,6 +19,8 @@ export interface RecordAnswerInput {
   durationMs: number;
   at: string;
 }
+
+export type AccountProgressMutationListener = (command: AccountSyncCommandInput) => void;
 
 export interface DashboardStats {
   answered: number;
@@ -151,6 +158,7 @@ export class ProgressService {
   private data: CurrentProgressData;
   private recoveryNotice: string | null;
   private scope: ProgressScope;
+  private mutationListener: AccountProgressMutationListener | null = null;
 
   constructor(
     private readonly repository: ProgressRepository,
@@ -166,6 +174,14 @@ export class ProgressService {
 
   private persist(): void {
     this.repository.save(this.scope, this.data);
+  }
+
+  private notifyAccount(command: AccountSyncCommandInput): void {
+    if (this.scope === 'account') this.mutationListener?.(command);
+  }
+
+  setAccountMutationListener(listener: AccountProgressMutationListener | null): void {
+    this.mutationListener = listener;
   }
 
   switchScope(scope: ProgressScope): void {
@@ -188,13 +204,23 @@ export class ProgressService {
     this.persist();
   }
 
+  /** Refresh in-memory reads after CloudSyncService replaces account-cache. */
+  refreshAccountSnapshot(): void {
+    if (this.scope !== 'account') throw new Error('account snapshot requires account scope');
+    this.data = this.repository.load('account').data;
+  }
+
   recordAnswer(input: RecordAnswerInput): void {
     validateRecordInput(input);
     this.data = appendAnswer(this.data, input);
     this.persist();
   }
 
-  recordPracticeResults(sessionId: string, inputs: readonly RecordAnswerInput[]): boolean {
+  recordPracticeResults(
+    sessionId: string,
+    inputs: readonly RecordAnswerInput[],
+    mode: PracticeMode = 'random',
+  ): boolean {
     if (!sessionId.trim()) throw new Error('sessionId is required');
     for (const input of inputs) validateRecordInput(input);
     if (this.data.recordedSessionIds.includes(sessionId)) return false;
@@ -205,6 +231,12 @@ export class ProgressService {
       recordedSessionIds: [...this.data.recordedSessionIds, sessionId],
     };
     this.persist();
+    this.notifyAccount({
+      action: 'recordPractice',
+      sessionId,
+      mode,
+      answers: inputs.map((input) => ({ ...input })),
+    });
     return true;
   }
 
@@ -254,6 +286,7 @@ export class ProgressService {
       },
     };
     this.persist();
+    this.notifyAccount({ action: 'markMastered', questionId, mastered: true });
     return true;
   }
 
@@ -264,6 +297,7 @@ export class ProgressService {
     else favorites[questionId] = savedAt;
     this.data = { ...this.data, favorites };
     this.persist();
+    this.notifyAccount({ action: 'setFavorite', questionId, favorite: !currentlySaved });
     return !currentlySaved;
   }
 
@@ -325,6 +359,10 @@ export class ProgressService {
       session?.mode === 'mock' ? { ...session, answerRevealMode: 'deferred' } : session;
     this.data = { ...this.data, session: finalizedSession };
     this.persist();
+    this.notifyAccount({
+      action: 'saveActiveSession',
+      session: finalizedSession?.status === 'active' ? finalizedSession : null,
+    });
   }
 
   restoreSession(): PersistedPracticeSession | null {
@@ -342,9 +380,37 @@ export class ProgressService {
     }
     this.data = { ...this.data, preferences: next };
     this.persist();
+    const {
+      nickname,
+      avatarUrl,
+      selectedCertificateKey,
+      dailyGoal,
+      answerTheme,
+      answerRevealMode,
+    } = next;
+    const changedProfile =
+      Object.hasOwn(preferences, 'nickname') || Object.hasOwn(preferences, 'avatarUrl');
+    const changedPreferences =
+      Object.hasOwn(preferences, 'selectedCertificateKey') ||
+      Object.hasOwn(preferences, 'dailyGoal') ||
+      Object.hasOwn(preferences, 'answerTheme') ||
+      Object.hasOwn(preferences, 'answerRevealMode');
+    if (changedProfile) this.notifyAccount({ action: 'updateProfile', nickname, avatarUrl });
+    if (changedPreferences) {
+      this.notifyAccount({
+        action: 'updatePreferences',
+        selectedCertificateKey,
+        dailyGoal,
+        answerTheme,
+        answerRevealMode,
+      });
+    }
   }
 
   clearLearningData(): void {
+    if (this.scope === 'account') {
+      throw new Error('account learning data must be cleared through AuthService');
+    }
     const preferences = { ...this.data.preferences };
     this.data = { ...createEmptyProgress(), preferences };
     this.persist();

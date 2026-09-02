@@ -151,7 +151,7 @@ export const recordActivePractice = (): PracticeSession | null => {
         : durationPerQuestion,
     at: localDateKey(),
   }));
-  appServices.progress.recordPracticeResults(session.id, records);
+  appServices.progress.recordPracticeResults(session.id, records, session.mode);
   activeSession = { ...session, progressRecorded: true };
   appServices.progress.saveSession(serializePracticeSession(activeSession));
   return activeSession;

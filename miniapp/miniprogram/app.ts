@@ -11,5 +11,17 @@ App<IAppOption>({
   },
   onLaunch() {
     initializeCloud();
+    void appServices.auth.initialize().then(() => {
+      const current = appServices.progress.getPreferences();
+      this.globalData.selectedCertificateKey = current.selectedCertificateKey;
+      this.globalData.answerTheme = appServices.theme.get();
+      this.globalData.recoveryNotice = appServices.progress.consumeRecoveryNotice() ?? '';
+    });
+    wx.onNetworkStatusChange((status) => {
+      if (status.isConnected) void appServices.auth.retryBackground();
+    });
+  },
+  onShow() {
+    void appServices.auth.retryBackground();
   },
 });
