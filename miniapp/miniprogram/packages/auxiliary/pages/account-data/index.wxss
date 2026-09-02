@@ -1,0 +1,54 @@
+.account-data {
+  padding-top: 28rpx;
+}
+
+.account-data__card {
+  margin-bottom: 18rpx;
+  padding: 28rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.account-data__label {
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+}
+
+.account-data__value,
+.account-data__title {
+  margin-top: 10rpx;
+  font-size: 30rpx;
+  font-weight: 680;
+}
+
+.account-data__card text {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  line-height: 1.6;
+}
+
+.account-data__button {
+  margin: 24rpx 0 0;
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  font-size: 25rpx;
+}
+
+.account-data__button--danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.account-data__card--danger {
+  border: 1rpx solid var(--color-danger-soft);
+}
+
+.account-data__empty {
+  padding: 48rpx 24rpx;
+  color: var(--color-text-secondary);
+  text-align: center;
+}

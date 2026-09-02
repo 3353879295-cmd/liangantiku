@@ -20,6 +20,10 @@ Page({
     certificateTitle: '',
     dashboard: emptyDashboard,
     activity: [] as ReturnType<typeof presentActivityBars>,
+    accountStatus: 'guest',
+    syncText: '',
+    lastSyncedAt: '',
+    syncFailed: false,
   },
 
   onShow() {
@@ -30,12 +34,18 @@ Page({
     const certificate = CERTIFICATES.find(
       (item) => item.key === preferences.selectedCertificateKey,
     );
+    const auth = appServices.auth.getState();
+    const sync = appServices.cloudSync.getState();
     this.setData({
       nickname: preferences.nickname,
       avatarUrl: preferences.avatarUrl,
       certificateTitle: certificate?.title ?? '粮油仓储管理员 · 初级',
       dashboard: presentDashboard(appServices.progress.getDashboard(today)),
       activity: presentActivityBars(appServices.progress.getActivity(today, 7)),
+      accountStatus: auth.status === 'authenticated' ? 'authenticated' : 'guest',
+      syncText: syncLabel(sync.status, sync.pendingCount),
+      lastSyncedAt: formatSyncedAt(appServices.cloudSync.getLastSyncedAt()),
+      syncFailed: sync.status === 'failed',
     });
   },
 
@@ -55,6 +65,19 @@ Page({
     void wx.navigateTo({ url: '/pages/learning-settings/index' });
   },
 
+  onLoginAndSync() {
+    void wx.navigateTo({ url: '/pages/account-entry/index?mode=login' });
+  },
+
+  onOpenAccountData() {
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/account-data/index' });
+  },
+
+  async onRetrySync() {
+    await appServices.auth.retryBackground();
+    void this.onShow();
+  },
+
   async onClearLearningData() {
     const result = await wx.showModal({
       title: '清除学习数据',
@@ -63,8 +86,31 @@ Page({
       confirmColor: '#c44747',
     });
     if (!result.confirm) return;
-    appServices.progress.clearLearningData();
+    const completed = await appServices.auth.clearLearningData();
+    if (!completed) {
+      void wx.showToast({ title: '清除未完成，请重试', icon: 'none' });
+      return;
+    }
     void this.onShow();
     void wx.showToast({ title: '学习数据已清除', icon: 'none' });
   },
 });
+
+const syncLabel = (
+  status: ReturnType<typeof appServices.cloudSync.getState>['status'],
+  pending: number,
+): string => {
+  if (status === 'syncing') return '同步中';
+  if (status === 'pending') return `待同步${pending > 0 ? `（${pending} 项）` : ''}`;
+  if (status === 'failed') return '同步失败';
+  if (status === 'conflict') return '已恢复云端记录';
+  return '已同步';
+};
+
+const formatSyncedAt = (value: string | null): string => {
+  if (!value) return '暂未同步';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? '暂未同步'
+    : `最近同步：${value.replace('T', ' ').slice(0, 16)}`;
+};

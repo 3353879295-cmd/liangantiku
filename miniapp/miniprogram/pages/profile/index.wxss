@@ -115,6 +115,33 @@
   font-weight: 700;
 }
 
+.account-status-card {
+  margin-top: 18rpx;
+  padding: 25rpx 28rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-soft);
+}
+
+.account-status-card__title {
+  font-size: 28rpx;
+  font-weight: 680;
+}
+
+.account-status-card text {
+  display: block;
+  margin-top: 8rpx;
+  color: var(--color-text-secondary);
+  font-size: 21rpx;
+}
+
+.account-status-card__button {
+  margin: 18rpx 0 0;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 23rpx;
+}
+
 .profile-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

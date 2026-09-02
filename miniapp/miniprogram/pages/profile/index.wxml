@@ -14,6 +14,17 @@
     </view>
   </view>
 
+  <view wx:if="{{accountStatus === 'guest'}}" class="account-status-card">
+    <view class="account-status-card__title">当前为游客</view>
+    <text>记录仅保存在本机，登录后以云端数据为准</text>
+    <button class="account-status-card__button" bind:tap="onLoginAndSync">登录并同步</button>
+  </view>
+  <view wx:else class="account-status-card">
+    <view class="account-status-card__title">{{syncText}}</view>
+    <text>{{lastSyncedAt}}</text>
+    <button wx:if="{{syncFailed}}" class="account-status-card__button" bind:tap="onRetrySync">重试同步</button>
+  </view>
+
   <view class="member-card" bind:tap="onOpenMember">
     <view>
       <text class="member-card__eyebrow">MEMBER</text>
@@ -80,7 +91,17 @@
       </view>
       <t-icon name="chevron-right" size="30rpx" />
     </view>
-    <view class="menu-row menu-row--danger" bind:tap="onClearLearningData">
+    <view wx:if="{{accountStatus === 'authenticated'}}" class="menu-row" bind:tap="onOpenAccountData">
+      <view class="menu-row__left">
+        <view class="menu-row__icon"><t-icon name="setting" size="32rpx" /></view>
+        <view>
+          <view class="menu-row__title">账号与数据</view>
+          <text class="menu-row__note">同步、退出登录与账号注销</text>
+        </view>
+      </view>
+      <t-icon name="chevron-right" size="30rpx" />
+    </view>
+    <view wx:else class="menu-row menu-row--danger" bind:tap="onClearLearningData">
       <view class="menu-row__left">
         <view class="menu-row__icon"><t-icon name="delete" size="32rpx" /></view>
         <view>

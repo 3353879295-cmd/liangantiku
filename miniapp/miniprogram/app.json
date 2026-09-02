@@ -1,5 +1,6 @@
 {
   "pages": [
+    "pages/account-entry/index",
     "pages/home/index",
     "pages/library/index",
     "pages/chapter-detail/index",
@@ -16,6 +17,12 @@
     "pages/edit-profile/index",
     "pages/learning-settings/index",
     "pages/profile/index"
+  ],
+  "subPackages": [
+    {
+      "root": "packages/auxiliary",
+      "pages": ["pages/account-data/index"]
+    }
   ],
   "window": {
     "backgroundColor": "#F4F6EE",

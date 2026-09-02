@@ -79,6 +79,11 @@ export class CloudSyncService {
     return clone(this.state);
   }
 
+  /** A display-only value from the validated account cache. */
+  getLastSyncedAt(): string | null {
+    return this.cache()?.syncedAt ?? null;
+  }
+
   private refreshState(
     status: AccountSyncState['status'] = this.state.status,
     notice = this.state.notice,

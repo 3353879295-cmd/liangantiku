@@ -1,0 +1,16 @@
+<view class="page-shell account-entry">
+  <view class="account-entry__hero">粮</view>
+  <view wx:if="{{phase === 'loading'}}" class="account-entry__loading">
+    <view class="account-entry__spinner"></view>
+    <view>正在恢复云端学习记录…</view>
+  </view>
+  <block wx:else>
+    <view class="account-entry__title">登录粮安题库</view>
+    <text class="account-entry__note">登录后可跨设备同步学习记录、错题、收藏和设置。</text>
+    <text wx:if="{{message}}" class="account-entry__error">{{message}}</text>
+    <button wx:if="{{phase === 'error'}}" class="account-entry__primary" bind:tap="onRetry">重新登录</button>
+    <button wx:else class="account-entry__primary" bind:tap="onLogin">微信登录</button>
+    <button wx:if="{{phase === 'error'}}" class="account-entry__secondary" bind:tap="onTemporaryGuest">以游客身份进入</button>
+    <button wx:else class="account-entry__secondary" bind:tap="onGuest">暂不登录</button>
+  </block>
+</view>

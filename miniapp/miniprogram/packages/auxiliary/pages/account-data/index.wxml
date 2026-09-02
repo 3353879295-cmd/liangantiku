@@ -1,0 +1,25 @@
+<view class="page-shell account-data">
+  <view wx:if="{{!available}}" class="account-data__empty">当前未登录账号，请返回首页后重新登录。</view>
+  <block wx:else>
+    <view class="account-data__card">
+      <view class="account-data__label">云端学习同步</view>
+      <view class="account-data__value">{{syncText}}</view>
+      <button wx:if="{{retryVisible}}" class="account-data__button" bind:tap="onRetrySync">重试同步</button>
+    </view>
+    <view class="account-data__card">
+      <view class="account-data__title">清除学习数据</view>
+      <text>保留昵称、头像和学习设置，清除云端学习记录。</text>
+      <button class="account-data__button account-data__button--danger" bind:tap="onClearLearningData">清除学习数据</button>
+    </view>
+    <view class="account-data__card">
+      <view class="account-data__title">退出登录</view>
+      <text>退出后将恢复本机游客记录，云端数据会保留。</text>
+      <button class="account-data__button" bind:tap="onLogout">退出登录</button>
+    </view>
+    <view class="account-data__card account-data__card--danger">
+      <view class="account-data__title">永久注销账号</view>
+      <text>云端学习记录将永久删除且无法恢复。</text>
+      <button class="account-data__button account-data__button--danger" bind:tap="onDeleteAccount">永久注销账号</button>
+    </view>
+  </block>
+</view>
