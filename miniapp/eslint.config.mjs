@@ -39,6 +39,18 @@ export default tseslint.config(
   {
     files: ['**/*.{js,mjs,cjs}'],
     ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      parserOptions: tseslint.configs.disableTypeChecked.languageOptions.parserOptions,
+      globals: {
+        module: 'readonly',
+        exports: 'writable',
+        require: 'readonly',
+      },
+    },
+    rules: {
+      ...tseslint.configs.disableTypeChecked.rules,
+      '@typescript-eslint/no-require-imports': 'off',
+    },
   },
   {
     files: ['tests/**/*.ts'],

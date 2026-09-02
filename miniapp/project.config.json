@@ -3,6 +3,7 @@
   "compileType": "miniprogram",
   "libVersion": "3.17.0",
   "miniprogramRoot": "miniprogram/",
+  "cloudfunctionRoot": "cloudfunctions/",
   "projectname": "粮安题库",
   "setting": {
     "es6": true,
