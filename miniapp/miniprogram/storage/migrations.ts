@@ -1,6 +1,6 @@
 import type { AnswerRevealMode, AnswerTheme, CertificateKey, PracticeMode } from '../types/domain';
 
-export const CURRENT_SCHEMA_VERSION = 3 as const;
+export const CURRENT_SCHEMA_VERSION = 4 as const;
 
 export interface AnswerHistoryRecord {
   questionId: string;
@@ -76,7 +76,7 @@ export interface ProgressDataV2 {
 }
 
 export interface ProgressDataV3 {
-  schemaVersion: typeof CURRENT_SCHEMA_VERSION;
+  schemaVersion: 3;
   answers: AnswerHistoryRecord[];
   wrongQuestions: Record<string, WrongQuestionRecord>;
   favorites: Record<string, number>;
@@ -86,19 +86,48 @@ export interface ProgressDataV3 {
   preferences: ProgressPreferences;
 }
 
+export interface ProgressSummary {
+  answered: number;
+  correct: number;
+  durationMs: number;
+  firstAnsweredAt: string | null;
+}
+
+export interface QuestionTotal {
+  attempts: number;
+  correctAttempts: number;
+}
+
+export interface ProgressDataV4 {
+  schemaVersion: typeof CURRENT_SCHEMA_VERSION;
+  summary: ProgressSummary;
+  questionTotals: Record<string, QuestionTotal>;
+  wrongQuestions: Record<string, WrongQuestionRecord>;
+  favorites: Record<string, number>;
+  session: PersistedPracticeSession | null;
+  dailyTotals: Record<string, DailyTotal>;
+  recentQuestionIds: string[];
+  recordedSessionIds: string[];
+  preferences: ProgressPreferences;
+}
+
+export type CurrentProgressData = ProgressDataV4;
+
 export interface MigrationResult {
-  data: ProgressDataV3;
+  data: CurrentProgressData;
   recovered: boolean;
   reason?: string;
 }
 
-export const createEmptyProgress = (): ProgressDataV3 => ({
+export const createEmptyProgress = (): CurrentProgressData => ({
   schemaVersion: CURRENT_SCHEMA_VERSION,
-  answers: [],
+  summary: { answered: 0, correct: 0, durationMs: 0, firstAnsweredAt: null },
+  questionTotals: {},
   wrongQuestions: {},
   favorites: {},
   session: null,
   dailyTotals: {},
+  recentQuestionIds: [],
   recordedSessionIds: [],
   preferences: {
     selectedCertificateKey: '4-02-06-01:5',
@@ -159,6 +188,21 @@ const isDailyTotal = (value: unknown): value is DailyTotal =>
   isNonNegativeInteger(value.correct) &&
   Number(value.correct) <= Number(value.answered) &&
   isNonNegativeNumber(value.durationMs);
+
+const isProgressSummary = (value: unknown): value is ProgressSummary =>
+  isRecord(value) &&
+  isNonNegativeInteger(value.answered) &&
+  isNonNegativeInteger(value.correct) &&
+  Number(value.correct) <= Number(value.answered) &&
+  isNonNegativeNumber(value.durationMs) &&
+  (value.firstAnsweredAt === null ||
+    (typeof value.firstAnsweredAt === 'string' && DATE_PATTERN.test(value.firstAnsweredAt)));
+
+const isQuestionTotal = (value: unknown): value is QuestionTotal =>
+  isRecord(value) &&
+  isNonNegativeInteger(value.attempts) &&
+  isNonNegativeInteger(value.correctAttempts) &&
+  Number(value.correctAttempts) <= Number(value.attempts);
 
 const isVersionOnePreferences = (value: unknown): value is ProgressDataV1['preferences'] =>
   isRecord(value) &&
@@ -268,12 +312,42 @@ export const isProgressDataV2 = (value: unknown): value is ProgressDataV2 => {
 };
 
 export const isProgressDataV3 = (value: unknown): value is ProgressDataV3 => {
-  if (!isRecord(value) || value.schemaVersion !== CURRENT_SCHEMA_VERSION) return false;
+  if (!isRecord(value) || value.schemaVersion !== 3) return false;
   return (
     hasValidLearningData(value, false, isPersistedSession) &&
     isVersionThreePreferences(value.preferences)
   );
 };
+
+export const isProgressDataV4 = (value: unknown): value is ProgressDataV4 =>
+  isRecord(value) &&
+  value.schemaVersion === CURRENT_SCHEMA_VERSION &&
+  isProgressSummary(value.summary) &&
+  isRecord(value.questionTotals) &&
+  Object.entries(value.questionTotals).every(
+    ([questionId, total]) => isNonBlankString(questionId) && isQuestionTotal(total),
+  ) &&
+  isRecord(value.wrongQuestions) &&
+  Object.entries(value.wrongQuestions).every(
+    ([questionId, record]) => isWrongQuestionRecord(record) && record.questionId === questionId,
+  ) &&
+  isRecord(value.favorites) &&
+  Object.entries(value.favorites).every(
+    ([questionId, savedAt]) => isNonBlankString(questionId) && isNonNegativeNumber(savedAt),
+  ) &&
+  (value.session === null || isPersistedSession(value.session)) &&
+  isRecord(value.dailyTotals) &&
+  Object.entries(value.dailyTotals).every(
+    ([date, total]) => DATE_PATTERN.test(date) && isDailyTotal(total),
+  ) &&
+  Array.isArray(value.recentQuestionIds) &&
+  value.recentQuestionIds.length <= 100 &&
+  value.recentQuestionIds.every(isNonBlankString) &&
+  new Set(value.recentQuestionIds).size === value.recentQuestionIds.length &&
+  Array.isArray(value.recordedSessionIds) &&
+  value.recordedSessionIds.every(isNonBlankString) &&
+  new Set(value.recordedSessionIds).size === value.recordedSessionIds.length &&
+  isVersionThreePreferences(value.preferences);
 
 const migrateVersionOneToVersionTwo = (value: ProgressDataV1): ProgressDataV2 => ({
   ...value,
@@ -292,7 +366,7 @@ const legacyRevealMode = (mode: PracticeMode): AnswerRevealMode =>
 
 export const migrateVersionTwo = (value: ProgressDataV2): ProgressDataV3 => ({
   ...value,
-  schemaVersion: CURRENT_SCHEMA_VERSION,
+  schemaVersion: 3,
   session: value.session
     ? { ...value.session, answerRevealMode: legacyRevealMode(value.session.mode) }
     : null,
@@ -301,6 +375,45 @@ export const migrateVersionTwo = (value: ProgressDataV2): ProgressDataV3 => ({
 
 export const migrateVersionOne = (value: ProgressDataV1): ProgressDataV3 =>
   migrateVersionTwo(migrateVersionOneToVersionTwo(value));
+
+export const migrateVersionThree = (value: ProgressDataV3): ProgressDataV4 => {
+  const questionTotals: Record<string, QuestionTotal> = {};
+  const recentQuestionIds: string[] = [];
+  const seenRecentIds = new Set<string>();
+  let correct = 0;
+  let durationMs = 0;
+  let firstAnsweredAt: string | null = null;
+
+  for (const answer of value.answers) {
+    const total = questionTotals[answer.questionId] ?? { attempts: 0, correctAttempts: 0 };
+    total.attempts += 1;
+    total.correctAttempts += answer.correct ? 1 : 0;
+    questionTotals[answer.questionId] = total;
+    correct += answer.correct ? 1 : 0;
+    durationMs += answer.durationMs;
+    if (firstAnsweredAt === null || answer.at < firstAnsweredAt) firstAnsweredAt = answer.at;
+  }
+  for (let index = value.answers.length - 1; index >= 0; index -= 1) {
+    const questionId = value.answers[index]?.questionId;
+    if (!questionId || seenRecentIds.has(questionId)) continue;
+    seenRecentIds.add(questionId);
+    recentQuestionIds.push(questionId);
+    if (recentQuestionIds.length === 100) break;
+  }
+
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    summary: { answered: value.answers.length, correct, durationMs, firstAnsweredAt },
+    questionTotals,
+    wrongQuestions: value.wrongQuestions,
+    favorites: value.favorites,
+    session: value.session,
+    dailyTotals: value.dailyTotals,
+    recentQuestionIds,
+    recordedSessionIds: value.recordedSessionIds,
+    preferences: value.preferences,
+  };
+};
 
 export const migrateProgress = (value: unknown): MigrationResult => {
   if (value === null || value === undefined) {
@@ -317,37 +430,41 @@ export const migrateProgress = (value: unknown): MigrationResult => {
     }
   }
 
-  if (isProgressDataV3(value)) {
+  if (isProgressDataV4(value)) {
     return { data: value, recovered: false };
   }
 
   if (
     isRecord(value) &&
-    value.schemaVersion === CURRENT_SCHEMA_VERSION &&
+    value.schemaVersion === 3 &&
     hasValidLearningData(value, false, isPersistedSession) &&
     isVersionTwoPreferences(value.preferences) &&
     isRecord(value.preferences) &&
     !isAnswerRevealMode(value.preferences.answerRevealMode)
   ) {
     return {
-      data: {
+      data: migrateVersionThree({
         ...(value as unknown as ProgressDataV3),
         preferences: {
           ...value.preferences,
           answerRevealMode: 'immediate',
         },
-      },
+      }),
       recovered: true,
       reason: 'invalid answer reveal preference',
     };
   }
 
   if (isProgressDataV2(value)) {
-    return { data: migrateVersionTwo(value), recovered: false };
+    return { data: migrateVersionThree(migrateVersionTwo(value)), recovered: false };
   }
 
   if (isProgressDataV1(value)) {
-    return { data: migrateVersionOne(value), recovered: false };
+    return { data: migrateVersionThree(migrateVersionOne(value)), recovered: false };
+  }
+
+  if (isProgressDataV3(value)) {
+    return { data: migrateVersionThree(value), recovered: false };
   }
 
   return {

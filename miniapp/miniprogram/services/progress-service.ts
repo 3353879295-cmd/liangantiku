@@ -1,11 +1,12 @@
 import { createEmptyProgress } from '../storage/migrations';
 import type {
+  CurrentProgressData,
   PersistedPracticeSession,
-  ProgressDataV3,
   ProgressPreferences,
   WrongQuestionRecord,
 } from '../storage/migrations';
 import type { ProgressRepository } from '../storage/progress-repository';
+import type { AccountProgressSnapshot, ProgressScope } from '../types/account-sync';
 
 export interface RecordAnswerInput {
   questionId: string;
@@ -46,7 +47,10 @@ const previousDate = (date: string): string => {
   return parsed.toISOString().slice(0, 10);
 };
 
-const calculateStreak = (dailyTotals: ProgressDataV3['dailyTotals'], today: string): number => {
+const calculateStreak = (
+  dailyTotals: CurrentProgressData['dailyTotals'],
+  today: string,
+): number => {
   const activeDates = Object.keys(dailyTotals)
     .filter((date) => date <= today && dailyTotals[date]?.answered)
     .sort();
@@ -70,8 +74,11 @@ const validateRecordInput = (input: RecordAnswerInput): void => {
   }
 };
 
-const appendAnswer = (data: ProgressDataV3, input: RecordAnswerInput): ProgressDataV3 => {
-  const answer = { ...input };
+const appendAnswer = (data: CurrentProgressData, input: RecordAnswerInput): CurrentProgressData => {
+  const previousQuestionTotal = data.questionTotals[input.questionId] ?? {
+    attempts: 0,
+    correctAttempts: 0,
+  };
   const previousDay = data.dailyTotals[input.at] ?? {
     answered: 0,
     correct: 0,
@@ -115,18 +122,42 @@ const appendAnswer = (data: ProgressDataV3, input: RecordAnswerInput): ProgressD
 
   return {
     ...data,
-    answers: [...data.answers, answer],
+    summary: {
+      answered: data.summary.answered + 1,
+      correct: data.summary.correct + (input.correct ? 1 : 0),
+      durationMs: data.summary.durationMs + input.durationMs,
+      firstAnsweredAt:
+        data.summary.firstAnsweredAt === null || input.at < data.summary.firstAnsweredAt
+          ? input.at
+          : data.summary.firstAnsweredAt,
+    },
+    questionTotals: {
+      ...data.questionTotals,
+      [input.questionId]: {
+        attempts: previousQuestionTotal.attempts + 1,
+        correctAttempts: previousQuestionTotal.correctAttempts + (input.correct ? 1 : 0),
+      },
+    },
     dailyTotals,
     wrongQuestions,
+    recentQuestionIds: [
+      input.questionId,
+      ...data.recentQuestionIds.filter((questionId) => questionId !== input.questionId),
+    ].slice(0, 100),
   };
 };
 
 export class ProgressService {
-  private data: ProgressDataV3;
+  private data: CurrentProgressData;
   private recoveryNotice: string | null;
+  private scope: ProgressScope;
 
-  constructor(private readonly repository: ProgressRepository) {
-    const result = repository.load();
+  constructor(
+    private readonly repository: ProgressRepository,
+    scope: ProgressScope = 'guest',
+  ) {
+    this.scope = scope;
+    const result = repository.load(scope);
     this.data = result.data;
     this.recoveryNotice = result.recovered
       ? '检测到异常学习记录，原始数据已备份，并已恢复为可用状态。'
@@ -134,7 +165,27 @@ export class ProgressService {
   }
 
   private persist(): void {
-    this.repository.save(this.data);
+    this.repository.save(this.scope, this.data);
+  }
+
+  switchScope(scope: ProgressScope): void {
+    if (scope === this.scope) return;
+    const result = this.repository.load(scope);
+    this.scope = scope;
+    this.data = result.data;
+    this.recoveryNotice = result.recovered
+      ? '检测到异常学习记录，原始数据已备份，并已恢复为可用状态。'
+      : null;
+  }
+
+  getScope(): ProgressScope {
+    return this.scope;
+  }
+
+  replaceSnapshot(snapshot: AccountProgressSnapshot): void {
+    if (this.scope !== 'account') throw new Error('account snapshot requires account scope');
+    this.data = snapshot;
+    this.persist();
   }
 
   recordAnswer(input: RecordAnswerInput): void {
@@ -163,11 +214,18 @@ export class ProgressService {
 
   getQuestionProgress(questionIds: readonly string[]): QuestionProgressSummary {
     const ids = new Set(questionIds);
-    const answers = this.data.answers.filter((answer) => ids.has(answer.questionId));
+    const uniqueQuestionIds = [...ids];
     return {
-      completed: new Set(answers.map((answer) => answer.questionId)).size,
-      attempts: answers.length,
-      correctAttempts: answers.filter((answer) => answer.correct).length,
+      completed: uniqueQuestionIds.filter((questionId) => this.data.questionTotals[questionId])
+        .length,
+      attempts: uniqueQuestionIds.reduce(
+        (total, questionId) => total + (this.data.questionTotals[questionId]?.attempts ?? 0),
+        0,
+      ),
+      correctAttempts: uniqueQuestionIds.reduce(
+        (total, questionId) => total + (this.data.questionTotals[questionId]?.correctAttempts ?? 0),
+        0,
+      ),
       wrongQuestions: Object.values(this.data.wrongQuestions).filter(
         (record) => ids.has(record.questionId) && !record.mastered,
       ).length,
@@ -221,23 +279,11 @@ export class ProgressService {
 
   listRecentQuestionIds(limit: number): string[] {
     if (limit <= 0) return [];
-    const recentIds: string[] = [];
-    const seen = new Set<string>();
-    for (let index = this.data.answers.length - 1; index >= 0; index -= 1) {
-      const questionId = this.data.answers[index]?.questionId;
-      if (!questionId || seen.has(questionId)) continue;
-      seen.add(questionId);
-      recentIds.push(questionId);
-      if (recentIds.length >= limit) break;
-    }
-    return recentIds;
+    return this.data.recentQuestionIds.slice(0, limit);
   }
 
   getPreparationDays(today: string): number {
-    const firstAnswerDate = this.data.answers
-      .map(({ at }) => at)
-      .filter((date) => date <= today)
-      .sort()[0];
+    const firstAnswerDate = this.data.summary.firstAnsweredAt;
     if (!firstAnswerDate) return 1;
     const firstTime = new Date(`${firstAnswerDate}T00:00:00Z`).getTime();
     const todayTime = new Date(`${today}T00:00:00Z`).getTime();
@@ -245,9 +291,7 @@ export class ProgressService {
   }
 
   getDashboard(today: string): DashboardStats {
-    const answered = this.data.answers.length;
-    const correct = this.data.answers.filter((answer) => answer.correct).length;
-    const durationMs = this.data.answers.reduce((sum, answer) => sum + answer.durationMs, 0);
+    const { answered, correct, durationMs } = this.data.summary;
     return {
       answered,
       correct,

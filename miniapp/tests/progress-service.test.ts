@@ -38,6 +38,34 @@ const createService = () => {
 };
 
 describe('ProgressService', () => {
+  it('can replace the active account snapshot without reading guest progress', () => {
+    const { repository, service } = createService();
+    service.recordAnswer({
+      questionId: 'guest-question',
+      correct: true,
+      durationMs: 1,
+      at: '2026-07-22',
+    });
+    const accountSnapshot = createEmptyProgress();
+    accountSnapshot.summary.answered = 5;
+
+    expect(() => service.replaceSnapshot(accountSnapshot)).toThrow(/account scope/);
+    service.switchScope('account');
+    service.replaceSnapshot(accountSnapshot);
+    service.recordAnswer({
+      questionId: 'account-question',
+      correct: true,
+      durationMs: 1,
+      at: '2026-07-22',
+    });
+
+    expect(service.getDashboard('2026-07-22').answered).toBe(6);
+    expect(accountSnapshot.summary.answered).toBe(5);
+    expect(accountSnapshot.questionTotals).toEqual({});
+    service.switchScope('guest');
+    expect(service.getDashboard('2026-07-22').answered).toBe(1);
+    expect(new ProgressService(repository).getDashboard('2026-07-22').answered).toBe(1);
+  });
   it('counts wrong answers and retains history after mastery', () => {
     const { service } = createService();
     service.recordAnswer({ questionId: 'Q1', correct: false, durationMs: 800, at: '2026-07-22' });
@@ -319,7 +347,7 @@ describe('ProgressService', () => {
     const storage = new MemoryStorageAdapter();
     const futureData = {
       ...createEmptyProgress(),
-      schemaVersion: 4,
+      schemaVersion: 5,
       futureOnlyField: { keep: 'verbatim' },
     };
     storage.set(STORAGE_KEY, futureData);
@@ -329,7 +357,7 @@ describe('ProgressService', () => {
     expect(service.consumeRecoveryNotice()).toMatch(/备份/);
     expect(storage.get(RECOVERY_BACKUP_KEY)).toEqual({
       capturedAt: 5678,
-      reason: 'unsupported learning data schema version 4',
+      reason: 'unsupported learning data schema version 5',
       value: futureData,
     });
     expect(storage.get(STORAGE_KEY)).toEqual(createEmptyProgress());
@@ -363,7 +391,7 @@ describe('ProgressService', () => {
       answerRevealMode: 'immediate',
     });
     expect(storage.get(STORAGE_KEY)).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       preferences: service.getPreferences(),
     });
     expect(storage.get(RECOVERY_BACKUP_KEY)).toBeNull();

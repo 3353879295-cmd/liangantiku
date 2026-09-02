@@ -84,6 +84,27 @@ describe('progress migrations', () => {
     expect(migrateProgress(data)).toEqual({ data, recovered: false });
   });
 
+  it('aggregates legacy answer history into the current snapshot', () => {
+    const legacy = {
+      ...createVersionTwoProgressFixture(),
+      answers: [
+        { questionId: 'Q1', correct: true, durationMs: 1200, at: '2026-07-20' },
+        { questionId: 'Q1', correct: false, durationMs: 800, at: '2026-07-22' },
+        { questionId: 'Q2', correct: true, durationMs: 500, at: '2026-07-21' },
+      ],
+    };
+
+    expect(migrateProgress(legacy).data).toMatchObject({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      summary: { answered: 3, correct: 2, durationMs: 2500, firstAnsweredAt: '2026-07-20' },
+      questionTotals: {
+        Q1: { attempts: 2, correctAttempts: 1 },
+        Q2: { attempts: 1, correctAttempts: 1 },
+      },
+      recentQuestionIds: ['Q2', 'Q1'],
+    });
+  });
+
   it('migrates version-one preferences without losing learning data', () => {
     const versionOne = {
       ...createVersionOneProgressFixture(),
@@ -100,7 +121,15 @@ describe('progress migrations', () => {
     const result = migrateProgress(versionOne);
 
     expect(result.recovered).toBe(false);
-    expect(result.data.answers).toEqual(versionOne.answers);
+    expect(result.data.summary).toEqual({
+      answered: 1,
+      correct: 1,
+      durationMs: 1200,
+      firstAnsweredAt: '2026-07-25',
+    });
+    expect(result.data.questionTotals).toEqual({
+      'WH-L5-000001': { attempts: 1, correctAttempts: 1 },
+    });
     expect(result.data.wrongQuestions).toEqual(versionOne.wrongQuestions);
     expect(result.data.favorites).toEqual(versionOne.favorites);
     expect(result.data.session).toEqual({
@@ -137,18 +166,26 @@ describe('progress migrations', () => {
   });
 
   it('returns a safe recovery result for a future schema version', () => {
-    const result = migrateProgress({ ...createEmptyProgress(), schemaVersion: 4 });
+    const result = migrateProgress({ ...createEmptyProgress(), schemaVersion: 5 });
 
     expect(result).toEqual({
       data: createEmptyProgress(),
       recovered: true,
-      reason: 'unsupported learning data schema version 4',
+      reason: 'unsupported learning data schema version 5',
     });
   });
 
-  it('repairs only a damaged current answer-reveal preference and preserves learning data', () => {
-    const damaged = createEmptyProgress();
-    damaged.favorites.Q1 = 1000;
+  it('repairs only a damaged version-three answer-reveal preference and preserves learning data', () => {
+    const damaged = {
+      ...createVersionTwoProgressFixture(),
+      schemaVersion: 3 as const,
+      session: null,
+      favorites: { Q1: 1000 },
+      preferences: {
+        ...createVersionTwoProgressFixture().preferences,
+        answerRevealMode: 'unknown',
+      },
+    };
     const result = migrateProgress({
       ...damaged,
       preferences: { ...damaged.preferences, answerRevealMode: 'unknown' },
@@ -159,14 +196,13 @@ describe('progress migrations', () => {
     expect(result.data.preferences.answerRevealMode).toBe('immediate');
   });
 
-  it('repairs a missing current answer-reveal preference without clearing learning data', () => {
-    const damaged = createEmptyProgress();
-    damaged.answers.push({
-      questionId: 'Q1',
-      correct: true,
-      durationMs: 1200,
-      at: '2026-07-25',
-    });
+  it('repairs a missing version-three answer-reveal preference without clearing learning data', () => {
+    const damaged = {
+      ...createVersionTwoProgressFixture(),
+      schemaVersion: 3 as const,
+      session: null,
+      answers: [{ questionId: 'Q1', correct: true, durationMs: 1200, at: '2026-07-25' }],
+    };
     const result = migrateProgress({
       ...damaged,
       preferences: {
@@ -179,7 +215,7 @@ describe('progress migrations', () => {
     });
 
     expect(result.recovered).toBe(true);
-    expect(result.data.answers).toEqual(damaged.answers);
+    expect(result.data.summary.answered).toBe(1);
     expect(result.data.preferences.answerRevealMode).toBe('immediate');
   });
 
