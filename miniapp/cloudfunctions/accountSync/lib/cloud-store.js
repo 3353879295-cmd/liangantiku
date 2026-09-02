@@ -14,18 +14,12 @@ class CloudStore {
   }
 
   async getAccount(id) {
-    const result = await this.database
-      .collection('user_accounts')
-      .doc(id)
-      .get({ throwOnNotFound: false });
+    const result = await this.database.collection('user_accounts').doc(id).get();
     return CloudStore.withoutDocumentId(result.data);
   }
 
   async getProgress(id) {
-    const result = await this.database
-      .collection('user_progress')
-      .doc(id)
-      .get({ throwOnNotFound: false });
+    const result = await this.database.collection('user_progress').doc(id).get();
     return CloudStore.withoutDocumentId(result.data);
   }
 
@@ -77,10 +71,7 @@ class CloudStore {
   }
 
   async getRecord(id) {
-    const result = await this.database
-      .collection('user_practice_records')
-      .doc(id)
-      .get({ throwOnNotFound: false });
+    const result = await this.database.collection('user_practice_records').doc(id).get();
     return CloudStore.withoutDocumentId(result.data);
   }
 

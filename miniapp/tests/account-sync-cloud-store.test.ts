@@ -51,7 +51,7 @@ describe('accountSync CloudStore', () => {
     expect(work).toHaveBeenCalledTimes(1);
   });
 
-  it('uses the wx-server-sdk missing-document option and returns null for each absent document', async () => {
+  it('returns null for each absent document without adding unsupported document.get options', async () => {
     const get = vi.fn().mockResolvedValue({ data: null });
     const doc = vi.fn().mockReturnValue({ get });
     const collection = vi.fn().mockReturnValue({ doc });
@@ -62,9 +62,9 @@ describe('accountSync CloudStore', () => {
     await expect(store.getRecord('first_record_hash')).resolves.toBeNull();
 
     expect(get).toHaveBeenCalledTimes(3);
-    expect(get).toHaveBeenNthCalledWith(1, { throwOnNotFound: false });
-    expect(get).toHaveBeenNthCalledWith(2, { throwOnNotFound: false });
-    expect(get).toHaveBeenNthCalledWith(3, { throwOnNotFound: false });
+    expect(get).toHaveBeenNthCalledWith(1);
+    expect(get).toHaveBeenNthCalledWith(2);
+    expect(get).toHaveBeenNthCalledWith(3);
     expect(collection).toHaveBeenNthCalledWith(1, 'user_accounts');
     expect(collection).toHaveBeenNthCalledWith(2, 'user_progress');
     expect(collection).toHaveBeenNthCalledWith(3, 'user_practice_records');

@@ -6,7 +6,7 @@ const { createHandler } = require('./lib/handler');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 const handler = createHandler({
-  store: new CloudStore(cloud.database()),
+  store: new CloudStore(cloud.database({ throwOnNotFound: false })),
   hash: createAccountKey,
 });
 
