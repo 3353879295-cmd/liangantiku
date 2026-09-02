@@ -14,13 +14,28 @@ class CloudStore {
   }
 
   async getAccount(id) {
-    const result = await this.database.collection('user_accounts').doc(id).get();
-    return result.data || null;
+    const result = await this.database
+      .collection('user_accounts')
+      .doc(id)
+      .get({ throwOnNotFound: false });
+    return CloudStore.withoutDocumentId(result.data);
   }
 
   async getProgress(id) {
-    const result = await this.database.collection('user_progress').doc(id).get();
-    return result.data || null;
+    const result = await this.database
+      .collection('user_progress')
+      .doc(id)
+      .get({ throwOnNotFound: false });
+    return CloudStore.withoutDocumentId(result.data);
+  }
+
+  static withoutDocumentId(data) {
+    if (!data) {
+      return null;
+    }
+    const value = { ...data };
+    delete value._id;
+    return value;
   }
 
   async createAccount(id, value) {
@@ -48,7 +63,7 @@ class CloudStore {
       .collection('user_accounts')
       .doc(id)
       .update({
-        data: { ...value, updated_at: this.serverDate() },
+        data: { ...CloudStore.withoutDocumentId(value), updated_at: this.serverDate() },
       });
   }
 
@@ -57,13 +72,16 @@ class CloudStore {
       .collection('user_progress')
       .doc(id)
       .update({
-        data: { ...value, updated_at: this.serverDate() },
+        data: { ...CloudStore.withoutDocumentId(value), updated_at: this.serverDate() },
       });
   }
 
   async getRecord(id) {
-    const result = await this.database.collection('user_practice_records').doc(id).get();
-    return result.data || null;
+    const result = await this.database
+      .collection('user_practice_records')
+      .doc(id)
+      .get({ throwOnNotFound: false });
+    return CloudStore.withoutDocumentId(result.data);
   }
 
   async createRecord(id, value) {
