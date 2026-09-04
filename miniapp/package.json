@@ -5,11 +5,13 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && stylelint \"miniprogram/**/*.wxss\"",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . --check-ignore-pragma",
+    "format:check": "prettier --check . --check-ignore-pragma",
     "check:package": "vitest run tests/main-package-budget.test.ts",
+    "build:account-sync": "node scripts/build-account-sync-cloud-function.mjs",
+    "check:account-sync": "node scripts/build-account-sync-cloud-function.mjs --check",
     "test": "vitest run",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:package && npm run test",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:package && npm run check:account-sync && npm run test",
     "prepare:runtime-deps": "node scripts/prepare-miniprogram-runtime-deps.mjs",
     "postinstall": "npm run prepare:runtime-deps",
     "sync:questions": "node scripts/sync-question-bank.mjs && npm run prepare:runtime-deps"
@@ -20,6 +22,7 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "26.1.1",
+    "esbuild": "0.28.2",
     "eslint": "10.7.0",
     "miniprogram-api-typings": "5.2.1",
     "prettier": "3.9.6",

@@ -19,6 +19,9 @@ const ACTION_FIELDS = {
   clearLearningData: ['action', 'schemaVersion'],
   deleteAccount: ['action', 'schemaVersion'],
 };
+// WeChat CloudBase injects these transport metadata fields into every Mini Program call.
+// They are permitted at the boundary but never used as identity or business input.
+const PLATFORM_EVENT_FIELDS = new Set(['tcbContext', 'userInfo']);
 const AVATAR_PATHS = new Set([
   '/assets/avatars/granary.svg',
   '/assets/avatars/wheat.svg',
@@ -27,6 +30,8 @@ const AVATAR_PATHS = new Set([
 ]);
 
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+const isKnownAction = (action) =>
+  typeof action === 'string' && Object.prototype.hasOwnProperty.call(ACTION_FIELDS, action);
 const invalid = () => {
   throw new AccountSyncError('INVALID_REQUEST');
 };
@@ -45,7 +50,11 @@ const validateEvent = (event) => {
   if (!isRecord(event) || typeof event.action !== 'string') invalid();
   if (event.schemaVersion !== 1) throw new AccountSyncError('SCHEMA_INCOMPATIBLE');
   const allowed = ACTION_FIELDS[event.action];
-  if (!allowed || Object.keys(event).some((key) => !allowed.includes(key))) invalid();
+  if (
+    !allowed ||
+    Object.keys(event).some((key) => !allowed.includes(key) && !PLATFORM_EVENT_FIELDS.has(key))
+  )
+    invalid();
   if (
     !['bootstrap', 'clearLearningData', 'deleteAccount'].includes(event.action) &&
     !isRevision(event.expectedRevision)
@@ -167,6 +176,7 @@ const validatePractice = (event) => {
 };
 
 module.exports = {
+  isKnownAction,
   validateEvent,
   validateProfile,
   validatePreferences,

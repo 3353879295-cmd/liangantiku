@@ -63,9 +63,11 @@ describe('account sync security boundary', () => {
     expect(operations).toContain('无权限');
     expect(operations).toContain('accountSync');
     expect(operations).toContain('Node.js 20');
-    expect(operations).toContain('wx-server-sdk 3.0.1');
+    expect(operations).toContain('wx-server-sdk 4.0.2');
     expect(operations).toContain('不会修改任何计费设置');
     expect(operations).toContain('不需要 AppSecret、SecretId 或 SecretKey');
-    expect(operations).toContain('未取得明确确认前，不执行任何云端操作');
+    expect(operations).toContain(
+      '任何新增资源、数据写入、删除、权限变化、触发器、环境变量或计费变更仍须重新确认',
+    );
   });
 });

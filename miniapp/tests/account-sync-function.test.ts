@@ -11,6 +11,9 @@ const { createHandler } = require('../cloudfunctions/accountSync/lib/handler.js'
     hash: (appId: string, openId: string) => string;
   }) => (event: unknown, context?: unknown) => Promise<unknown>;
 };
+const { isKnownAction } = require('../cloudfunctions/accountSync/lib/validation.js') as {
+  isKnownAction: (action: unknown) => boolean;
+};
 
 const createStore = (
   options: { failCreateProgress?: boolean; failRemoveRecordsOnce?: boolean } = {},
@@ -119,6 +122,13 @@ const fillQuestionTotalsPastResponseLimit = (store: ReturnType<typeof createStor
 };
 
 describe('accountSync handler', () => {
+  it('uses the request action whitelist for safe logging', () => {
+    expect(isKnownAction('bootstrap')).toBe(true);
+    expect(isKnownAction('deleteAccount')).toBe(true);
+    expect(isKnownAction('openid-sensitive-value')).toBe(false);
+    expect(isKnownAction(null)).toBe(false);
+  });
+
   it('derives the stable SHA-256 account key from app ID and open ID', () => {
     expect(createAccountKey('wx-test', 'openid-test')).toBe(
       'e69e0e04e995205840d0516d710afb99484fac2acfb95f97b249d1fffb80c1ad',
@@ -223,6 +233,20 @@ describe('accountSync handler', () => {
         error: { code: 'INVALID_REQUEST' },
       });
     }
+
+    const hash = vi.fn(() => 'platform-metadata');
+    const platformHandler = createHandler({ store: createStore(), hash });
+    await expect(
+      platformHandler(
+        {
+          ...bootstrap,
+          tcbContext: { OPENID: 'forged-tcb-openid' },
+          userInfo: { openId: 'forged-user-openid' },
+        },
+        context,
+      ),
+    ).resolves.toMatchObject({ ok: true });
+    expect(hash).toHaveBeenCalledWith(context.APPID, context.OPENID);
 
     await expect(handler(bootstrap, { APPID: '', OPENID: 'openid-test' })).resolves.toEqual({
       ok: false,
