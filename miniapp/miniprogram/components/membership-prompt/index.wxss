@@ -1,0 +1,63 @@
+.membership-prompt {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  background: rgb(0 0 0 / 45%);
+}
+
+.membership-prompt__panel {
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+  padding: 38rpx 30rpx calc(34rpx + env(safe-area-inset-bottom));
+  border-radius: 32rpx 32rpx 0 0;
+  background: var(--color-surface);
+  box-sizing: border-box;
+}
+
+.membership-prompt__title {
+  font-size: 32rpx;
+  font-weight: 680;
+}
+
+.membership-prompt__body {
+  display: block;
+  margin-top: 16rpx;
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+  line-height: 1.65;
+}
+
+.membership-prompt__actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 32rpx;
+}
+
+.membership-prompt__later,
+.membership-prompt__confirm {
+  min-height: 44px;
+  flex: 1;
+  margin: 0;
+  border-radius: var(--radius-md);
+  font-size: 24rpx;
+  line-height: 84rpx;
+}
+
+.membership-prompt__later {
+  background: var(--color-surface-secondary);
+  color: var(--color-text);
+}
+
+.membership-prompt__confirm {
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-weight: 680;
+}
+
+.membership-prompt__later::after,
+.membership-prompt__confirm::after {
+  border: 0;
+}

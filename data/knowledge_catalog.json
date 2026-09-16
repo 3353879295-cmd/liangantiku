@@ -785,9 +785,9 @@
       "title": "粮油质量检验员",
       "parts": [
         {
-          "id": "inspector",
+          "id": "inspector-basic",
           "number": 1,
-          "title": "粮油质检员知识目录",
+          "title": "基础知识",
           "levels": [
             5,
             4,
@@ -795,161 +795,992 @@
           ],
           "chapters": [
             {
-              "id": "inspector-c01",
+              "id": "inspector-basic-c01",
               "number": 1,
-              "title": "职业道德与实验室安全",
+              "title": "农产品食品检验员职业守则",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c01-s01",
+                  "id": "inspector-basic-c01-s01",
                   "number": 1,
-                  "title": "实验室安全规范",
+                  "title": "职业道德",
                   "page": null
                 },
                 {
-                  "id": "inspector-c01-s02",
+                  "id": "inspector-basic-c01-s02",
                   "number": 2,
-                  "title": "检验职业道德",
+                  "title": "职业守则",
                   "page": null
                 }
               ]
             },
             {
-              "id": "inspector-c02",
+              "id": "inspector-basic-c02",
               "number": 2,
-              "title": "扦样分样与样品制备",
+              "title": "粮食形态与化学组成",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c02-s01",
+                  "id": "inspector-basic-c02-s01",
                   "number": 1,
-                  "title": "扦样方法",
+                  "title": "主要粮食品种的形态",
                   "page": null
                 },
                 {
-                  "id": "inspector-c02-s02",
+                  "id": "inspector-basic-c02-s02",
                   "number": 2,
-                  "title": "样品制备",
+                  "title": "粮食的主要化学成分",
                   "page": null
                 }
               ]
             },
             {
-              "id": "inspector-c03",
+              "id": "inspector-basic-c03",
               "number": 3,
-              "title": "试剂器皿与仪器",
+              "title": "粮油标准基础知识",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c03-s01",
+                  "id": "inspector-basic-c03-s01",
                   "number": 1,
-                  "title": "试剂管理",
+                  "title": "标准及标准化基础知识",
                   "page": null
                 },
                 {
-                  "id": "inspector-c03-s02",
+                  "id": "inspector-basic-c03-s02",
                   "number": 2,
-                  "title": "仪器校准",
+                  "title": "主要粮油标准",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c03-s03",
+                  "number": 3,
+                  "title": "\"中国好粮油\"标准",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c03-s04",
+                  "number": 4,
+                  "title": "执行粮油质量国家标准的有关规定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c03-s05",
+                  "number": 5,
+                  "title": "粮油储藏过程质量管理要求",
                   "page": null
                 }
               ]
             },
             {
-              "id": "inspector-c04",
+              "id": "inspector-basic-c04",
               "number": 4,
-              "title": "粮油质量指标",
+              "title": "粮油检验基础",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c04-s01",
+                  "id": "inspector-basic-c04-s01",
                   "number": 1,
-                  "title": "水分指标",
+                  "title": "计量基础知识",
                   "page": null
                 },
                 {
-                  "id": "inspector-c04-s02",
+                  "id": "inspector-basic-c04-s02",
                   "number": 2,
-                  "title": "杂质指标",
+                  "title": "粮油检验概述",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c04-s03",
+                  "number": 3,
+                  "title": "粮油检验方法",
                   "page": null
                 }
               ]
             },
             {
-              "id": "inspector-c05",
+              "id": "inspector-basic-c05",
               "number": 5,
-              "title": "理化检验方法",
+              "title": "安全操作",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c05-s01",
+                  "id": "inspector-basic-c05-s01",
                   "number": 1,
-                  "title": "水分测定",
+                  "title": "实验室安全操作",
                   "page": null
                 },
                 {
-                  "id": "inspector-c05-s02",
+                  "id": "inspector-basic-c05-s02",
                   "number": 2,
-                  "title": "杂质测定",
+                  "title": "实验室常见事故的处理",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c05-s03",
+                  "number": 3,
+                  "title": "环境保护知识",
                   "page": null
                 }
               ]
             },
             {
-              "id": "inspector-c06",
+              "id": "inspector-basic-c06",
               "number": 6,
-              "title": "储存品质与安全指标",
+              "title": "相关法律、法规及管理办法",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c06-s01",
+                  "id": "inspector-basic-c06-s01",
                   "number": 1,
-                  "title": "储存品质判定",
+                  "title": "《中华人民共和国劳动法》的相关知识",
                   "page": null
                 },
                 {
-                  "id": "inspector-c06-s02",
+                  "id": "inspector-basic-c06-s02",
                   "number": 2,
-                  "title": "食品安全指标",
+                  "title": "《中华人民共和国食品安全法》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s03",
+                  "number": 3,
+                  "title": "《中华人民共和国农产品质量安全法》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s04",
+                  "number": 4,
+                  "title": "《中华人民共和国产品质量法》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s05",
+                  "number": 5,
+                  "title": "《中华人民共和国标准化法》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s06",
+                  "number": 6,
+                  "title": "《中华人民共和国计量法》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s07",
+                  "number": 7,
+                  "title": "《粮食质量安全监管办法》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s08",
+                  "number": 8,
+                  "title": "《粮食流通管理条例》的相关知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-basic-c06-s09",
+                  "number": 9,
+                  "title": "《中央储备粮管理条例》的相关知识",
                   "page": null
                 }
               ]
-            },
+            }
+          ]
+        },
+        {
+          "id": "inspector-l5",
+          "number": 2,
+          "title": "初级农产品食品检验员",
+          "levels": [
+            5
+          ],
+          "chapters": [
             {
-              "id": "inspector-c07",
+              "id": "inspector-l5-c07",
               "number": 7,
-              "title": "数据处理与质量控制",
+              "title": "粮油样品的准备",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c07-s01",
+                  "id": "inspector-l5-c07-s01",
                   "number": 1,
-                  "title": "检验数据处理",
+                  "title": "样品的意义与分类",
                   "page": null
                 },
                 {
-                  "id": "inspector-c07-s02",
+                  "id": "inspector-l5-c07-s02",
                   "number": 2,
-                  "title": "质量控制样",
+                  "title": "粮食、油料扦样用具及扦样方法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c07-s03",
+                  "number": 3,
+                  "title": "油脂扦样用具及扦样方法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c07-s04",
+                  "number": 4,
+                  "title": "样品的分样与保管",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c07-s05",
+                  "number": 5,
+                  "title": "样品的制备",
                   "page": null
                 }
               ]
             },
             {
-              "id": "inspector-c08",
+              "id": "inspector-l5-c08",
               "number": 8,
-              "title": "检验记录与报告",
+              "title": "检验准备",
               "page": null,
               "sections": [
                 {
-                  "id": "inspector-c08-s01",
+                  "id": "inspector-l5-c08-s01",
                   "number": 1,
-                  "title": "原始记录",
+                  "title": "玻璃器具使用与维护",
                   "page": null
                 },
                 {
-                  "id": "inspector-c08-s02",
+                  "id": "inspector-l5-c08-s02",
                   "number": 2,
-                  "title": "检验报告",
+                  "title": "实验室通用仪器设备使用与维护",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c08-s03",
+                  "number": 3,
+                  "title": "实验室专用仪器设备使用与维护",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l5-c09",
+              "number": 9,
+              "title": "原粮、油料物理检验",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l5-c09-s01",
+                  "number": 1,
+                  "title": "色泽、气味、口味鉴定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s02",
+                  "number": 2,
+                  "title": "类型及互混测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s03",
+                  "number": 3,
+                  "title": "小麦硬度指数测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s04",
+                  "number": 4,
+                  "title": "杂质、不完善粒及有害籽粒测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s05",
+                  "number": 5,
+                  "title": "纯粮(质)率、完整粒率测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s06",
+                  "number": 6,
+                  "title": "容重的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s07",
+                  "number": 7,
+                  "title": "稻谷出糙率的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s08",
+                  "number": 8,
+                  "title": "整精米率的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s09",
+                  "number": 9,
+                  "title": "稻米垩白度检验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c09-s10",
+                  "number": 10,
+                  "title": "黄粒米和裂纹粒检验",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l5-c10",
+              "number": 10,
+              "title": "成品粮物理检验",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l5-c10-s01",
+                  "number": 1,
+                  "title": "小麦粉加工精度的检验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c10-s02",
+                  "number": 2,
+                  "title": "粉类粗细度的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c10-s03",
+                  "number": 3,
+                  "title": "粉类含砂量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c10-s04",
+                  "number": 4,
+                  "title": "磁性金属物的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c10-s05",
+                  "number": 5,
+                  "title": "大米加工精度的检验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c10-s06",
+                  "number": 6,
+                  "title": "米类杂质及不完善粒的检验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c10-s07",
+                  "number": 7,
+                  "title": "碎米的检验",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l5-c11",
+              "number": 11,
+              "title": "植物油脂物理检验",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l5-c11-s01",
+                  "number": 1,
+                  "title": "透明度、气味、滋味的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s02",
+                  "number": 2,
+                  "title": "植物油脂色泽的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s03",
+                  "number": 3,
+                  "title": "植物油脂相对密度的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s04",
+                  "number": 4,
+                  "title": "植物油脂加热试验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s05",
+                  "number": 5,
+                  "title": "植物油脂冷冻试验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s06",
+                  "number": 6,
+                  "title": "植物油脂水分及挥发物的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s07",
+                  "number": 7,
+                  "title": "植物油脂不溶性杂质含量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c11-s08",
+                  "number": 8,
+                  "title": "植物油脂烟点测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l5-c12",
+              "number": 12,
+              "title": "粮食水分、灰分检验",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l5-c12-s01",
+                  "number": 1,
+                  "title": "水分的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c12-s02",
+                  "number": 2,
+                  "title": "灰分的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l5-c13",
+              "number": 13,
+              "title": "标签标示",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l5-c13-s01",
+                  "number": 1,
+                  "title": "预包装食品标签通则",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c13-s02",
+                  "number": 2,
+                  "title": "特殊标注内容",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c13-s03",
+                  "number": 3,
+                  "title": "外包装标志要求",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l5-c14",
+              "number": 14,
+              "title": "检验数据处理",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l5-c14-s01",
+                  "number": 1,
+                  "title": "原始记录规范",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l5-c14-s02",
+                  "number": 2,
+                  "title": "有效数字及数据修约规则",
+                  "page": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "inspector-l4",
+          "number": 3,
+          "title": "中级农产品食品检验员",
+          "levels": [
+            4
+          ],
+          "chapters": [
+            {
+              "id": "inspector-l4-c15",
+              "number": 15,
+              "title": "扦样方案制定与样品接收",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c15-s01",
+                  "number": 1,
+                  "title": "扦样方案的制定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c15-s02",
+                  "number": 2,
+                  "title": "样品接收",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l4-c16",
+              "number": 16,
+              "title": "检验仪器的准备",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c16-s01",
+                  "number": 1,
+                  "title": "常用玻璃计量仪器的使用与校准",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c16-s02",
+                  "number": 2,
+                  "title": "可见分光光度计",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c16-s03",
+                  "number": 3,
+                  "title": "凯氏定氮装置",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c16-s04",
+                  "number": 4,
+                  "title": "索氏抽提器与脂肪测定仪",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c16-s05",
+                  "number": 5,
+                  "title": "面筋测定仪",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c16-s06",
+                  "number": 6,
+                  "title": "降落数值仪",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l4-c17",
+              "number": 17,
+              "title": "滴定分析基础知识",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c17-s01",
+                  "number": 1,
+                  "title": "滴定分析方法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c17-s02",
+                  "number": 2,
+                  "title": "溶液的配制",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c17-s03",
+                  "number": 3,
+                  "title": "标准滴定溶液的制备",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l4-c18",
+              "number": 18,
+              "title": "粮食理化检验",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c18-s01",
+                  "number": 1,
+                  "title": "面筋含量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s02",
+                  "number": 2,
+                  "title": "粗蛋白含量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s03",
+                  "number": 3,
+                  "title": "淀粉含量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s04",
+                  "number": 4,
+                  "title": "直链淀粉含量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s05",
+                  "number": 5,
+                  "title": "粗脂肪含量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s06",
+                  "number": 6,
+                  "title": "脂肪酸值的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s07",
+                  "number": 7,
+                  "title": "蒸煮品质的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s08",
+                  "number": 8,
+                  "title": "胶稠度的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c18-s09",
+                  "number": 9,
+                  "title": "降落数值的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l4-c19",
+              "number": 19,
+              "title": "植物油脂化学检验",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c19-s01",
+                  "number": 1,
+                  "title": "油脂酸价的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c19-s02",
+                  "number": 2,
+                  "title": "油脂过氧化值的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c19-s03",
+                  "number": 3,
+                  "title": "植物油脂碘值的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c19-s04",
+                  "number": 4,
+                  "title": "油脂含皂量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c19-s05",
+                  "number": 5,
+                  "title": "油脂不皂化物的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l4-c20",
+              "number": 20,
+              "title": "粮油质量近红外快速检测",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c20-s01",
+                  "number": 1,
+                  "title": "近红外光谱分析的基础和应用特点",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c20-s02",
+                  "number": 2,
+                  "title": "粮食中几种成分的近红外快速检测",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l4-c21",
+              "number": 21,
+              "title": "检验结果数据处理",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l4-c21-s01",
+                  "number": 1,
+                  "title": "误差及数据处理基础知识",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c21-s02",
+                  "number": 2,
+                  "title": "数据处理的基本方法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l4-c21-s03",
+                  "number": 3,
+                  "title": "标准偏差及其计算",
+                  "page": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "inspector-l3",
+          "number": 4,
+          "title": "高级农产品食品检验员",
+          "levels": [
+            3
+          ],
+          "chapters": [
+            {
+              "id": "inspector-l3-c22",
+              "number": 22,
+              "title": "样品预处理技术",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c22-s01",
+                  "number": 1,
+                  "title": "待测组分的提取",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c22-s02",
+                  "number": 2,
+                  "title": "净化",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c22-s03",
+                  "number": 3,
+                  "title": "浓缩",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c23",
+              "number": 23,
+              "title": "仪器分析基础知识",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c23-s01",
+                  "number": 1,
+                  "title": "气相色谱法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c23-s02",
+                  "number": 2,
+                  "title": "原子吸收分光光度法",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c23-s03",
+                  "number": 3,
+                  "title": "分析仪器的维护与故障检修",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c24",
+              "number": 24,
+              "title": "实验磨粉机及粉质仪",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c24-s01",
+                  "number": 1,
+                  "title": "实验磨粉机",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c24-s02",
+                  "number": 2,
+                  "title": "粉质仪",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c25",
+              "number": 25,
+              "title": "小麦、小麦粉食用品质评价技术",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c25-s01",
+                  "number": 1,
+                  "title": "小麦制粉试验",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c25-s02",
+                  "number": 2,
+                  "title": "小麦粉面团流变学特性测试——粉质仪法",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c26",
+              "number": 26,
+              "title": "油脂脂肪酸组成与溶剂残留的测定",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c26-s01",
+                  "number": 1,
+                  "title": "油脂脂肪酸组成的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c26-s02",
+                  "number": 2,
+                  "title": "浸出油脂中残留溶剂的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c27",
+              "number": 27,
+              "title": "农药的测定",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c27-s01",
+                  "number": 1,
+                  "title": "磷化物的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c27-s02",
+                  "number": 2,
+                  "title": "有机氯农药残留量的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c27-s03",
+                  "number": 3,
+                  "title": "有机磷农药残留量的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c28",
+              "number": 28,
+              "title": "金属元素的测定",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c28-s01",
+                  "number": 1,
+                  "title": "粮油中钙的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c28-s02",
+                  "number": 2,
+                  "title": "粮油中铁的测定",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c28-s03",
+                  "number": 3,
+                  "title": "粮油中锌的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c29",
+              "number": 29,
+              "title": "黄曲霉毒素B₁的测定",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c29-s01",
+                  "number": 1,
+                  "title": "概述",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c29-s02",
+                  "number": 2,
+                  "title": "黄曲霉毒素B₁的测定",
+                  "page": null
+                }
+              ]
+            },
+            {
+              "id": "inspector-l3-c30",
+              "number": 30,
+              "title": "检验结果分析与处理",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-l3-c30-s01",
+                  "number": 1,
+                  "title": "检验误差分析",
+                  "page": null
+                },
+                {
+                  "id": "inspector-l3-c30-s02",
+                  "number": 2,
+                  "title": "回归分析",
+                  "page": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "inspector-import",
+          "number": 5,
+          "title": "质检员综合理论",
+          "levels": [
+            2,
+            1
+          ],
+          "chapters": [
+            {
+              "id": "inspector-import-c01",
+              "number": 1,
+              "title": "质检员综合理论",
+              "page": null,
+              "sections": [
+                {
+                  "id": "inspector-import-c01-s01",
+                  "number": 1,
+                  "title": "质检员综合理论",
                   "page": null
                 }
               ]

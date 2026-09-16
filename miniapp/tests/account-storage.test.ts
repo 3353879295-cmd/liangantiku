@@ -61,7 +61,23 @@ describe('account-scoped progress storage', () => {
     expect(repository.load('account').data).toEqual(createEmptyProgress());
     const account = createEmptyProgress();
     account.summary.answered = 7;
-    repository.save('account', account);
+    repository.saveAccountCache({
+      cacheVersion: 1,
+      schemaVersion: 1,
+      avatarUploadPathPrefix: `account-avatars/${'a'.repeat(64)}`,
+      profileRevision: 0,
+      progressRevision: 0,
+      syncedAt: '',
+      profile: {
+        nickname: account.preferences.nickname,
+        avatarUrl: account.preferences.avatarUrl,
+        selectedCertificateKey: account.preferences.selectedCertificateKey,
+        dailyGoal: account.preferences.dailyGoal,
+        answerTheme: account.preferences.answerTheme,
+        answerRevealMode: account.preferences.answerRevealMode,
+      },
+      progress: account,
+    });
 
     expect(repository.load('guest').data.summary.answered).toBe(3);
     expect(repository.load('account').data.summary.answered).toBe(7);
@@ -74,6 +90,7 @@ describe('account-scoped progress storage', () => {
     repository.saveAccountCache({
       cacheVersion: 1,
       schemaVersion: 1,
+      avatarUploadPathPrefix: `account-avatars/${'a'.repeat(64)}`,
       profileRevision: 3,
       progressRevision: 8,
       syncedAt: '2026-09-02T00:00:00.000Z',
@@ -94,10 +111,57 @@ describe('account-scoped progress storage', () => {
     expect(cache).toMatchObject({
       profileRevision: 3,
       progressRevision: 8,
+      avatarUploadPathPrefix: `account-avatars/${'a'.repeat(64)}`,
       profile: { nickname: '云端用户' },
     });
     expect(cache?.progress.summary.answered).toBe(2);
     if (cache) cache.progress.summary.answered = 99;
     expect(repository.loadAccountCache()?.progress.summary.answered).toBe(2);
+  });
+
+  it('accepts a normalized legacy account cache without avatar upload support', () => {
+    const storage = new MemoryStorageAdapter();
+    const repository = new ProgressRepository(storage);
+    const account = createEmptyProgress();
+    storage.set(ACCOUNT_CACHE_KEY, {
+      cacheVersion: 1,
+      schemaVersion: 1,
+      avatarUploadPathPrefix: '',
+      profileRevision: 0,
+      progressRevision: 0,
+      syncedAt: '',
+      profile: {
+        nickname: '旧缓存',
+        avatarUrl: '',
+        selectedCertificateKey: '4-02-06-01:5',
+        dailyGoal: 20,
+        answerTheme: 'light',
+        answerRevealMode: 'immediate',
+      },
+      progress: account,
+    });
+
+    account.summary.answered = 6;
+    expect(repository.load('account').data.summary.answered).toBe(6);
+    expect(repository.loadAccountCache()).toMatchObject({ avatarUploadPathPrefix: '' });
+  });
+
+  it('recovers a pre-upgrade account cache without a prefix but does not trust it for sync', () => {
+    const storage = new MemoryStorageAdapter();
+    const account = createEmptyProgress();
+    account.summary.answered = 6;
+    storage.set(ACCOUNT_CACHE_KEY, {
+      cacheVersion: 1,
+      schemaVersion: 1,
+      profileRevision: 0,
+      progressRevision: 0,
+      syncedAt: '',
+      profile: {},
+      progress: account,
+    });
+
+    const repository = new ProgressRepository(storage);
+    expect(repository.load('account').data.summary.answered).toBe(6);
+    expect(repository.loadAccountCache()).toBeNull();
   });
 });

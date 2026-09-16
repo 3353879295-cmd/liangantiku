@@ -9,15 +9,48 @@ import { appServices } from '../../services/app-services';
 import type { PracticeMode } from '../../types/domain';
 
 const pendingQuestionSelections = new WeakSet<object>();
+const pendingSubmissions = new WeakSet<object>();
+const visibleSheets = new WeakSet<object>();
+
+const redirectToReport = () =>
+  new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve();
+    };
+    const timeout = setTimeout(() => finish(new Error('页面跳转超时，请重试')), 5000);
+    try {
+      const result = wx.redirectTo({
+        url: '/pages/report/index',
+        success: () => finish(),
+        fail: () => finish(new Error('页面跳转失败，请重试')),
+        complete: () => finish(),
+      });
+      void Promise.resolve(result).catch(() => finish(new Error('页面跳转失败，请重试')));
+    } catch {
+      finish(new Error('页面跳转失败，请重试'));
+    }
+  });
 
 const createNavigationCallbacks = (page: object) => {
   let released = false;
-  const release = () => {
+  const release = (message?: string) => {
     if (released) return;
     released = true;
+    clearTimeout(timeout);
     pendingQuestionSelections.delete(page);
+    if (message && visibleSheets.has(page)) void wx.showToast({ title: message, icon: 'none' });
   };
-  return { success: release, fail: release, complete: release };
+  const timeout = setTimeout(() => release('页面跳转超时，请重试'), 5000);
+  return {
+    success: () => release(),
+    fail: () => release('页面跳转失败，请重试'),
+    complete: () => release(),
+  };
 };
 
 export const buildAnswerSheetSubmitModal = (
@@ -40,6 +73,7 @@ Page({
     modeText: '',
     answeredText: '',
     submitted: false,
+    submitting: false,
     submitText: '',
     theme: 'light',
     themeClass: '',
@@ -47,14 +81,32 @@ Page({
   },
 
   async onLoad() {
+    visibleSheets.add(this);
     this.syncTheme();
-    await restorePractice();
+    try {
+      await restorePractice();
+    } catch (error) {
+      void wx.showToast({
+        title: error instanceof Error ? error.message : '练习恢复失败，请重试',
+        icon: 'none',
+      });
+      return;
+    }
     this.renderSheet();
   },
 
   onShow() {
+    visibleSheets.add(this);
     this.syncTheme();
     if (getActivePractice()) this.renderSheet();
+  },
+
+  onHide() {
+    visibleSheets.delete(this);
+  },
+
+  onUnload() {
+    visibleSheets.delete(this);
   },
 
   syncTheme() {
@@ -100,30 +152,49 @@ Page({
     ) {
       return;
     }
+    visibleSheets.add(this);
     saveActivePractice(navigateToQuestion(session, index, Date.now()));
     pendingQuestionSelections.add(this);
     const callbacks = createNavigationCallbacks(this);
-    if (session.status === 'submitted') {
-      void wx.redirectTo({ url: '/pages/practice/index?resume=1', ...callbacks });
-      return;
+    try {
+      const result =
+        session.status === 'submitted'
+          ? wx.redirectTo({ url: '/pages/practice/index?resume=1', ...callbacks })
+          : wx.navigateBack(callbacks);
+      void Promise.resolve(result).catch(() => callbacks.fail());
+    } catch {
+      callbacks.fail();
     }
-    void wx.navigateBack(callbacks);
   },
 
   async onSubmit() {
+    if (pendingSubmissions.has(this)) return;
     const session = getActivePractice();
     if (!session) return;
-    const unanswered = getAnswerSheet(session).filter(
-      (item) => item.status === 'unanswered',
-    ).length;
-    const result = await wx.showModal(buildAnswerSheetSubmitModal(session.mode, unanswered));
-    if (!result.confirm) return;
-    const submitted = submitActivePractice();
-    if (!submitted?.report) {
-      void wx.showToast({ title: '提交失败，请稍后重试', icon: 'none' });
+    visibleSheets.add(this);
+    pendingSubmissions.add(this);
+    this.setData({ submitting: true });
+    try {
+      const unanswered = getAnswerSheet(session).filter(
+        (item) => item.status === 'unanswered',
+      ).length;
+      const result = await wx.showModal(buildAnswerSheetSubmitModal(session.mode, unanswered));
+      if (!result.confirm) return;
+      const submitted = submitActivePractice();
+      if (!submitted?.report) throw new Error('提交失败，请稍后重试');
+      await redirectToReport();
       return;
+    } catch (error) {
+      void wx.showToast({
+        title: error instanceof Error ? error.message : '提交失败，请稍后重试',
+        icon: 'none',
+      });
+    } finally {
+      if (pendingSubmissions.has(this)) {
+        pendingSubmissions.delete(this);
+        if (visibleSheets.has(this)) this.setData({ submitting: false });
+      }
     }
-    void wx.redirectTo({ url: '/pages/report/index' });
   },
 
   onToggleTheme() {

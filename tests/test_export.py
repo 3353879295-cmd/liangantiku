@@ -105,6 +105,8 @@ def test_export_json_shards_are_sorted_and_verified_only(tmp_path: Path):
         "inspector_l5.json": 0,
         "inspector_l4.json": 1,
         "inspector_l3.json": 0,
+        "inspector_l2.json": 0,
+        "inspector_l1.json": 0,
     }
     for filename in counts:
         records = json.loads((tmp_path / filename).read_text(encoding="utf-8"))
@@ -161,18 +163,26 @@ def test_export_json_shards_includes_verified_inspector_levels(tmp_path: Path):
                 level=level,
             )
         )
-        for level in (5, 4, 3)
+        for level in (5, 4, 3, 2, 1)
     ]
 
     counts = export_json_shards(questions, tmp_path)
 
     assert {
         filename: counts[filename]
-        for filename in ("inspector_l5.json", "inspector_l4.json", "inspector_l3.json")
+        for filename in (
+            "inspector_l5.json",
+            "inspector_l4.json",
+            "inspector_l3.json",
+            "inspector_l2.json",
+            "inspector_l1.json",
+        )
     } == {
         "inspector_l5.json": 1,
         "inspector_l4.json": 1,
         "inspector_l3.json": 1,
+        "inspector_l2.json": 1,
+        "inspector_l1.json": 1,
     }
     inspector_records = json.loads(
         (tmp_path / "inspector_l3.json").read_text(encoding="utf-8")

@@ -39,7 +39,7 @@ describe('certificate selector presenter', () => {
     ]);
   });
 
-  it('selects the quality inspector catalog and marks unreleased levels as pending', () => {
+  it('selects the quality inspector catalog with every released level ready to practice', () => {
     const view = presentCertificateSelector(CERTIFICATES, '4-08-05-01:3', '4-08-05-01');
 
     expect(view.summaryText).toBe('粮油质量检验员 · 高级');
@@ -58,8 +58,8 @@ describe('certificate selector presenter', () => {
       { key: '4-08-05-01:5', name: '初级', statusText: '', selected: false },
       { key: '4-08-05-01:4', name: '中级', statusText: '', selected: false },
       { key: '4-08-05-01:3', name: '高级', statusText: '', selected: true },
-      { key: '4-08-05-01:2', name: '技师', statusText: '待补充', selected: false },
-      { key: '4-08-05-01:1', name: '高级技师', statusText: '待补充', selected: false },
+      { key: '4-08-05-01:2', name: '技师', statusText: '', selected: false },
+      { key: '4-08-05-01:1', name: '高级技师', statusText: '', selected: false },
     ]);
   });
 

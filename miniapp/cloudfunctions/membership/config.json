@@ -1,0 +1,5 @@
+{
+  "triggers": [
+    { "name": "membership-reconcile-pending", "type": "timer", "config": "0 */10 * * * * *" }
+  ]
+}

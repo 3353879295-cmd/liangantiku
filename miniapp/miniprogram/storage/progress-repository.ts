@@ -52,6 +52,9 @@ export const isAccountCacheEnvelope = (value: unknown): value is AccountCacheEnv
   return (
     candidate.cacheVersion === 1 &&
     candidate.schemaVersion === ACCOUNT_SYNC_SCHEMA_VERSION &&
+    typeof candidate.avatarUploadPathPrefix === 'string' &&
+    (candidate.avatarUploadPathPrefix === '' ||
+      /^account-avatars\/[a-f0-9]{64}$/.test(candidate.avatarUploadPathPrefix)) &&
     Number.isInteger(candidate.profileRevision) &&
     Number(candidate.profileRevision) >= 0 &&
     Number.isInteger(candidate.progressRevision) &&
@@ -62,15 +65,32 @@ export const isAccountCacheEnvelope = (value: unknown): value is AccountCacheEnv
   );
 };
 
+const isLocalAccountProjection = (value: unknown): value is { progress: CurrentProgressData } => {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const candidate = value as {
+    cacheVersion?: unknown;
+    schemaVersion?: unknown;
+    avatarUploadPathPrefix?: unknown;
+    progress?: unknown;
+  };
+  return (
+    candidate.cacheVersion === 1 &&
+    candidate.schemaVersion === ACCOUNT_SYNC_SCHEMA_VERSION &&
+    (candidate.avatarUploadPathPrefix === '' || candidate.avatarUploadPathPrefix === undefined) &&
+    isProgressDataV4(candidate.progress)
+  );
+};
+
 export const createAccountCacheEnvelope = (
   progress: AccountProgressSnapshot,
   metadata?: Pick<
     AccountCacheEnvelope,
-    'profileRevision' | 'progressRevision' | 'syncedAt' | 'profile'
+    'avatarUploadPathPrefix' | 'profileRevision' | 'progressRevision' | 'syncedAt' | 'profile'
   >,
 ): AccountCacheEnvelope => ({
   cacheVersion: 1,
   schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,
+  avatarUploadPathPrefix: metadata?.avatarUploadPathPrefix ?? '',
   profileRevision: metadata?.profileRevision ?? 0,
   progressRevision: metadata?.progressRevision ?? 0,
   syncedAt: metadata?.syncedAt ?? '',
@@ -92,6 +112,9 @@ export class ProgressRepository {
     const storageKey = this.keyFor(scope);
     let value = this.storage.get<unknown>(storageKey);
     if (scope === 'account' && isAccountCacheEnvelope(value)) {
+      return { data: clone(value.progress), recovered: false };
+    }
+    if (scope === 'account' && isLocalAccountProjection(value)) {
       return { data: clone(value.progress), recovered: false };
     }
     let migratedLegacyValue = false;
@@ -129,6 +152,7 @@ export class ProgressRepository {
       ? {
           profileRevision: existing.profileRevision,
           progressRevision: existing.progressRevision,
+          avatarUploadPathPrefix: existing.avatarUploadPathPrefix,
           syncedAt: existing.syncedAt,
           profile: existing.profile,
         }

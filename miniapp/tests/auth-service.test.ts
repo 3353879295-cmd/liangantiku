@@ -32,6 +32,7 @@ class MemoryStorage implements StorageAdapter {
 
 const snapshot = (): AccountSyncSnapshot => ({
   schemaVersion: 1,
+  avatarUploadPathPrefix: `account-avatars/${'a'.repeat(64)}`,
   profileRevision: 0,
   progressRevision: 0,
   syncedAt: '2026-09-02T00:00:00.000Z',
@@ -52,7 +53,8 @@ const createAuth = (preference: 'undecided' | 'guest' | 'account' = 'undecided')
   const repository = new ProgressRepository(storage);
   const progress = new ProgressService(repository);
   const outbox = new SyncOutbox(storage);
-  const client: AccountSyncCaller = { call: () => Promise.resolve(snapshot()) };
+  const call = vi.fn(() => Promise.resolve(snapshot()));
+  const client: AccountSyncCaller = { call };
   const sync = new CloudSyncService(client, repository, outbox, {
     getScope: () => progress.getScope(),
   });
@@ -60,6 +62,7 @@ const createAuth = (preference: 'undecided' | 'guest' | 'account' = 'undecided')
     storage,
     progress,
     outbox,
+    call,
     auth: new AuthService(storage, progress, repository, outbox, sync, client as AccountSyncClient),
   };
 };
@@ -105,7 +108,9 @@ describe('AuthService', () => {
     const repository = new ProgressRepository(storage);
     const progress = new ProgressService(repository, 'account');
     const outbox = new SyncOutbox(storage);
-    const call = vi.fn(() => Promise.resolve(snapshot()));
+    const restored = snapshot();
+    restored.progress.preferences.nickname = restored.profile.nickname;
+    const call = vi.fn(() => Promise.resolve(restored));
     const client = { call } as unknown as AccountSyncClient;
     const sync = new CloudSyncService(client, repository, outbox, {
       getScope: () => progress.getScope(),
@@ -115,14 +120,29 @@ describe('AuthService', () => {
     await auth.initialize();
     expect(call).toHaveBeenCalledTimes(1);
     expect(call).toHaveBeenCalledWith({ action: 'bootstrap', schemaVersion: 1 });
+    expect(auth.getState()).toMatchObject({ status: 'authenticated', preference: 'account' });
+    expect(progress.getPreferences().nickname).toBe('云端用户');
   });
 
-  it('keeps undecided and guest startup local without calling cloud bootstrap', async () => {
-    const { auth, progress } = createAuth();
-    await auth.initialize();
-    expect(auth.getState()).toMatchObject({ status: 'guest', preference: 'undecided' });
-    expect(progress.getScope()).toBe('guest');
-  });
+  it.each(['undecided', 'guest'] as const)(
+    'keeps %s startup and foreground retries local without account bootstrap',
+    async (preference) => {
+      const { auth, progress, call } = createAuth(preference);
+      await Promise.all([auth.initialize(), auth.initialize()]);
+      await auth.retryBackground();
+      expect(auth.getState()).toMatchObject({ status: 'guest', preference });
+      expect(progress.getScope()).toBe('guest');
+      expect(call).not.toHaveBeenCalled();
+      progress.recordAnswer({
+        questionId: 'guest-q',
+        correct: true,
+        durationMs: 1,
+        at: '2026-09-07',
+      });
+      expect(progress.getDashboard('2026-09-07').answered).toBe(1);
+      expect(call).not.toHaveBeenCalled();
+    },
+  );
 
   it('restores an account archive without reading the guest archive', async () => {
     const { auth, progress } = createAuth('account');
@@ -492,4 +512,102 @@ describe('AuthService', () => {
     expect(progress.getScope()).toBe('guest');
     expect(progress.getDashboard('2026-09-02').answered).toBe(3);
   });
+
+  it('keeps local account state until a cloud avatar is removed after server deletion', async () => {
+    const storage = new MemoryStorage();
+    storage.set(AUTH_PREFERENCE_KEY, 'account');
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    const progress = new ProgressService(repository, 'account');
+    const outbox = new SyncOutbox(storage);
+    const client = {
+      call: vi.fn((request: { action: string }) =>
+        request.action === 'bootstrap'
+          ? Promise.resolve(snapshot())
+          : Promise.resolve({ schemaVersion: 1, done: true, stage: 'done' as const }),
+      ),
+    } as unknown as AccountSyncClient;
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+    });
+    const avatarFiles = {
+      remove: vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined),
+    };
+    const auth = new AuthService(
+      storage,
+      progress,
+      repository,
+      outbox,
+      sync,
+      client,
+      4,
+      avatarFiles,
+    );
+    await auth.initialize();
+    const avatarUrl = `cloud://cloud1-d2gglad830c91db10/account-avatars/${'a'.repeat(64)}.jpg`;
+    progress.updatePreferences({ avatarUrl });
+
+    await expect(auth.deleteAccount()).resolves.toBe(false);
+    expect(repository.loadAccountCache()).not.toBeNull();
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
+    await expect(auth.deleteAccount()).resolves.toBe(true);
+    expect(avatarFiles.remove).toHaveBeenCalledTimes(2);
+    expect(avatarFiles.remove).toHaveBeenLastCalledWith(avatarUrl);
+    expect(repository.loadAccountCache()).toBeNull();
+  });
+
+  it('keeps an account cache when pending-free logout cannot clean an orphan avatar registry', async () => {
+    const storage = new MemoryStorage();
+    storage.set(AUTH_PREFERENCE_KEY, 'account');
+    const repository = new ProgressRepository(storage);
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    const progress = new ProgressService(repository, 'account');
+    const outbox = new SyncOutbox(storage);
+    const client = {
+      call: vi.fn(() => Promise.resolve(snapshot())),
+    } as unknown as AccountSyncClient;
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+    });
+    const avatars = { remove: vi.fn(), reconcile: vi.fn().mockResolvedValueOnce(undefined) };
+    const auth = new AuthService(storage, progress, repository, outbox, sync, client, 4, avatars);
+    await auth.initialize();
+    avatars.reconcile.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined);
+
+    await expect(auth.logout()).resolves.toEqual({ needsDecision: true });
+    expect(repository.loadAccountCache()).not.toBeNull();
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
+    await expect(auth.logout()).resolves.toEqual({ needsDecision: false });
+    expect(repository.loadAccountCache()).toBeNull();
+  });
+
+  it.each(['initialize', 'login', 'retry'] as const)(
+    'keeps %s successful when background avatar reconciliation fails',
+    async (operation) => {
+      const storage = new MemoryStorage();
+      if (operation !== 'login') storage.set(AUTH_PREFERENCE_KEY, 'account');
+      const repository = new ProgressRepository(storage);
+      if (operation !== 'login') repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+      const progress = new ProgressService(repository, operation === 'login' ? 'guest' : 'account');
+      const outbox = new SyncOutbox(storage);
+      const client = {
+        call: vi.fn(() => Promise.resolve(snapshot())),
+      } as unknown as AccountSyncClient;
+      const sync = new CloudSyncService(client, repository, outbox, {
+        getScope: () => progress.getScope(),
+      });
+      const avatars = {
+        remove: vi.fn(),
+        reconcile: vi.fn().mockRejectedValue(new Error('offline')),
+      };
+      const auth = new AuthService(storage, progress, repository, outbox, sync, client, 4, avatars);
+
+      if (operation === 'initialize')
+        await expect(auth.initialize()).resolves.toMatchObject({ status: 'authenticated' });
+      else if (operation === 'login') await expect(auth.login()).resolves.toBe(true);
+      else await expect(auth.retry()).resolves.toBe(true);
+      expect(avatars.reconcile).toHaveBeenCalled();
+      expect(repository.loadAccountCache()).not.toBeNull();
+    },
+  );
 });

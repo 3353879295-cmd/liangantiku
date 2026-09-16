@@ -4,6 +4,7 @@ import { dirname, extname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import CLASSIFICATION_MANIFEST from '../../data/warehouse_classification_manifest.json';
+import INSPECTOR_SYNC_REPORT from '../../data/inspector_cloud_sync_report.json';
 import { RUNTIME_QUESTION_RECORDS } from '../miniprogram/data/questions/runtime-question-records';
 
 const miniappRoot = resolve(import.meta.dirname, '..', 'miniprogram');
@@ -17,6 +18,8 @@ const PUBLISHED_SOURCE_SHARDS = [
   'inspector_l5.jsonl',
   'inspector_l4.jsonl',
   'inspector_l3.jsonl',
+  'inspector_l2.jsonl',
+  'inspector_l1.jsonl',
 ] as const;
 
 const readJson = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
@@ -148,6 +151,28 @@ const readLossyWebpSize = (path: string) => {
 };
 
 describe('WeChat mini program structure', () => {
+  it('keeps personal information optional and the login route behind the profile action', () => {
+    const profileSource = join(miniappRoot, 'pages', 'profile', 'index.ts');
+    const avatarMarkup = join(miniappRoot, 'pages', 'account-entry', 'index.wxml');
+    const nicknameMarkup = join(
+      miniappRoot,
+      'packages',
+      'auxiliary',
+      'pages',
+      'edit-profile',
+      'index.wxml',
+    );
+    for (const path of collectSourceFiles(miniappRoot).filter((path) =>
+      /\.(ts|wxml)$/.test(path),
+    )) {
+      const source = readFileSync(path, 'utf8');
+      expect(source, path).not.toMatch(/getPhoneNumber|getUserProfile|getUserInfo/);
+      if (path !== profileSource) expect(source, path).not.toContain('/pages/account-entry/index');
+      if (path !== avatarMarkup) expect(source, path).not.toContain('open-type="chooseAvatar"');
+      if (path !== nicknameMarkup) expect(source, path).not.toContain('type="nickname"');
+    }
+  });
+
   it('maps npm dependencies into the configured miniprogram root', () => {
     const project = readJson<ProjectConfig>(join(projectRoot, 'project.config.json'));
 
@@ -288,6 +313,7 @@ describe('WeChat mini program structure', () => {
       { pagePath: 'pages/profile/index', text: '我的' },
     ]);
     expect(app.pages).toContain('pages/library/index');
+    expect(app.pages[0]).toBe('pages/home/index');
     expect(app.pages).toContain('pages/account-entry/index');
     expect(app.subPackages).toEqual([
       {
@@ -666,12 +692,12 @@ describe('WeChat mini program structure', () => {
     expect(reportSource).toContain('appServices.progress.getActivity');
     expect(reportSource).toContain('appServices.progress.getQuestionProgress');
     expect(reportSource).toContain('presentCatalogParts');
-    expect(memberMarkup).toContain('功能逐步开放');
-    expect(memberMarkup).toContain('name="book-open"');
-    expect(memberMarkup).not.toContain('name="books"');
+    expect(memberMarkup).toContain('¥28');
+    expect(memberMarkup).toContain('半年');
+    expect(memberMarkup).toContain('不限次数');
     expect(memberMarkup).not.toContain('requestPayment');
     expect(memberMarkup).not.toContain('立即支付');
-    expect(memberMarkup).not.toContain('立即开通');
+    expect(memberMarkup).toContain('立即开通');
 
     for (const source of [editSource, settingsSource, reportSource]) {
       expect(source).not.toContain('wx.getStorageSync');
@@ -753,7 +779,12 @@ describe('WeChat mini program structure', () => {
         count,
       ]),
     ) as Record<number, number>;
-    const expectedInspectorCounts = { 5: 8, 4: 8, 3: 8 } as const;
+    const expectedInspectorCounts = Object.fromEntries(
+      Object.entries(INSPECTOR_SYNC_REPORT.after_local_level_counts).map(([level, count]) => [
+        Number(level.slice(1)),
+        count,
+      ]),
+    ) as Record<number, number>;
     const expectedTotal =
       Object.values(expectedWarehouseCounts).reduce((total, count) => total + count, 0) +
       Object.values(expectedInspectorCounts).reduce((total, count) => total + count, 0);
@@ -793,7 +824,7 @@ describe('WeChat mini program structure', () => {
       expect(record.content_version).toBe(source?.content_version);
     }
 
-    expect(expectedTotal).toBe(3_629);
+    expect(expectedTotal).toBe(7_428);
     expect(ids.size).toBe(expectedTotal);
     expect(new Set(sourceIds)).toEqual(ids);
     expect(
@@ -808,7 +839,7 @@ describe('WeChat mini program structure', () => {
     ).toEqual(expectedWarehouseCounts);
     expect(
       Object.fromEntries(
-        [5, 4, 3].map((level) => [
+        [5, 4, 3, 2, 1].map((level) => [
           level,
           RUNTIME_QUESTION_RECORDS.filter(
             (record) => record.occupation === '4-08-05-01' && record.level === level,

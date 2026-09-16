@@ -6,6 +6,11 @@ node_modules/
 /.worktrees/
 *.egg-info/
 /dist/
+/dist_verify/
+/tmp/
+/miniapp/dist/
+/miniapp/tmp/
+/[[]key
 /miniapp/miniprogram_npm/
 /miniapp/miniprogram/miniprogram_npm/
 /miniapp/project.private.config.json

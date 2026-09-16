@@ -38,7 +38,7 @@
     </view>
 
     <view wx:if="{{!submitted}}" class="sheet-footer">
-      <button class="submit-button" bindtap="onSubmit">{{submitText}}</button>
+      <button class="submit-button" disabled="{{submitting}}" loading="{{submitting}}" bindtap="onSubmit">{{submitText}}</button>
     </view>
   </view>
 

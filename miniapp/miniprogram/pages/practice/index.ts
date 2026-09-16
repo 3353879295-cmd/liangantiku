@@ -16,7 +16,11 @@ import {
   startPractice,
 } from '../../services/practice-runtime';
 import { CERTIFICATES } from '../../data/certificates';
+import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
+import { QUESTION_RECORDS } from '../../data/question-bank';
 import { appServices } from '../../services/app-services';
+import { MembershipError } from '../../repositories/membership-client';
+import { presentMembership } from '../../presenters/membership-presenter';
 import { PRACTICE_QUESTION_LIMITS, QUESTION_TYPES } from '../../types/domain';
 import type {
   CertificateLevel,
@@ -39,6 +43,50 @@ const PRACTICE_LIMITS = new Set<string>(PRACTICE_QUESTION_LIMITS.map((limit) => 
 const QUESTION_TYPE_WHITELIST = new Set<string>(QUESTION_TYPES);
 const NAVIGATION_ANIMATION_DURATION_MS = 180;
 
+const belongsToCertificateCatalog = (
+  occupation: OccupationCode,
+  level: CertificateLevel,
+  chapterId?: string,
+  sectionId?: string,
+): boolean => {
+  if (chapterId && sectionId) return false;
+  const chapters = KNOWLEDGE_CATALOG.occupations[occupation]?.parts
+    .filter((part) => part.levels.includes(level))
+    .flatMap((part) => part.chapters);
+  if (!chapters) return false;
+  if (chapterId) return chapters.some((chapter) => chapter.id === chapterId);
+  if (sectionId)
+    return chapters.some((chapter) => chapter.sections.some((section) => section.id === sectionId));
+  return true;
+};
+
+const belongsToCertificateModule = (
+  occupation: OccupationCode,
+  level: CertificateLevel,
+  module?: string,
+): boolean =>
+  !module ||
+  QUESTION_RECORDS.some(
+    (question) =>
+      question.occupation === occupation && question.level === level && question.module === module,
+  );
+
+const hasMatchingRuntimeQuestion = (
+  occupation: OccupationCode,
+  level: CertificateLevel,
+  module?: string,
+  chapterId?: string,
+  sectionId?: string,
+): boolean =>
+  QUESTION_RECORDS.some(
+    (question) =>
+      question.occupation === occupation &&
+      question.level === level &&
+      (!module || question.module === module) &&
+      (!chapterId || question.chapter_id === chapterId) &&
+      (!sectionId || question.section_id === sectionId),
+  );
+
 interface TouchPoint {
   x: number;
   y: number;
@@ -52,6 +100,7 @@ interface PracticeInteractionState {
 }
 
 const practiceInteractionStates = new WeakMap<object, PracticeInteractionState>();
+const practiceRoutes = new WeakMap<object, Record<string, string | undefined>>();
 
 const getPracticeInteractionState = (page: object): PracticeInteractionState => {
   const current = practiceInteractionStates.get(page);
@@ -74,14 +123,20 @@ const openAnswerSheet = (page: object): void => {
   const release = () => {
     if (released) return;
     released = true;
+    clearTimeout(timer);
     state.answerSheetNavigationPending = false;
   };
+  const timer = setTimeout(release, 5000);
   const callbacks = { success: release, fail: release, complete: release };
-  if (session.status === 'submitted') {
-    void wx.redirectTo({ url: '/pages/answer-sheet/index', ...callbacks });
-    return;
+  try {
+    const result =
+      session.status === 'submitted'
+        ? wx.redirectTo({ url: '/pages/answer-sheet/index', ...callbacks })
+        : wx.navigateTo({ url: '/pages/answer-sheet/index', ...callbacks });
+    void Promise.resolve(result).catch(release);
+  } catch {
+    release();
   }
-  void wx.navigateTo({ url: '/pages/answer-sheet/index', ...callbacks });
 };
 
 const MODE_LABELS: Record<PracticeMode, string> = {
@@ -136,6 +191,18 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
       questionTypes = [...new Set(decodedTypes)] as QuestionType[];
     }
 
+    const module = options['module'] ? decodeURIComponent(options['module']) : undefined;
+    const chapterId = options['chapterId'] ? decodeURIComponent(options['chapterId']) : undefined;
+    const sectionId = options['sectionId'] ? decodeURIComponent(options['sectionId']) : undefined;
+    if (
+      !belongsToCertificateCatalog(occupation, level, chapterId, sectionId) ||
+      !belongsToCertificateModule(occupation, level, module) ||
+      ((module || chapterId || sectionId) &&
+        !hasMatchingRuntimeQuestion(occupation, level, module, chapterId, sectionId))
+    ) {
+      return null;
+    }
+
     return {
       resume: false,
       input: {
@@ -144,9 +211,9 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
         mode,
         ...(limit !== undefined ? { limit } : {}),
         ...(questionTypes ? { questionTypes } : {}),
-        ...(options['module'] ? { module: decodeURIComponent(options['module']) } : {}),
-        ...(options['chapterId'] ? { chapterId: decodeURIComponent(options['chapterId']) } : {}),
-        ...(options['sectionId'] ? { sectionId: decodeURIComponent(options['sectionId']) } : {}),
+        ...(module ? { module } : {}),
+        ...(chapterId ? { chapterId } : {}),
+        ...(sectionId ? { sectionId } : {}),
       },
     } as const;
   } catch {
@@ -157,6 +224,8 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
 Page({
   data: {
     loading: true,
+    freePracticeText: '',
+    memberPromptVisible: false,
     sessionReady: false,
     errorTitle: '',
     errorDescription: '',
@@ -186,6 +255,7 @@ Page({
   },
 
   async onLoad(options: Record<string, string | undefined>) {
+    practiceRoutes.set(this, options);
     this.syncTheme();
     const route = parsePracticeRoute(options);
     if (!route) {
@@ -196,9 +266,9 @@ Page({
       });
       return;
     }
-    void wx.showLoading({ title: '正在准备题目', mask: true });
     try {
-      const session = route.resume ? await restorePractice() : await startPractice(route.input);
+      const session = route.resume ? await restorePractice(true) : await startPractice(route.input);
+      if (practiceRoutes.get(this) !== options) return;
       if (!session) {
         this.setData({
           loading: false,
@@ -208,14 +278,16 @@ Page({
         return;
       }
       this.renderSession(session);
-    } catch {
+      if (session.mode === 'random') void this.refreshMembership();
+    } catch (error) {
+      if (practiceRoutes.get(this) !== options) return;
+      const membershipError = error instanceof MembershipError;
       this.setData({
         loading: false,
-        errorTitle: '题目加载失败',
-        errorDescription: '本地题库可能尚未同步，请返回后重试。',
+        errorTitle: membershipError ? '暂时无法开始练习' : '题目加载失败',
+        errorDescription: membershipError ? error.message : '本地题库可能尚未同步，请返回后重试。',
+        memberPromptVisible: membershipError && error.code === 'DAILY_LIMIT_REACHED',
       });
-    } finally {
-      void wx.hideLoading();
     }
   },
 
@@ -223,6 +295,35 @@ Page({
     this.syncTheme();
     const session = getActivePractice();
     if (this.data.sessionReady && session) this.renderSession(session);
+    if (this.data.sessionReady && session?.mode === 'random') void this.refreshMembership();
+  },
+
+  async refreshMembership() {
+    const options = practiceRoutes.get(this);
+    try {
+      const status = await appServices.membership.getStatus();
+      if (!options || practiceRoutes.get(this) !== options) return;
+      this.setData({ freePracticeText: presentMembership(status).freePracticeText });
+    } catch {
+      if (!options || practiceRoutes.get(this) !== options) return;
+      this.setData({ freePracticeText: '今日免费次数暂时无法查询' });
+    }
+  },
+
+  onCloseMemberPrompt() {
+    this.setData({ memberPromptVisible: false });
+  },
+
+  onRetryLoad() {
+    const options = practiceRoutes.get(this);
+    if (!options || this.data.loading) return;
+    this.setData({ loading: true });
+    void this.onLoad(options);
+  },
+
+  onOpenMember() {
+    this.setData({ memberPromptVisible: false });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/member/index' });
   },
 
   syncTheme() {
@@ -455,6 +556,7 @@ Page({
   },
 
   onUnload() {
+    practiceRoutes.delete(this);
     const state = getPracticeInteractionState(this);
     if (state.unlockTimer !== undefined) clearTimeout(state.unlockTimer);
     practiceInteractionStates.delete(this);

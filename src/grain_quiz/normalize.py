@@ -8,6 +8,24 @@ from grain_quiz.models import Question
 
 
 _MEASUREMENT_SYMBOLS = frozenset({"\u2103", "\u2109", "\u00b0", "%", "\u2030", "\u03bc", "\u00b5", "\u00d7"})
+_ION_SOURCE_SIGNS = frozenset({"+", "-", "\u2212"})
+
+
+def _is_ion_source_sign(value: str, index: int) -> bool:
+    """Return whether a sign terminates an uppercase ASCII ion-source token."""
+    if value[index] not in _ION_SOURCE_SIGNS:
+        return False
+    following_character = value[index + 1 : index + 2]
+    if following_character.isascii() and following_character.isalnum():
+        return False
+
+    uppercase_count = 0
+    for character in reversed(value[:index]):
+        if character.isascii() and character.isupper():
+            uppercase_count += 1
+            continue
+        break
+    return uppercase_count >= 2
 
 
 def normalize_text(value: str) -> str:
@@ -21,11 +39,15 @@ def normalize_text(value: str) -> str:
         protected = protected.replace(symbol, placeholder)
 
     restored = {placeholder: symbol for symbol, placeholder in placeholders.items()}
-    normalized = unicodedata.normalize("NFKC", protected).lower()
+    compatibility_normalized = unicodedata.normalize("NFKC", protected)
+    normalized = compatibility_normalized.lower()
     return "".join(
         restored.get(character, character)
-        for character in normalized
-        if character in restored or character.isalnum() or character in _MEASUREMENT_SYMBOLS
+        for index, character in enumerate(normalized)
+        if character in restored
+        or character.isalnum()
+        or character in _MEASUREMENT_SYMBOLS
+        or _is_ion_source_sign(compatibility_normalized, index)
     )
 
 

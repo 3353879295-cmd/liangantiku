@@ -1,6 +1,6 @@
 <view class="app-topbar">
   <button
-    wx:if="{{showBack}}"
+    wx:if="{{showBack && !hasNativeBack}}"
     class="app-topbar__back"
     aria-label="返回"
     hover-class="app-topbar__back--pressed"

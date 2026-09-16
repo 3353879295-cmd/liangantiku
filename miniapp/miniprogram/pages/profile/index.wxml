@@ -1,7 +1,7 @@
 <view class="page-shell profile-page">
   <view class="profile-header">
     <view class="profile-identity">
-      <image wx:if="{{avatarUrl}}" class="profile-avatar" src="{{avatarUrl}}" mode="aspectFill" />
+      <image wx:if="{{avatarUrl}}" class="profile-avatar" src="{{avatarUrl}}" mode="aspectFill" bind:error="onAvatarError" />
       <view wx:else class="profile-avatar profile-avatar--fallback">粮</view>
       <view class="profile-copy">
         <view class="profile-name">{{nickname}}</view>
@@ -21,17 +21,27 @@
   </view>
   <view wx:else class="account-status-card">
     <view class="account-status-card__title">{{syncText}}</view>
-    <text>{{lastSyncedAt}}</text>
-    <button wx:if="{{syncFailed}}" class="account-status-card__button" bind:tap="onRetrySync">重试同步</button>
+    <text>{{accountDetail || lastSyncedAt}}</text>
+    <button
+      wx:if="{{accountStatus === 'offline' || accountStatus === 'recovering'}}"
+      class="account-status-card__button"
+      bind:tap="onLoginAndSync"
+    >
+      登录并重试
+    </button>
+    <button wx:elif="{{syncFailed}}" class="account-status-card__button" bind:tap="onRetrySync">
+      重试同步
+    </button>
   </view>
 
   <view class="member-card" bind:tap="onOpenMember">
     <view>
-      <text class="member-card__eyebrow">MEMBER</text>
-      <view class="member-card__title">会员权益</view>
-      <text class="member-card__note">查看功能开放计划</text>
+      <text class="member-card__eyebrow">会员权益</text>
+      <view class="member-card__title">{{membershipStatus}}</view>
+      <text class="member-card__note">{{membershipDetail}}</text>
+      <text wx:if="{{membershipPractice}}" class="member-card__note">{{membershipPractice}}</text>
     </view>
-    <view class="member-card__action">了解权益</view>
+    <view class="member-card__action">{{isMember ? '查看会员' : '开通会员'}}</view>
   </view>
 
   <view class="profile-stats">
@@ -91,7 +101,7 @@
       </view>
       <t-icon name="chevron-right" size="30rpx" />
     </view>
-    <view wx:if="{{accountStatus === 'authenticated'}}" class="menu-row" bind:tap="onOpenAccountData">
+    <view wx:if="{{accountStatus !== 'guest'}}" class="menu-row" bind:tap="onOpenAccountData">
       <view class="menu-row__left">
         <view class="menu-row__icon"><t-icon name="setting" size="32rpx" /></view>
         <view>

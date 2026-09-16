@@ -34,6 +34,7 @@ interface LibraryPageData {
   parts: CatalogPartViewModel[];
   comingSoon: boolean;
   loading: boolean;
+  loadError: string;
 }
 
 const initialData: LibraryPageData = {
@@ -45,7 +46,9 @@ const initialData: LibraryPageData = {
   parts: [],
   comingSoon: false,
   loading: true,
+  loadError: '',
 };
+const loadVersions = new WeakMap<object, number>();
 
 export const buildTextbookPracticeRoute = (input: TextbookPracticeRouteInput): string | null => {
   if (input.loading || !input.questionCount) return null;
@@ -67,6 +70,8 @@ Page({
   async loadCertificate(key: CertificateKey) {
     const certificate = getCertificate(key);
     if (!certificate) return;
+    const version = (loadVersions.get(this) ?? 0) + 1;
+    loadVersions.set(this, version);
     this.setData({
       selectedKey: certificate.key,
       selectedTitle: certificate.title,
@@ -76,27 +81,33 @@ Page({
       parts: [] as CatalogPartViewModel[],
       comingSoon: certificate.availability === 'coming-soon',
       loading: certificate.availability === 'available',
+      loadError: '',
     });
 
     if (certificate.availability === 'coming-soon') return;
 
-    const questions = await appServices.questions.list({
-      occupation: certificate.occupation,
-      level: certificate.level,
-    });
-    if (this.data.selectedKey !== certificate.key) return;
-    const parts = presentCatalogParts({
-      catalog: KNOWLEDGE_CATALOG,
-      occupation: certificate.occupation,
-      level: certificate.level,
-      questions,
-      getProgress: (ids) => appServices.progress.getQuestionProgress(ids),
-    });
-    this.setData({
-      questionCount: questions.length,
-      parts,
-      loading: false,
-    });
+    try {
+      const questions = await appServices.questions.list({
+        occupation: certificate.occupation,
+        level: certificate.level,
+      });
+      if (loadVersions.get(this) !== version) return;
+      const parts = presentCatalogParts({
+        catalog: KNOWLEDGE_CATALOG,
+        occupation: certificate.occupation,
+        level: certificate.level,
+        questions,
+        getProgress: (ids) => appServices.progress.getQuestionProgress(ids),
+      });
+      this.setData({ questionCount: questions.length, parts, loading: false });
+    } catch {
+      if (loadVersions.get(this) !== version) return;
+      this.setData({ loading: false, loadError: '题库暂时无法读取，请重试。' });
+    }
+  },
+
+  onRetryLoad() {
+    void this.loadCertificate(this.data.selectedKey);
   },
 
   onChapterTap(event: WechatMiniprogram.TouchEvent) {

@@ -17,10 +17,10 @@ page {
   --space-4: 32rpx;
   --space-5: 40rpx;
   --space-6: 48rpx;
-  --radius-md: 28rpx;
-  --radius-lg: 40rpx;
-  --radius-xl: 52rpx;
-  --shadow-soft: 0 12rpx 36rpx rgb(35 45 25 / 7%);
+  --radius-md: 24rpx;
+  --radius-lg: 32rpx;
+  --radius-xl: 40rpx;
+  --shadow-soft: 0 8rpx 24rpx rgb(35 45 25 / 5%);
 
   min-height: 100%;
   background: var(--color-bg);
@@ -39,5 +39,5 @@ page {
   --color-primary-strong: #8fb532;
   --color-primary-soft: #33431f;
   --color-border: rgb(240 242 235 / 8%);
-  --shadow-soft: 0 12rpx 36rpx rgb(0 0 0 / 18%);
+  --shadow-soft: 0 8rpx 24rpx rgb(0 0 0 / 14%);
 }

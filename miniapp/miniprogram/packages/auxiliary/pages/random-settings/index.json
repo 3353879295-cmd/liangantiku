@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "随机练习设置",
   "usingComponents": {
+    "membership-prompt": "/components/membership-prompt/index",
     "app-topbar": "/components/app-topbar/index"
   }
 }

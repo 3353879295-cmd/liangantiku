@@ -9,6 +9,7 @@ const { createHandler } = require('../cloudfunctions/accountSync/lib/handler.js'
   createHandler: (dependencies: {
     store: ReturnType<typeof createStore>;
     hash: (appId: string, openId: string) => string;
+    deleteFiles?: (fileIDs: string[]) => Promise<{ fileID: string; status: number }[]>;
   }) => (event: unknown, context?: unknown) => Promise<unknown>;
 };
 const { isKnownAction } = require('../cloudfunctions/accountSync/lib/validation.js') as {
@@ -112,6 +113,7 @@ const createStore = (
 
 const context = { APPID: 'wx-test', OPENID: 'openid-test' };
 const bootstrap = { action: 'bootstrap', schemaVersion: 1 };
+const avatarKey = 'a'.repeat(64);
 
 const fillQuestionTotalsPastResponseLimit = (store: ReturnType<typeof createStore>) => {
   const questionTotals: Record<string, { attempts: number; correct_attempts: number }> = {};
@@ -148,14 +150,14 @@ describe('accountSync handler', () => {
     const response = await handler(bootstrap, context);
 
     expect(response).toMatchObject({ ok: true, data: { profileRevision: 0, progressRevision: 0 } });
-    expect(JSON.stringify(response)).not.toMatch(/openid|hashed|_id/i);
+    expect(JSON.stringify(response)).not.toMatch(/openid|_id/i);
     expect(store.accounts.has('account_hashed')).toBe(true);
     expect(store.progress.has('progress_hashed')).toBe(true);
   });
 
   it('rolls back account creation when bootstrap cannot create the progress document', async () => {
     const store = createStore({ failCreateProgress: true });
-    const handler = createHandler({ store, hash: () => 'hashed' });
+    const handler = createHandler({ store, hash: () => avatarKey });
 
     await expect(handler(bootstrap, context)).resolves.toEqual({
       ok: false,
@@ -221,7 +223,8 @@ describe('accountSync handler', () => {
   });
 
   it('rejects caller-supplied identity, unknown fields and actions', async () => {
-    const handler = createHandler({ store: createStore(), hash: () => 'hashed' });
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
 
     for (const event of [
       { ...bootstrap, openid: 'forged' },
@@ -288,8 +291,9 @@ describe('accountSync handler', () => {
     expect(repeated).toMatchObject({ ok: true, data: { profileRevision: 1 } });
   });
 
-  it('accepts only the four built-in avatar paths and complete active sessions', async () => {
-    const handler = createHandler({ store: createStore(), hash: () => 'hashed' });
+  it('accepts built-in and controlled cloud avatar paths but rejects unsafe avatar URLs', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => avatarKey });
     await handler(bootstrap, context);
 
     await expect(
@@ -304,6 +308,46 @@ describe('accountSync handler', () => {
         context,
       ),
     ).resolves.toEqual({ ok: false, error: { code: 'INVALID_REQUEST' } });
+    await expect(
+      handler(
+        {
+          action: 'updateProfile',
+          schemaVersion: 1,
+          expectedRevision: 0,
+          nickname: '昵称',
+          avatarUrl: `cloud://cloud1-d2gglad830c91db10.bucket/account-avatars/${avatarKey}/nonce0001.png`,
+        },
+        context,
+      ),
+    ).resolves.toMatchObject({ ok: true });
+    expect(store.accounts.get(`account_${avatarKey}`)?.avatar_file_ids).toEqual([
+      `cloud://cloud1-d2gglad830c91db10.bucket/account-avatars/${avatarKey}/nonce0001.png`,
+    ]);
+    for (const avatarUrl of [
+      'https://example.com/avatar.png',
+      'cloud://test-env/other/avatar.png',
+      'cloud://test-env/account-avatars/../avatar.png',
+      'cloud://cloud1-d2gglad830c91db10/account-avatars/other-account.png',
+      'cloud://Test-env/account-avatars/avatar.png',
+      'cloud://test-env..bucket/account-avatars/avatar.png',
+      'cloud://test-env.bucket.extra/account-avatars/avatar.png',
+      'cloud://test-env.bucket//account-avatars/avatar.png',
+      'cloud://test-env/account-avatars/avatar.svg',
+      `cloud://test-env/account-avatars/${'a'.repeat(97)}.jpg`,
+    ]) {
+      await expect(
+        handler(
+          {
+            action: 'updateProfile',
+            schemaVersion: 1,
+            expectedRevision: 1,
+            nickname: '昵称',
+            avatarUrl,
+          },
+          context,
+        ),
+      ).resolves.toEqual({ ok: false, error: { code: 'INVALID_REQUEST' } });
+    }
     await expect(
       handler(
         {
@@ -541,16 +585,62 @@ describe('accountSync handler', () => {
     expect(store.records.size).toBe(0);
   });
 
-  it('deletes accounts in a retryable records-progress-account sequence', async () => {
+  it('clears learning fields while preserving existing progress metadata', async () => {
     const store = createStore();
     const handler = createHandler({ store, hash: () => 'hashed' });
     await handler(bootstrap, context);
-    store.records.set('record_1', { account_key: 'hashed' });
+    Object.assign(store.progress.get('progress_hashed')!, {
+      created_at: 'CREATED_DATE',
+      migration_metadata: { source: 'legacy-import', batch: 'batch_1' },
+      revision: 7,
+      summary: { answered: 4, correct: 3, duration_ms: 800, first_answered_at: '2026-09-01' },
+      question_totals: { Q1: { attempts: 4, correct_attempts: 3 } },
+      wrong_questions: { Q1: { error_count: 1 } },
+      favorites: { Q1: 1 },
+      daily_totals: { '2026-09-01': { answered: 4, correct: 3, duration_ms: 800 } },
+      recent_question_ids: ['Q1'],
+      active_session: { id: 'session_1' },
+    });
+
+    await expect(
+      handler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toEqual({ ok: false, error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' } });
+    await expect(
+      handler({ action: 'clearLearningData', schemaVersion: 1 }, context),
+    ).resolves.toMatchObject({ ok: true, data: { progressRevision: 0 } });
+
+    expect(store.progress.get('progress_hashed')).toEqual({
+      schema_version: 1,
+      revision: 0,
+      summary: { answered: 0, correct: 0, duration_ms: 0, first_answered_at: null },
+      question_totals: {},
+      wrong_questions: {},
+      favorites: {},
+      daily_totals: {},
+      recent_question_ids: [],
+      active_session: null,
+      created_at: 'CREATED_DATE',
+      migration_metadata: { source: 'legacy-import', batch: 'batch_1' },
+    });
+  });
+
+  it('deletes accounts in a retryable records-progress-account sequence', async () => {
+    const store = createStore();
+    const deleteFiles = vi.fn((fileIDs: string[]) =>
+      Promise.resolve(fileIDs.map((fileID) => ({ fileID, status: 0 }))),
+    );
+    const handler = createHandler({ store, hash: () => avatarKey, deleteFiles });
+    await handler(bootstrap, context);
+    store.accounts.get(`account_${avatarKey}`)!.avatar_file_ids = [
+      `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.jpg`,
+      'cloud://cloud1-d2gglad830c91db10/account-avatars/other.jpg',
+    ];
+    store.records.set('record_1', { account_key: avatarKey });
     await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
       ok: true,
       data: { schemaVersion: 1, done: false, stage: 'records' },
     });
-    expect(store.accounts.get('account_hashed')!.status).toBe('deleting');
+    expect(store.accounts.get(`account_${avatarKey}`)!.status).toBe('deleting');
     await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
       ok: true,
       data: { schemaVersion: 1, done: false, stage: 'records' },
@@ -561,9 +651,105 @@ describe('accountSync handler', () => {
     });
     expect(store.accounts.size).toBe(0);
     expect(store.progress.size).toBe(0);
+    expect(deleteFiles).toHaveBeenCalledWith([
+      `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.jpg`,
+    ]);
     await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
       ok: true,
       data: { schemaVersion: 1, done: true, stage: 'done' },
+    });
+  });
+
+  it('keeps a deleting account when avatar cleanup fails so deletion can retry', async () => {
+    const store = createStore();
+    const deleteFiles = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          fileID: `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.webp`,
+          status: 500,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          fileID: `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.webp`,
+          status: -503003,
+        },
+      ]);
+    const handler = createHandler({ store, hash: () => avatarKey, deleteFiles });
+    await handler(bootstrap, context);
+    store.accounts.get(`account_${avatarKey}`)!.avatar_file_ids = [
+      `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.webp`,
+    ];
+    await handler({ action: 'deleteAccount', schemaVersion: 1 }, context);
+
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: false,
+      error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' },
+    });
+    expect(store.accounts.get(`account_${avatarKey}`)?.status).toBe('deleting');
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: true,
+      data: { schemaVersion: 1, done: true, stage: 'done' },
+    });
+  });
+
+  it('keeps a deleting account when cloud storage omits avatar deletion results', async () => {
+    const store = createStore();
+    const deleteFiles = vi
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          fileID: `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.jpg`,
+          status: 0,
+        },
+      ]);
+    const handler = createHandler({ store, hash: () => avatarKey, deleteFiles });
+    await handler(bootstrap, context);
+    store.accounts.get(`account_${avatarKey}`)!.avatar_file_ids = [
+      `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce0001.jpg`,
+    ];
+    await handler({ action: 'deleteAccount', schemaVersion: 1 }, context);
+
+    await expect(handler({ action: 'deleteAccount', schemaVersion: 1 }, context)).resolves.toEqual({
+      ok: false,
+      error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' },
+    });
+    expect(store.accounts.get(`account_${avatarKey}`)?.status).toBe('deleting');
+    await expect(
+      handler({ action: 'deleteAccount', schemaVersion: 1 }, context),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { done: true },
+    });
+  });
+
+  it('retains more than four avatar objects and deletes them in safe batches', async () => {
+    const store = createStore();
+    const deleteFiles = vi.fn((ids: string[]) =>
+      Promise.resolve(ids.map((fileID) => ({ fileID, status: 0 }))),
+    );
+    const handler = createHandler({ store, hash: () => avatarKey, deleteFiles });
+    await handler(bootstrap, context);
+    const files = Array.from(
+      { length: 51 },
+      (_, index) =>
+        `cloud://cloud1-d2gglad830c91db10/account-avatars/${avatarKey}/nonce${index.toString().padStart(4, '0')}.jpg`,
+    );
+    store.accounts.get(`account_${avatarKey}`)!.avatar_file_ids = files;
+    await handler({ action: 'deleteAccount', schemaVersion: 1 }, context);
+    await expect(
+      handler({ action: 'deleteAccount', schemaVersion: 1 }, context),
+    ).resolves.toMatchObject({
+      data: { done: false, stage: 'account' },
+    });
+    expect(deleteFiles).toHaveBeenCalledWith(files.slice(0, 50));
+    expect(store.accounts.get(`account_${avatarKey}`)?.avatar_file_ids).toEqual(files.slice(50));
+    await expect(
+      handler({ action: 'deleteAccount', schemaVersion: 1 }, context),
+    ).resolves.toMatchObject({
+      data: { done: true },
     });
   });
 

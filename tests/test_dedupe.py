@@ -8,6 +8,13 @@ def test_normalize_text_folds_width_space_and_punctuation():
     assert normalize_text(" \u7cae\u3000\u6e29\uff08\u2103\uff09\uff1f ") == "\u7cae\u6e29\u2103"
 
 
+def test_normalize_text_preserves_ion_signs_but_discards_regular_hyphens():
+    assert normalize_text("ESI+ ESI- ESI\u2212 \uff25\uff33\uff29\uff0b") == "esi+esi-esi\u2212esi+"
+    assert normalize_text("1-2") == normalize_text("12")
+    assert normalize_text("85-90%") == normalize_text("8590%")
+    assert normalize_text("GB/T 26882.1-2011") == normalize_text("GBT2688212011")
+
+
 def test_exact_fingerprint_ignores_option_order():
     left = Question.model_validate(BASE)
     right_data = {
@@ -18,6 +25,22 @@ def test_exact_fingerprint_ignores_option_order():
     right = Question.model_validate(right_data)
 
     assert exact_fingerprint(left) == exact_fingerprint(right)
+
+
+def test_exact_fingerprint_distinguishes_technical_positive_and_negative_signs():
+    positive = Question.model_validate(
+        {**BASE, "stem": "ESI+ 模式下应选择哪个选项？", "answer": ["A"]}
+    )
+    negative = Question.model_validate(
+        {
+            **BASE,
+            "id": "WH-L5-000002",
+            "stem": "ESI- 模式下应选择哪个选项？",
+            "answer": ["C"],
+        }
+    )
+
+    assert exact_fingerprint(positive) != exact_fingerprint(negative)
 
 
 def test_find_duplicates_flags_reworded_stem():

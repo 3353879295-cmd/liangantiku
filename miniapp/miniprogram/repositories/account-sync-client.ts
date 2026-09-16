@@ -25,6 +25,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNonNegativeInteger = (value: unknown): value is number =>
   Number.isInteger(value) && typeof value === 'number' && value >= 0;
 
+const isAvatarUploadPathPrefix = (value: unknown): value is string =>
+  typeof value === 'string' && /^account-avatars\/[a-f0-9]{64}$/.test(value);
+
 const isProfile = (value: unknown): value is AccountProfileSnapshot =>
   isRecord(value) &&
   typeof value.nickname === 'string' &&
@@ -35,7 +38,9 @@ const isProfile = (value: unknown): value is AccountProfileSnapshot =>
   (value.answerTheme === 'light' || value.answerTheme === 'night') &&
   (value.answerRevealMode === 'immediate' || value.answerRevealMode === 'deferred');
 
-const isSnapshot = (value: unknown): value is AccountSyncSnapshot =>
+type SnapshotBase = Omit<AccountSyncSnapshot, 'avatarUploadPathPrefix'> & Record<string, unknown>;
+
+const isSnapshotBase = (value: unknown): value is SnapshotBase =>
   isRecord(value) &&
   value.schemaVersion === ACCOUNT_SYNC_SCHEMA_VERSION &&
   isNonNegativeInteger(value.profileRevision) &&
@@ -43,6 +48,13 @@ const isSnapshot = (value: unknown): value is AccountSyncSnapshot =>
   typeof value.syncedAt === 'string' &&
   isProfile(value.profile) &&
   isProgressDataV4(value.progress);
+
+const normalizeSnapshot = (value: unknown): AccountSyncSnapshot | null => {
+  if (!isSnapshotBase(value)) return null;
+  const prefix = value.avatarUploadPathPrefix;
+  if (prefix === undefined) return { ...value, avatarUploadPathPrefix: '' };
+  return isAvatarUploadPathPrefix(prefix) ? { ...value, avatarUploadPathPrefix: prefix } : null;
+};
 
 const DELETE_STAGES = new Set(['marking', 'records', 'progress', 'account', 'done']);
 const ERROR_CODES = new Set<AccountSyncErrorCode>([
@@ -109,7 +121,10 @@ export class AccountSyncClient {
       if (errorCode) throw new AccountSyncClientError(errorCode, ERROR_MESSAGES[errorCode]);
       const data = readSuccessData(response.result);
       if (request.action === 'deleteAccount' && isDeleteAccountResult(data)) return data;
-      if (request.action !== 'deleteAccount' && isSnapshot(data)) return data;
+      if (request.action !== 'deleteAccount') {
+        const snapshot = normalizeSnapshot(data);
+        if (snapshot) return snapshot;
+      }
       throw new AccountSyncClientError('SCHEMA_INCOMPATIBLE', ERROR_MESSAGES.SCHEMA_INCOMPATIBLE);
     } catch (error) {
       if (error instanceof AccountSyncClientError) throw error;

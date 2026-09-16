@@ -1,7 +1,7 @@
 <view class="page-shell home-page">
   <view class="user-bar">
     <view class="user-profile">
-      <image wx:if="{{avatarUrl}}" class="user-avatar" src="{{avatarUrl}}" mode="aspectFill" />
+      <image wx:if="{{avatarUrl}}" class="user-avatar" src="{{avatarUrl}}" mode="aspectFill" bind:error="onAvatarError" />
       <view wx:else class="user-avatar user-avatar--fallback">粮</view>
       <view class="user-copy">
         <text class="user-copy__meta">备考第 {{preparationDays}} 天</text>
@@ -46,12 +46,11 @@
       <view class="action-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
       <view class="action-card__copy">
         <view class="action-card__title">{{item.title}}</view>
-        <text class="action-card__note">
-          {{certificate.canStart ? item.note : '待补充 · 暂不可开始'}}
-        </text>
+        <text class="action-card__note">{{certificate.canStart ? (item.id === 'random' && freePracticeText ? freePracticeText : item.note) : '待补充 · 暂不可开始'}}</text>
       </view>
       <t-icon wx:if="{{item.emphasized}}" name="chevron-right" size="34rpx" />
     </view>
   </view>
 
 </view>
+<membership-prompt visible="{{showMembershipPrompt}}" bind:close="onCloseMembershipPrompt" bind:confirm="onConfirmMembershipPrompt" />

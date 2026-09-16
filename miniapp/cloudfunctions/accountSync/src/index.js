@@ -17,6 +17,7 @@ const getRuntime = () => {
     handler: createHandler({
       store: new CloudStore(cloud.database({ throwOnNotFound: false })),
       hash: createAccountKey,
+      deleteFiles: async (fileIDs) => (await cloud.deleteFile({ fileList: fileIDs })).fileList,
     }),
     isKnownAction,
   };

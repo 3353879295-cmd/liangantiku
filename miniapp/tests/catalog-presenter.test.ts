@@ -236,6 +236,26 @@ describe('presentCatalogParts', () => {
     expect(view.map((part) => part.id)).toEqual(['inspector']);
   });
 
+  it.each([2, 1] as const)(
+    'exposes the inspector import catalog for released level %i',
+    (level) => {
+      const view = presentCatalogParts({
+        catalog: KNOWLEDGE_CATALOG,
+        occupation: '4-08-05-01',
+        level,
+        questions: [],
+        getProgress: noProgress,
+      });
+
+      expect(view.map((part) => part.id)).toEqual(['inspector-import']);
+      expect(view[0]?.chapters[0]).toMatchObject({
+        id: 'inspector-import-c01',
+        title: '质检员综合理论',
+        canStart: false,
+      });
+    },
+  );
+
   it('uses stable zero text for an empty chapter without NaN or division by zero', () => {
     const view = presentCatalogParts({
       catalog,
@@ -278,6 +298,8 @@ describe('presentCatalogParts', () => {
         ['4-08-05-01', 5],
         ['4-08-05-01', 4],
         ['4-08-05-01', 3],
+        ['4-08-05-01', 2],
+        ['4-08-05-01', 1],
       ] as const satisfies ReadonlyArray<readonly [OccupationCode, CertificateLevel]>
     ).flatMap(([occupation, level]) =>
       presentCatalogParts({

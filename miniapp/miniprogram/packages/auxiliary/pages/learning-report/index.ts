@@ -33,6 +33,7 @@ interface LearningReportPageData extends LearningReportViewModel {
   level: CertificateLevel;
   certificateTitle: string;
   chapterIds: string[];
+  loadError: string;
 }
 
 const initialData: LearningReportPageData = {
@@ -42,8 +43,10 @@ const initialData: LearningReportPageData = {
   level: 5,
   certificateTitle: '',
   chapterIds: [],
+  loadError: '',
   ...emptyReport,
 };
+const reportVersions = new WeakMap<object, number>();
 
 Page({
   data: initialData,
@@ -57,6 +60,8 @@ Page({
     const certificate = getCertificate(preferences.selectedCertificateKey);
     if (!certificate) return;
 
+    const version = (reportVersions.get(this) ?? 0) + 1;
+    reportVersions.set(this, version);
     this.setData({
       loading: true,
       selectedKey: certificate.key,
@@ -64,47 +69,53 @@ Page({
       level: certificate.level,
       certificateTitle: certificate.title,
       chapterIds: [] as string[],
+      loadError: '',
     });
 
     const today = localDateKey();
     const dashboard = appServices.progress.getDashboard(today);
     const activity = appServices.progress.getActivity(today, 7);
-    const questions = await appServices.questions.list({
-      occupation: certificate.occupation,
-      level: certificate.level,
-    });
-    if (this.data.selectedKey !== certificate.key) return;
+    try {
+      const questions = await appServices.questions.list({
+        occupation: certificate.occupation,
+        level: certificate.level,
+      });
+      if (reportVersions.get(this) !== version) return;
 
-    const parts = presentCatalogParts({
-      catalog: KNOWLEDGE_CATALOG,
-      occupation: certificate.occupation,
-      level: certificate.level,
-      questions,
-      getProgress: (questionIds) => appServices.progress.getQuestionProgress(questionIds),
-    });
-    const questionIdsByChapter = new Map<string, string[]>();
-    for (const question of questions) {
-      const ids = questionIdsByChapter.get(question.chapterId) ?? [];
-      ids.push(question.id);
-      questionIdsByChapter.set(question.chapterId, ids);
+      const parts = presentCatalogParts({
+        catalog: KNOWLEDGE_CATALOG,
+        occupation: certificate.occupation,
+        level: certificate.level,
+        questions,
+        getProgress: (questionIds) => appServices.progress.getQuestionProgress(questionIds),
+      });
+      const questionIdsByChapter = new Map<string, string[]>();
+      for (const question of questions) {
+        const ids = questionIdsByChapter.get(question.chapterId) ?? [];
+        ids.push(question.id);
+        questionIdsByChapter.set(question.chapterId, ids);
+      }
+      const chapters = parts.flatMap((part) =>
+        part.chapters.map((chapter) => ({
+          id: chapter.id,
+          numberText: chapter.numberText,
+          title: chapter.title,
+          progress: appServices.progress.getQuestionProgress(
+            questionIdsByChapter.get(chapter.id) ?? [],
+          ),
+        })),
+      );
+      const report = presentLearningReport({ dashboard, activity, chapters });
+
+      this.setData({ loading: false, chapterIds: chapters.map(({ id }) => id), ...report });
+    } catch {
+      if (reportVersions.get(this) !== version) return;
+      this.setData({ loading: false, loadError: '报告暂时无法读取，请重试。' });
     }
-    const chapters = parts.flatMap((part) =>
-      part.chapters.map((chapter) => ({
-        id: chapter.id,
-        numberText: chapter.numberText,
-        title: chapter.title,
-        progress: appServices.progress.getQuestionProgress(
-          questionIdsByChapter.get(chapter.id) ?? [],
-        ),
-      })),
-    );
-    const report = presentLearningReport({ dashboard, activity, chapters });
+  },
 
-    this.setData({
-      loading: false,
-      chapterIds: chapters.map(({ id }) => id),
-      ...report,
-    });
+  onRetryLoad() {
+    void this.loadReport();
   },
 
   onStartPractice() {

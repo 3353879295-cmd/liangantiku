@@ -14,8 +14,8 @@ describe('certificate catalog', () => {
       { key: '4-08-05-01:5', availability: 'available' },
       { key: '4-08-05-01:4', availability: 'available' },
       { key: '4-08-05-01:3', availability: 'available' },
-      { key: '4-08-05-01:2', availability: 'coming-soon' },
-      { key: '4-08-05-01:1', availability: 'coming-soon' },
+      { key: '4-08-05-01:2', availability: 'available' },
+      { key: '4-08-05-01:1', availability: 'available' },
     ]);
     expect(certificateKey('4-02-06-01', 1)).toBe('4-02-06-01:1');
   });

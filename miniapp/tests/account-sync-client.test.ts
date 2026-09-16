@@ -8,6 +8,7 @@ import {
 
 const createBootstrapResponse = () => ({
   schemaVersion: 1,
+  avatarUploadPathPrefix: `account-avatars/${'a'.repeat(64)}`,
   profileRevision: 0,
   progressRevision: 0,
   syncedAt: '2026-09-02T00:00:00.000Z',
@@ -56,6 +57,36 @@ describe('AccountSyncClient', () => {
 
   it('rejects malformed cloud responses instead of accepting a cache-corrupting snapshot', async () => {
     const client = new AccountSyncClient(vi.fn().mockResolvedValue({ result: success({}) }));
+
+    await expect(client.call({ action: 'bootstrap', schemaVersion: 1 })).rejects.toMatchObject({
+      code: 'SCHEMA_INCOMPATIBLE',
+    });
+  });
+
+  it('normalizes an old cloud-function snapshot without an avatar upload prefix', async () => {
+    const response = createBootstrapResponse();
+    Reflect.deleteProperty(response, 'avatarUploadPathPrefix');
+    const client = new AccountSyncClient(vi.fn().mockResolvedValue({ result: success(response) }));
+
+    await expect(client.call({ action: 'bootstrap', schemaVersion: 1 })).resolves.toMatchObject({
+      avatarUploadPathPrefix: '',
+    });
+  });
+
+  it('rejects an invalid non-empty avatar upload prefix', async () => {
+    const response = createBootstrapResponse();
+    response.avatarUploadPathPrefix = 'account-avatars/not-an-account';
+    const client = new AccountSyncClient(vi.fn().mockResolvedValue({ result: success(response) }));
+
+    await expect(client.call({ action: 'bootstrap', schemaVersion: 1 })).rejects.toMatchObject({
+      code: 'SCHEMA_INCOMPATIBLE',
+    });
+  });
+
+  it('rejects an explicit empty avatar upload prefix', async () => {
+    const response = createBootstrapResponse();
+    response.avatarUploadPathPrefix = '';
+    const client = new AccountSyncClient(vi.fn().mockResolvedValue({ result: success(response) }));
 
     await expect(client.call({ action: 'bootstrap', schemaVersion: 1 })).rejects.toMatchObject({
       code: 'SCHEMA_INCOMPATIBLE',

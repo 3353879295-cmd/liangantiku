@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -15,8 +15,9 @@ const verifiedRecord = (id: string, level = 5, occupation = '4-02-06-01') => ({
   id,
   occupation,
   level,
-  chapter_id: occupation === '4-08-05-01' ? 'inspector-c01' : `warehouse-l${level}-c03`,
-  section_id: occupation === '4-08-05-01' ? 'inspector-c01-s01' : `warehouse-l${level}-c03-s01`,
+  chapter_id: occupation === '4-08-05-01' ? 'inspector-import-c01' : `warehouse-l${level}-c03`,
+  section_id:
+    occupation === '4-08-05-01' ? 'inspector-import-c01-s01' : `warehouse-l${level}-c03-s01`,
   stem: `题干 ${id}`,
   options: [{ key: 'A', text: '选项' }],
   answer: ['A'],
@@ -54,7 +55,14 @@ const createCatalog = () => ({
     },
     '4-08-05-01': {
       title: '粮油质量检验员',
-      parts: [catalogPart('inspector', [5, 4, 3], 'inspector-c01', 'inspector-c01-s01')],
+      parts: [
+        catalogPart(
+          'inspector-import',
+          [5, 4, 3, 2, 1],
+          'inspector-import-c01',
+          'inspector-import-c01-s01',
+        ),
+      ],
     },
   },
 });
@@ -92,6 +100,61 @@ describe('question bank sync', () => {
     const catalogModule = readFileSync(join(target, 'runtime-knowledge-catalog.ts'), 'utf8');
     expect(catalogModule).toContain('export const RUNTIME_KNOWLEDGE_CATALOG');
     expect(catalogModule).toContain('粮油仓储管理员');
+  });
+
+  it('rolls back both generated runtime modules when the second replacement fails', () => {
+    const { source, target } = createFixture();
+    const recordsPath = join(target, 'runtime-question-records.ts');
+    const catalogPath = join(target, 'runtime-knowledge-catalog.ts');
+    mkdirSync(target);
+    writeFileSync(recordsPath, 'old records', 'utf8');
+    writeFileSync(catalogPath, 'old catalog', 'utf8');
+
+    expect(() =>
+      syncQuestionBank(source, target, {
+        minimumPerShard: 1,
+        fileOps: {
+          renameSync(from: string, to: string) {
+            if (to === catalogPath) throw new Error('second replacement failed');
+            renameSync(from, to);
+          },
+        },
+      }),
+    ).toThrow(/second replacement failed/);
+    expect(readFileSync(recordsPath, 'utf8')).toBe('old records');
+    expect(readFileSync(catalogPath, 'utf8')).toBe('old catalog');
+  });
+
+  it('restores the current artifact after a Windows EEXIST fallback loses its second rename', () => {
+    const { source, target } = createFixture();
+    const recordsPath = join(target, 'runtime-question-records.ts');
+    const catalogPath = join(target, 'runtime-knowledge-catalog.ts');
+    mkdirSync(target);
+    writeFileSync(recordsPath, 'old records', 'utf8');
+    writeFileSync(catalogPath, 'old catalog', 'utf8');
+    let catalogRenameAttempts = 0;
+
+    expect(() =>
+      syncQuestionBank(source, target, {
+        minimumPerShard: 1,
+        fileOps: {
+          renameSync(from: string, to: string) {
+            if (to === catalogPath) {
+              catalogRenameAttempts += 1;
+              const error = new Error(
+                catalogRenameAttempts === 1 ? 'destination exists' : 'second rename failed',
+              ) as NodeJS.ErrnoException;
+              error.code = catalogRenameAttempts === 1 ? 'EEXIST' : 'EIO';
+              throw error;
+            }
+            renameSync(from, to);
+          },
+        },
+      }),
+    ).toThrow(/second rename failed/);
+    expect(catalogRenameAttempts).toBe(2);
+    expect(readFileSync(recordsPath, 'utf8')).toBe('old records');
+    expect(readFileSync(catalogPath, 'utf8')).toBe('old catalog');
   });
 
   it('rejects unpublished records', () => {

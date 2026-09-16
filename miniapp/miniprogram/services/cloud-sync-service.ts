@@ -33,6 +33,7 @@ export interface CloudSyncOptions {
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const delay = (milliseconds: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
+const CONFLICT_NOTICE = '本地待同步记录已保留；检测到数据冲突，需要处理后才能继续同步。';
 
 const requestFor = (
   command: SyncCommand,
@@ -60,6 +61,13 @@ const isErrorCode = (error: unknown, code: string): boolean =>
   'code' in error &&
   (error as { code?: unknown }).code === code;
 
+const preferenceSnapshotMatches = (command: SyncCommand, snapshot: AccountSyncSnapshot): boolean =>
+  command.action !== 'updatePreferences' ||
+  (snapshot.profile.selectedCertificateKey === command.selectedCertificateKey &&
+    snapshot.profile.dailyGoal === command.dailyGoal &&
+    snapshot.profile.answerTheme === command.answerTheme &&
+    snapshot.profile.answerRevealMode === command.answerRevealMode);
+
 export class CloudSyncService {
   private processing: Promise<void> | null = null;
   private state: AccountSyncState = { status: 'idle', pendingCount: 0, notice: null };
@@ -86,10 +94,22 @@ export class CloudSyncService {
     return this.cache()?.syncedAt ?? null;
   }
 
+  getAvatarUploadPathPrefix(): string | null {
+    return this.cache()?.avatarUploadPathPrefix || null;
+  }
+
+  getConfirmedAvatarUrl(): string | null {
+    return this.cache()?.profile.avatarUrl ?? null;
+  }
+
   private refreshState(
     status: AccountSyncState['status'] = this.state.status,
     notice = this.state.notice,
   ): void {
+    if (this.outbox.isBlocked) {
+      this.state = { status: 'conflict', pendingCount: this.outbox.size, notice: CONFLICT_NOTICE };
+      return;
+    }
     this.state = { status, pendingCount: this.outbox.size, notice };
   }
 
@@ -105,18 +125,32 @@ export class CloudSyncService {
     this.repository.saveAccountCache(envelopeFor(snapshot));
   }
 
+  /** Do not let an older bootstrap replace a newer optimistic projection. */
+  private saveBootstrapSnapshot(snapshot: AccountSyncSnapshot): boolean {
+    const current = this.cache();
+    if (
+      current &&
+      (current.profileRevision > snapshot.profileRevision ||
+        current.progressRevision > snapshot.progressRevision)
+    ) {
+      return false;
+    }
+    this.saveSnapshot(snapshot);
+    return true;
+  }
+
   private updateMetadata(snapshot: AccountSyncSnapshot): void {
     const current = this.cache();
     if (!current) {
       this.saveSnapshot(snapshot);
       return;
     }
-    // ProgressService owns the optimistic projection. Do not replace it while
-    // later queued commands still depend on it.
+    // Keep the optimistic projection while queued commands depend on it.
     this.repository.saveAccountCache(
       createAccountCacheEnvelope(current.progress, {
         profileRevision: snapshot.profileRevision,
         progressRevision: snapshot.progressRevision,
+        avatarUploadPathPrefix: snapshot.avatarUploadPathPrefix,
         syncedAt: snapshot.syncedAt,
         profile: snapshot.profile,
       }),
@@ -147,14 +181,12 @@ export class CloudSyncService {
         : 'progress';
     const currentRevision = domain === 'profile' ? cache.profileRevision : cache.progressRevision;
     this.outbox.enqueue(this.commandInput(command, currentRevision));
-    // Rebase pending commands from the cached server revision. Sending commands
-    // retain their request body, but still reserve their revision for later work.
-    this.outbox.rebase(cache.profileRevision, cache.progressRevision);
-    this.refreshState('pending');
+    if (!this.outbox.isBlocked) this.outbox.rebase(cache.profileRevision, cache.progressRevision);
+    this.refreshState(this.outbox.isBlocked ? 'conflict' : 'pending');
     return true;
   }
 
-  /** Replace the completed clear snapshot and safely rebase deferred profile writes. */
+  /** Replace a completed clear snapshot and rebase deferred profile writes. */
   replaceAfterLearningClear(snapshot: AccountSyncSnapshot): void {
     this.saveSnapshot(snapshot);
     this.outbox.rebase(snapshot.profileRevision, snapshot.progressRevision);
@@ -163,10 +195,12 @@ export class CloudSyncService {
 
   async bootstrap(): Promise<boolean> {
     if (!this.assertAccountScope()) return false;
+    if (this.outbox.isBlocked) {
+      this.refreshState();
+      return true;
+    }
     try {
-      // A persisted outbox belongs to the cached account revision. Replaying it
-      // first lets the server report a genuine cross-device conflict instead of
-      // silently rebasing stale local writes onto a newer cloud snapshot.
+      // Replay persisted writes before bootstrap so the server can report conflicts.
       if (this.outbox.size > 0) {
         await this.process();
         if (this.state.status === 'conflict') return true;
@@ -176,8 +210,14 @@ export class CloudSyncService {
         action: 'bootstrap',
         schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,
       });
-      this.saveSnapshot(finalSnapshot);
-      this.refreshState(this.outbox.size === 0 ? 'idle' : 'pending', null);
+      // Let an in-flight drain settle before applying this bootstrap observation.
+      if (this.processing) await this.processing;
+      if (this.state.status === 'conflict') return true;
+      // Preserve pending commands and their original expected revisions.
+      if (this.outbox.size === 0) this.saveBootstrapSnapshot(finalSnapshot);
+      const status =
+        this.outbox.size === 0 ? 'idle' : this.state.status === 'failed' ? 'failed' : 'pending';
+      this.refreshState(status, status === 'failed' ? this.state.notice : null);
       return true;
     } catch (error) {
       this.refreshState(
@@ -192,6 +232,10 @@ export class CloudSyncService {
 
   async process(): Promise<void> {
     if (!this.assertAccountScope()) return;
+    if (this.outbox.isBlocked) {
+      this.refreshState();
+      return;
+    }
     // Profile updates are retained locally during a resumable learning clear,
     // but must not race the server's clearing/deleting write barrier.
     if (this.options.isClearPending?.()) {
@@ -219,6 +263,11 @@ export class CloudSyncService {
       this.refreshState('syncing', null);
       const snapshot = await this.sendWithRetry(command);
       if (snapshot === null) return;
+      if (!preferenceSnapshotMatches(command, snapshot)) {
+        this.outbox.block();
+        this.refreshState();
+        return;
+      }
       this.outbox.remove(command.id);
       this.outbox.rebase(snapshot.profileRevision, snapshot.progressRevision);
       if (this.outbox.size === 0) this.saveSnapshot(snapshot);
@@ -233,7 +282,8 @@ export class CloudSyncService {
         return await this.client.call(requestFor(command));
       } catch (error) {
         if (isErrorCode(error, 'REVISION_CONFLICT')) {
-          await this.recoverConflict();
+          this.outbox.block();
+          this.refreshState();
           return null;
         }
         if (isErrorCode(error, 'SCHEMA_INCOMPATIBLE') || isErrorCode(error, 'ACCOUNT_DELETING')) {
@@ -250,22 +300,5 @@ export class CloudSyncService {
       }
     }
     return null;
-  }
-
-  private async recoverConflict(): Promise<void> {
-    try {
-      const snapshot = await this.client.call({
-        action: 'bootstrap',
-        schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,
-      });
-      // Do not discard the only recoverable command log until a valid cloud
-      // replacement is available.
-      this.outbox.clear();
-      this.saveSnapshot(snapshot);
-      this.refreshState('conflict', '数据已在其他设备更新，已恢复云端记录');
-    } catch {
-      this.outbox.resetSending();
-      this.refreshState('failed', '云端学习同步暂不可用，请稍后重试。');
-    }
   }
 }

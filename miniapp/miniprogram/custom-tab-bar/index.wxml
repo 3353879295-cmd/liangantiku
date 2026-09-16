@@ -5,6 +5,8 @@
       wx:for="{{tabs}}"
       wx:key="value"
       class="app-tab-bar__item {{value === item.value ? 'app-tab-bar__item--active' : ''}}"
+      hover-class="app-tab-bar__item--pressed"
+      hover-stay-time="60"
       data-value="{{item.value}}"
       bind:tap="onTabTap"
     >

@@ -23,13 +23,17 @@ export interface LogoutResult {
 }
 
 type AccountActions = Pick<AccountSyncClient, 'call'>;
+type AvatarFiles = {
+  remove(fileID: string): Promise<void>;
+  reconcile?(boundFileID: string | null, retainedFileIDs?: readonly string[]): Promise<void>;
+};
 
 export const readAuthPreference = (storage: StorageAdapter): AuthPreference => {
   const value = storage.get<unknown>(AUTH_PREFERENCE_KEY);
   return value === 'guest' || value === 'account' ? value : 'undecided';
 };
 
-/** Coordinates account lifecycle without exposing cloud protocol to pages. */
+/** Account lifecycle state. */
 export class AuthService {
   private state: AuthState;
   private initialization: Promise<AuthState> | null = null;
@@ -43,6 +47,7 @@ export class AuthService {
     private readonly sync: CloudSyncService,
     private readonly client: AccountActions,
     private readonly maxDeletionSteps = 32,
+    private readonly avatarFiles?: AvatarFiles,
   ) {
     const preference = readAuthPreference(storage);
     this.state = {
@@ -114,6 +119,24 @@ export class AuthService {
     };
   }
 
+  private async reconcileAvatars(): Promise<void> {
+    if (!this.avatarFiles?.reconcile) return;
+    const retained = this.outbox
+      .list()
+      .filter((command) => command.action === 'updateProfile')
+      .map((command) => command.avatarUrl)
+      .filter((avatarUrl) => avatarUrl.startsWith('cloud://'));
+    await this.avatarFiles.reconcile(this.sync.getConfirmedAvatarUrl(), retained);
+  }
+
+  private async reconcileAvatarsInBackground(): Promise<void> {
+    try {
+      await this.reconcileAvatars();
+    } catch {
+      // Retry cleanup later.
+    }
+  }
+
   async initialize(): Promise<AuthState> {
     if (this.initialized) return this.getState();
     if (this.initialization) return this.initialization;
@@ -135,8 +158,10 @@ export class AuthService {
       return this.getState();
     }
     const recovered = await this.sync.bootstrap();
-    if (recovered) this.enterAuthenticated();
-    else {
+    if (recovered) {
+      await this.reconcileAvatarsInBackground();
+      this.enterAuthenticated();
+    } else {
       this.state = {
         status: 'error',
         preference: 'account',
@@ -154,11 +179,10 @@ export class AuthService {
 
   async login(): Promise<boolean> {
     if (this.state.status === 'authenticated') return true;
-    // Existing account preference means this is account recovery (including
-    // temporary guest and failed automatic recovery), never a fresh login.
+    // Existing preference resumes account recovery.
     if (this.state.preference === 'account') return this.retry();
     const previousScope = this.progress.getScope();
-    // An explicit new login must never revive a stale local account projection.
+    // New login discards stale account data.
     this.repository.remove('account');
     this.outbox.clear();
     this.progress.switchScope('account');
@@ -166,6 +190,7 @@ export class AuthService {
     if (recovered) {
       this.savePreference('account');
       if (this.isLearningClearPending()) return this.continueLearningClear();
+      await this.reconcileAvatarsInBackground();
       this.enterAuthenticated();
       return true;
     }
@@ -184,8 +209,10 @@ export class AuthService {
     this.progress.switchScope('account');
     if (this.isLearningClearPending()) return this.continueLearningClear();
     const recovered = await this.sync.bootstrap();
-    if (recovered) this.enterAuthenticated();
-    else
+    if (recovered) {
+      await this.reconcileAvatarsInBackground();
+      this.enterAuthenticated();
+    } else
       this.state = { ...this.state, status: 'error', notice: '账号记录暂时无法恢复，请稍后重试。' };
     return recovered;
   }
@@ -203,6 +230,7 @@ export class AuthService {
     }
     await this.sync.retry();
     this.progress.refreshAccountSnapshot();
+    if (this.sync.getState().status !== 'failed') await this.reconcileAvatarsInBackground();
   }
 
   async logout(discardFailed = false): Promise<LogoutResult> {
@@ -211,7 +239,14 @@ export class AuthService {
     await this.sync.process();
     const pending = this.sync.getState().pendingCount;
     if (pending > 0 && !discardFailed) return { needsDecision: true };
-    if (pending > 0) this.outbox.clear();
+    try {
+      await this.avatarFiles?.reconcile?.(this.sync.getConfirmedAvatarUrl(), []);
+    } catch {
+      return { needsDecision: true };
+    }
+    if (pending > 0) {
+      this.outbox.clear();
+    }
     this.repository.remove('account');
     this.outbox.clear();
     this.savePreference('guest');
@@ -224,8 +259,7 @@ export class AuthService {
       this.progress.clearLearningData();
       return true;
     }
-    // Do not silently discard profile/settings (or any other recoverable
-    // command).  Clearing can begin only after the durable queue converges.
+    // Keep recoverable commands until the durable queue converges.
     if (this.isLearningClearPending()) return this.continueLearningClear();
     await this.sync.process();
     if (this.sync.getState().pendingCount > 0) return false;
@@ -243,6 +277,10 @@ export class AuthService {
           schemaVersion: ACCOUNT_SYNC_SCHEMA_VERSION,
         });
         if (!result.done) continue;
+        if (this.avatarFiles?.reconcile) await this.avatarFiles.reconcile(null);
+        const avatarUrl = this.progress.getPreferences().avatarUrl;
+        if (avatarUrl.startsWith('cloud://') && this.avatarFiles)
+          await this.avatarFiles.remove(avatarUrl);
         this.repository.remove('account');
         this.outbox.clear();
         this.setLearningClearPending(false);
@@ -251,7 +289,7 @@ export class AuthService {
         return true;
       }
     } catch {
-      // Keep the preference and cache: cloud deletion is deliberately resumable.
+      // Preserve resumable deletion state.
     }
     this.state = {
       ...this.state,

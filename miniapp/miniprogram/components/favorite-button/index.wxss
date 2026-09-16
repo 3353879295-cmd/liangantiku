@@ -6,6 +6,8 @@
   justify-content: center;
   width: 64rpx;
   height: 64rpx;
+  min-width: 44px;
+  min-height: 44px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -28,7 +30,7 @@
 }
 
 .favorite-button--pressed {
-  transform: scale(0.88);
+  opacity: 0.75;
 }
 
 .favorite-button--pop {

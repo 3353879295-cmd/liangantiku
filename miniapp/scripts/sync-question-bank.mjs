@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { Buffer } from 'node:buffer';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -14,9 +21,52 @@ export const SHARDS = [
   'inspector_l5.json',
   'inspector_l4.json',
   'inspector_l3.json',
+  'inspector_l2.json',
+  'inspector_l1.json',
 ];
 
 const countsForShard = (records) => (Array.isArray(records) ? records.length : 0);
+
+const replaceGeneratedArtifacts = (targetDir, artifacts, { rename = renameSync } = {}) => {
+  const timestamp = `${process.pid}-${Date.now()}`;
+  const staged = artifacts.map(({ filename, content }, index) => {
+    const targetPath = join(targetDir, filename);
+    const temporaryPath = join(targetDir, `.${filename}.${timestamp}-${index}.tmp`);
+    const previous = existsSync(targetPath) ? readFileSync(targetPath) : null;
+    writeFileSync(temporaryPath, content, 'utf8');
+    return { targetPath, temporaryPath, previous };
+  });
+  const replaced = [];
+  let currentArtifact;
+  try {
+    for (const artifact of staged) {
+      currentArtifact = artifact;
+      try {
+        rename(artifact.temporaryPath, artifact.targetPath);
+      } catch (error) {
+        if (!existsSync(artifact.targetPath) || error?.code !== 'EEXIST') throw error;
+        unlinkSync(artifact.targetPath);
+        rename(artifact.temporaryPath, artifact.targetPath);
+      }
+      replaced.push(artifact);
+      currentArtifact = undefined;
+    }
+  } catch (error) {
+    const restore = currentArtifact ? [...replaced, currentArtifact] : replaced;
+    for (const artifact of restore.reverse()) {
+      if (artifact.previous === null) {
+        if (existsSync(artifact.targetPath)) unlinkSync(artifact.targetPath);
+      } else {
+        writeFileSync(artifact.targetPath, artifact.previous);
+      }
+    }
+    throw error;
+  } finally {
+    for (const artifact of staged) {
+      if (existsSync(artifact.temporaryPath)) unlinkSync(artifact.temporaryPath);
+    }
+  }
+};
 
 const isVisibleCatalogPath = (catalog, record) => {
   const occupation = catalog.occupations?.[record.occupation];
@@ -96,7 +146,12 @@ const loadShard = (sourceDir, filename, minimumPerShard, catalog, seenIds, seenF
   return records;
 };
 
-export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } = {}) {
+/**
+ * @param {string} sourceDir
+ * @param {string} targetDir
+ * @param {{minimumPerShard?: number, fileOps?: {renameSync?: (from: string, to: string) => void}}} options
+ */
+export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8, fileOps } = {}) {
   if (!Number.isInteger(minimumPerShard) || minimumPerShard < 1) {
     throw new Error('minimumPerShard must be a positive integer');
   }
@@ -136,8 +191,10 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8 } =
     counts[filename] = records.length;
   }
   const runtimeRecords = SHARDS.flatMap((filename) => loaded[filename]);
-  const encodedRecords = gzipSync(Buffer.from(JSON.stringify(runtimeRecords))).toString('base64');
-  const packedChunks = encodedRecords.match(/.{1,120}/g) ?? [];
+  const encodedRecords = gzipSync(Buffer.from(JSON.stringify(runtimeRecords)), {
+    level: 9,
+  }).toString('base64');
+  const packedChunks = encodedRecords.match(/.{1,4096}/g) ?? [];
   const runtimeModule = `import { gunzipSync, strFromU8 } from 'fflate';
 import type { RuntimeQuestionRecord } from '../../types/runtime-question';
 
@@ -158,14 +215,41 @@ const records: unknown = JSON.parse(strFromU8(gunzipSync(compressed)));
 
 export const RUNTIME_QUESTION_RECORDS = records as RuntimeQuestionRecord[];
 `;
-  writeFileSync(join(targetDir, 'runtime-question-records.ts'), runtimeModule, 'utf8');
-  const catalogModule = `import type { RuntimeKnowledgeCatalog } from '../../types/knowledge-catalog';
+  const encodedCatalog = gzipSync(Buffer.from(JSON.stringify(catalog)), { level: 9 }).toString(
+    'base64',
+  );
+  const catalogChunks = encodedCatalog.match(/.{1,4096}/g) ?? [];
+  const catalogModule = `import { gunzipSync, strFromU8 } from 'fflate';
+import type { RuntimeKnowledgeCatalog } from '../../types/knowledge-catalog';
 
-const catalog: unknown = ${JSON.stringify(catalog, null, 2)};
+// 目录数据包含：${Object.values(catalog.occupations)
+    .map((occupation) => occupation.title)
+    .join('、')}
+
+const packed = [
+${catalogChunks.map((chunk) => `  '${chunk}',`).join('\n')}
+].join('');
+
+const base64ToBytes = (value: string): Uint8Array => {
+  if (typeof wx !== 'undefined' && typeof wx.base64ToArrayBuffer === 'function') {
+    return new Uint8Array(wx.base64ToArrayBuffer(value));
+  }
+  const binary = globalThis.atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+};
+
+const catalog: unknown = JSON.parse(strFromU8(gunzipSync(base64ToBytes(packed))));
 
 export const RUNTIME_KNOWLEDGE_CATALOG = catalog as RuntimeKnowledgeCatalog;
 `;
-  writeFileSync(join(targetDir, 'runtime-knowledge-catalog.ts'), catalogModule, 'utf8');
+  replaceGeneratedArtifacts(
+    targetDir,
+    [
+      { filename: 'runtime-question-records.ts', content: runtimeModule },
+      { filename: 'runtime-knowledge-catalog.ts', content: catalogModule },
+    ],
+    { rename: fileOps?.renameSync },
+  );
   return counts;
 }
 

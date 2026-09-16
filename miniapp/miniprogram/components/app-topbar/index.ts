@@ -8,6 +8,17 @@ Component({
     fallbackTab: { type: String, value: 'home' },
     showBack: { type: Boolean, value: true },
   },
+  data: { hasNativeBack: false },
+  lifetimes: {
+    attached() {
+      this.setData({ hasNativeBack: getCurrentPages().length > 1 });
+    },
+  },
+  pageLifetimes: {
+    show() {
+      this.setData({ hasNativeBack: getCurrentPages().length > 1 });
+    },
+  },
   methods: {
     handleBack() {
       const target = resolveBackTarget(getCurrentPages().length, this.data.fallbackTab as MainTab);

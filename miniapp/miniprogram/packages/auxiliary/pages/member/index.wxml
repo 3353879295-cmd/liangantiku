@@ -1,49 +1,53 @@
 <view class="page-shell page-shell--secondary member-page">
-  <app-topbar title="会员中心" subtitle="权益说明" fallback-tab="profile" />
+  <app-topbar title="开通会员" subtitle="半年会员，随时续费顺延" fallback-tab="profile" />
 
   <view class="member-hero">
-    <text class="member-hero__eyebrow">GRAIN PRACTICE</text>
-    <view class="member-hero__title">会员功能逐步开放</view>
-    <text class="member-hero__body">
-      当前仅展示权益方向与开放状态，本页不提供付费、开通或结算操作。
-    </text>
+    <text class="member-hero__eyebrow">有效期 6 个月</text>
+    <view class="member-hero__title">半年会员</view>
+    <view class="member-price">¥28 <text>/ 半年</text></view>
+    <text class="member-hero__body">{{isMember ? detailText : '开通后立即生效，到期后自动恢复为免费用户，不自动续费。'}}</text>
   </view>
 
   <view class="section-heading member-section-heading">
-    <view class="section-title">权益进度</view>
-    <text class="section-note">以实际开放为准</text>
+    <view class="section-title">会员权益</view>
+    <text class="section-note">半年内持续可用</text>
   </view>
   <view class="rights-card matte-card">
     <view class="right-row">
       <view class="right-row__icon"><t-icon name="chart-bar" size="34rpx" /></view>
       <view class="right-row__copy">
-        <view class="right-row__title">学习数据洞察</view>
-        <text class="right-row__note">基础学习报告已面向所有用户开放</text>
+          <view class="right-row__title">半年内不限次数刷题</view>
+          <text class="right-row__note">随机练习可随时开始</text>
       </view>
-      <text class="right-row__status right-row__status--open">基础版开放</text>
+      <text class="right-row__status right-row__status--open">会员权益</text>
     </view>
     <view class="right-row">
       <view class="right-row__icon"><t-icon name="book-open" size="34rpx" /></view>
       <view class="right-row__copy">
-        <view class="right-row__title">更多专项题库</view>
-        <text class="right-row__note">将随题库校验进度逐步补充</text>
+          <view class="right-row__title">解锁完整刷题功能</view>
+          <text class="right-row__note">其他会员功能逐步开放后可直接使用</text>
       </view>
-      <text class="right-row__status">规划中</text>
+      <text class="right-row__status">会员权益</text>
     </view>
     <view class="right-row">
       <view class="right-row__icon"><t-icon name="cloud-upload" size="34rpx" /></view>
       <view class="right-row__copy">
-        <view class="right-row__title">更多学习能力</view>
-        <text class="right-row__note">开放时间与方式将在功能就绪后公布</text>
+          <view class="right-row__title">不受每日3次随机练习限制</view>
+          <text class="right-row__note">会员有效期内不限次数</text>
       </view>
-      <text class="right-row__status">规划中</text>
+      <text class="right-row__status">会员权益</text>
     </view>
   </view>
 
   <view class="member-notice matte-card">
-    <view class="member-notice__title">状态说明</view>
-    <text class="member-notice__body">
-      页面不代表会员身份，也不会发起支付。后续若有变化，将在功能真实可用时明确说明。
-    </text>
+    <view class="member-notice__title">{{statusText}}</view>
+    <text class="member-notice__body">{{detailText}}</text>
+    <text wx:if="{{notice}}" class="member-notice__body">{{notice}}</text>
+    <text wx:if="{{pendingOrderId}}" class="member-notice__order">订单号：{{pendingOrderId}}</text>
+    <button wx:if="{{pendingOrderId}}" class="member-notice__query" hover-class="member-button--pressed" bind:tap="onCopyPendingOrder">复制订单号</button>
+    <button wx:if="{{pendingOrderId && transactionStage !== 'PREPARED'}}" class="member-notice__query" hover-class="member-button--pressed" disabled="{{loading || purchasing}}" bind:tap="onQueryPending">检查支付结果</button>
+    <text wx:if="{{pendingOrderId}}" class="member-notice__body">若长时间仍未确认：复制订单号，通过小程序右上角菜单选择“反馈”，粘贴订单号；如已扣款请勿重复付款。</text>
   </view>
+  <button wx:if="{{!paymentAvailable}}" class="purchase-button" hover-class="member-button--pressed" loading="{{loading}}" disabled="{{loading || purchasing}}" bind:tap="onRefresh">{{loading ? '正在查询会员…' : '刷新会员服务'}}</button>
+  <button wx:else class="purchase-button" hover-class="member-button--pressed" loading="{{purchasing}}" disabled="{{loading || purchasing || transactionStage === 'PAYMENT_STARTING' || transactionStage === 'PAYMENT_UNKNOWN' || transactionStage === 'PENDING'}}" bind:tap="onPurchase">{{purchasing || transactionStage === 'PAYMENT_STARTING' ? '正在确认支付…' : transactionStage === 'PAYMENT_UNKNOWN' || transactionStage === 'PENDING' ? '请先检查支付结果' : transactionStage === 'PREPARED' ? '继续支付 ¥28' : paymentState === 'failed' || paymentState === 'cancelled' ? '可以重新购买 ¥28' : isMember ? '续费 ¥28 / 半年' : '立即开通 ¥28'}}</button>
 </view>

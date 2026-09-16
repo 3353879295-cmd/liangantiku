@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "答题",
   "usingComponents": {
+    "membership-prompt": "/components/membership-prompt/index",
     "app-toast": "/components/app-toast/index",
     "app-topbar": "/components/app-topbar/index",
     "analysis-panel": "/components/analysis-panel/index",

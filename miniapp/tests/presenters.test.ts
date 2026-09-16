@@ -151,8 +151,8 @@ describe('library presenters', () => {
           { levelName: '初级', availability: 'available' },
           { levelName: '中级', availability: 'available' },
           { levelName: '高级', availability: 'available' },
-          { levelName: '技师', availability: 'coming-soon' },
-          { levelName: '高级技师', availability: 'coming-soon' },
+          { levelName: '技师', availability: 'available' },
+          { levelName: '高级技师', availability: 'available' },
         ],
       },
     ]);

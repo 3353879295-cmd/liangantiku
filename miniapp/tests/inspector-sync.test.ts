@@ -15,6 +15,8 @@ const EXPECTED_SHARDS = [
   'inspector_l5.json',
   'inspector_l4.json',
   'inspector_l3.json',
+  'inspector_l2.json',
+  'inspector_l1.json',
 ] as const;
 
 const shardRecord = (filename: string) => {
@@ -26,8 +28,8 @@ const shardRecord = (filename: string) => {
     id: `${prefix}-L${level}-000001`,
     occupation: inspector ? '4-08-05-01' : '4-02-06-01',
     level,
-    chapter_id: inspector ? 'inspector-c01' : `warehouse-l${level}-c03`,
-    section_id: inspector ? 'inspector-c01-s01' : `warehouse-l${level}-c03-s01`,
+    chapter_id: inspector ? 'inspector-import-c01' : `warehouse-l${level}-c03`,
+    section_id: inspector ? 'inspector-import-c01-s01' : `warehouse-l${level}-c03-s01`,
     stem: `题干 ${filename}`,
     options: [{ key: 'A', text: '选项' }],
     answer: ['A'],
@@ -51,7 +53,7 @@ const catalogPart = (id: string, levels: number[], chapterId: string, sectionId:
   ],
 });
 
-const createCatalog = (inspectorLevels = [5, 4, 3]) => ({
+const createCatalog = (inspectorLevels = [5, 4, 3, 2, 1]) => ({
   occupations: {
     '4-02-06-01': {
       title: '粮油仓储管理员',
@@ -66,12 +68,19 @@ const createCatalog = (inspectorLevels = [5, 4, 3]) => ({
     },
     '4-08-05-01': {
       title: '粮油质量检验员',
-      parts: [catalogPart('inspector', inspectorLevels, 'inspector-c01', 'inspector-c01-s01')],
+      parts: [
+        catalogPart(
+          'inspector-import',
+          inspectorLevels,
+          'inspector-import-c01',
+          'inspector-import-c01-s01',
+        ),
+      ],
     },
   },
 });
 
-const createFixture = (inspectorLevels = [5, 4, 3]) => {
+const createFixture = (inspectorLevels = [5, 4, 3, 2, 1]) => {
   const root = mkdtempSync(join(tmpdir(), 'grain-inspector-sync-'));
   const source = join(root, 'source');
   const target = join(root, 'target');
@@ -96,6 +105,8 @@ describe('inspector question bank sync', () => {
     expect(counts['inspector_l5.json']).toBe(1);
     expect(counts['inspector_l4.json']).toBe(1);
     expect(counts['inspector_l3.json']).toBe(1);
+    expect(counts['inspector_l2.json']).toBe(1);
+    expect(counts['inspector_l1.json']).toBe(1);
     const runtimeModule = readFileSync(join(target, 'runtime-question-records.ts'), 'utf8');
     expect(runtimeModule).toContain('export const RUNTIME_QUESTION_RECORDS');
   });

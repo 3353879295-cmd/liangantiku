@@ -12,15 +12,26 @@
 
 .member-hero__eyebrow {
   color: var(--color-primary);
-  font-size: 19rpx;
-  font-weight: 700;
-  letter-spacing: 3rpx;
+  font-size: 24rpx;
+  font-weight: 500;
 }
 
 .member-hero__title {
   margin-top: 13rpx;
   font-size: 40rpx;
   font-weight: 680;
+}
+
+.member-price {
+  margin-top: 14rpx;
+  color: var(--color-primary);
+  font-size: 54rpx;
+  font-weight: 700;
+}
+
+.member-price text {
+  font-size: 23rpx;
+  font-weight: 600;
 }
 
 .member-hero__body {
@@ -108,6 +119,7 @@
 }
 
 .member-notice {
+  min-height: 80rpx;
   margin-top: 18rpx;
   padding: 28rpx 30rpx;
 }
@@ -123,4 +135,52 @@
   color: var(--color-text-secondary);
   font-size: 22rpx;
   line-height: 1.65;
+}
+
+.member-notice__order {
+  display: block;
+  margin-top: 12rpx;
+  color: var(--color-text-secondary);
+  font-size: 20rpx;
+  overflow-wrap: anywhere;
+}
+
+.member-notice__query {
+  min-height: 44px;
+  width: auto;
+  margin: 18rpx 0 0;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  font-size: 22rpx;
+  line-height: 64rpx;
+}
+
+.member-notice__query::after {
+  border: 0;
+}
+
+.purchase-button {
+  min-height: 44px;
+  margin-top: 26rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 28rpx;
+  font-weight: 680;
+  line-height: 96rpx;
+}
+
+.purchase-button::after {
+  border: 0;
+}
+
+.purchase-button[disabled] {
+  background: var(--color-surface-secondary);
+  color: var(--color-text-secondary);
+}
+
+.member-button--pressed {
+  opacity: 0.75;
 }

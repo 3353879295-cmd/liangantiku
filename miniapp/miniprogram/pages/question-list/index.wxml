@@ -142,7 +142,7 @@
             expected-text="{{item.answerText}}"
             explanation="{{item.question.explanation}}"
             knowledge-point="{{item.question.knowledgePoint}}"
-            common-mistake="{{item.question.commonMistake}}"
+            common-mistake="{{item.question.commonMistake || ''}}"
             standard-reference="{{item.question.standardReference}}"
             question-id="{{item.question.id}}"
           />

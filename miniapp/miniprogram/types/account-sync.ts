@@ -18,6 +18,8 @@ export interface AccountProfileSnapshot {
 
 export interface AccountSyncSnapshot {
   schemaVersion: typeof ACCOUNT_SYNC_SCHEMA_VERSION;
+  /** Empty disables uploads. */
+  avatarUploadPathPrefix: string;
   profileRevision: number;
   progressRevision: number;
   syncedAt: string;
@@ -124,6 +126,7 @@ export type SyncCommand = Extract<AccountSyncRequest, { action: SyncCommandActio
 export interface AccountOutboxState {
   schemaVersion: 1;
   commands: SyncCommand[];
+  blocked?: boolean;
 }
 
 export type AccountSyncStatus = 'idle' | 'syncing' | 'pending' | 'failed' | 'conflict';

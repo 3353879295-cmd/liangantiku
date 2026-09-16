@@ -6,6 +6,11 @@
     <text>正在整理真实学习记录</text>
   </view>
 
+  <view wx:elif="{{loadError}}" class="report-loading matte-card">
+    <text>{{loadError}}</text>
+    <button class="report-retry" bindtap="onRetryLoad">重新读取</button>
+  </view>
+
   <view wx:elif="{{!hasLearningData}}" class="report-empty matte-card">
     <view class="report-empty__mark"><t-icon name="chart-bar" size="42rpx" /></view>
     <view class="report-empty__title">还没有可生成的学习报告</view>

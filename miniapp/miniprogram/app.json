@@ -1,7 +1,7 @@
 {
   "pages": [
-    "pages/account-entry/index",
     "pages/home/index",
+    "pages/account-entry/index",
     "pages/library/index",
     "pages/practice/index",
     "pages/answer-sheet/index",

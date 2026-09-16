@@ -16,6 +16,7 @@
 .app-tab-bar__items {
   display: flex;
   height: 112rpx;
+  min-height: 44px;
   align-items: stretch;
 }
 
@@ -27,7 +28,12 @@
   justify-content: center;
   gap: 6rpx;
   box-sizing: border-box;
+  min-height: 44px;
   color: #272d23;
+}
+
+.app-tab-bar__item--pressed {
+  background: rgb(17 18 15 / 5%);
 }
 
 .app-tab-bar__item--active {

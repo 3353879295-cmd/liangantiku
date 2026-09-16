@@ -25,6 +25,8 @@ _SHARDS = (
     ("inspector_l5.json", "4-08-05-01", 5),
     ("inspector_l4.json", "4-08-05-01", 4),
     ("inspector_l3.json", "4-08-05-01", 3),
+    ("inspector_l2.json", "4-08-05-01", 2),
+    ("inspector_l1.json", "4-08-05-01", 1),
 )
 
 

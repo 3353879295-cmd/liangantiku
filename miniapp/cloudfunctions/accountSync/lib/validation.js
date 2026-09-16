@@ -28,6 +28,10 @@ const AVATAR_PATHS = new Set([
   '/assets/avatars/field.svg',
   '/assets/avatars/book.svg',
 ]);
+const CLOUD_ENVIRONMENT_ID = 'cloud1-d2gglad830c91db10';
+const CLOUD_AVATAR_FILE_ID = new RegExp(
+  `^cloud://${CLOUD_ENVIRONMENT_ID}(?:\\.[a-z0-9-]+)?/account-avatars/([a-f0-9]{64})/([a-z0-9-]{8,128})\\.(?:jpg|jpeg|png|webp)$`,
+);
 
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isKnownAction = (action) =>
@@ -45,6 +49,15 @@ const isDate = (value) => {
   const date = new Date(`${value}T00:00:00.000Z`);
   return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
 };
+const isCloudAvatarFileID = (value, accountKey) => {
+  if (typeof value !== 'string' || typeof accountKey !== 'string') return false;
+  const match = CLOUD_AVATAR_FILE_ID.exec(value);
+  return match?.[1] === accountKey;
+};
+const isAvatarUrl = (value, accountKey) =>
+  typeof value === 'string' &&
+  value.length <= 256 &&
+  (value === '' || AVATAR_PATHS.has(value) || isCloudAvatarFileID(value, accountKey));
 
 const validateEvent = (event) => {
   if (!isRecord(event) || typeof event.action !== 'string') invalid();
@@ -63,13 +76,12 @@ const validateEvent = (event) => {
   return event;
 };
 
-const validateProfile = (event) => {
+const validateProfile = (event, accountKey) => {
   if (
     typeof event.nickname !== 'string' ||
     !event.nickname.trim() ||
     Array.from(event.nickname).length > 12 ||
-    typeof event.avatarUrl !== 'string' ||
-    (event.avatarUrl !== '' && !AVATAR_PATHS.has(event.avatarUrl))
+    !isAvatarUrl(event.avatarUrl, accountKey)
   ) {
     invalid();
   }
@@ -183,4 +195,5 @@ module.exports = {
   validateQuestionState,
   validateSession,
   validatePractice,
+  isCloudAvatarFileID,
 };

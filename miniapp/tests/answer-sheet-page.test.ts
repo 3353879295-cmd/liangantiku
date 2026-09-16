@@ -15,6 +15,7 @@ interface AnswerSheetPageModule {
 
 interface AnswerSheetPageData {
   items: Array<{ index: number; number: number; status: string; current: boolean }>;
+  submitting: boolean;
 }
 
 interface AnswerSheetPageContext {
@@ -50,6 +51,7 @@ const loadAnswerSheetPage = async () => {
   const redirectTo = vi.fn<(options: NavigationOptions) => void>();
   const setStorageSync = vi.fn();
   const showModal = vi.fn(() => Promise.resolve({ confirm: true, cancel: false }));
+  const showToast = vi.fn();
 
   vi.stubGlobal('Page', (value: AnswerSheetPageDefinition) => {
     definition = value;
@@ -62,6 +64,7 @@ const loadAnswerSheetPage = async () => {
     navigateTo,
     redirectTo,
     showModal,
+    showToast,
   });
 
   const page = (await import('../miniprogram/pages/answer-sheet/index')) as AnswerSheetPageModule;
@@ -91,6 +94,7 @@ const loadAnswerSheetPage = async () => {
     runtime,
     setStorageSync,
     showModal,
+    showToast,
   };
 };
 
@@ -139,8 +143,9 @@ describe('answer-sheet submission', () => {
     );
     runtime.saveActivePractice(active);
     let statusWhenOpeningReport = '';
-    redirectTo.mockImplementation(() => {
+    redirectTo.mockImplementation((options) => {
       statusWhenOpeningReport = runtime.getActivePractice()?.status ?? '';
+      options.success?.();
     });
 
     await definition.onSubmit.call(context);
@@ -148,7 +153,85 @@ describe('answer-sheet submission', () => {
     expect(showModal).toHaveBeenCalledTimes(1);
     expect(statusWhenOpeningReport).toBe('submitted');
     expect(runtime.getActivePractice()?.feedback[question.id]?.correct).toBe(true);
-    expect(redirectTo).toHaveBeenCalledWith({ url: '/pages/report/index' });
+    expect(redirectTo).toHaveBeenCalledWith({
+      url: '/pages/report/index',
+      success: expect.any(Function),
+      fail: expect.any(Function),
+      complete: expect.any(Function),
+    });
+  });
+
+  it('ignores repeated submission taps while confirmation is pending', async () => {
+    const { context, definition, practiceSession, runtime, showModal } =
+      await loadAnswerSheetPage();
+    const question = makeQuestion({ id: 'Q-SUBMIT-LOCK' });
+    runtime.saveActivePractice(
+      practiceSession.createPracticeSession([question], {
+        mode: 'random',
+        answerRevealMode: 'deferred',
+        now: 1000,
+      }),
+    );
+    let resolveModal!: (value: { confirm: boolean; cancel: boolean }) => void;
+    showModal.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveModal = resolve;
+        }),
+    );
+
+    const first = definition.onSubmit.call(context);
+    const second = definition.onSubmit.call(context);
+    expect(showModal).toHaveBeenCalledTimes(1);
+    resolveModal({ confirm: false, cancel: true });
+    await Promise.all([first, second]);
+
+    expect(context.data.submitting).toBe(false);
+  });
+
+  it('keeps the submission lock until report navigation calls back', async () => {
+    const { context, definition, practiceSession, redirectTo, runtime, showModal } =
+      await loadAnswerSheetPage();
+    const question = makeQuestion({ id: 'Q-SUBMIT-NAVIGATION-LOCK' });
+    runtime.saveActivePractice(
+      practiceSession.createPracticeSession([question], {
+        mode: 'random',
+        answerRevealMode: 'deferred',
+        now: 1000,
+      }),
+    );
+    const first = definition.onSubmit.call(context);
+    await Promise.resolve();
+    expect(showModal).toHaveBeenCalledTimes(1);
+    expect(redirectTo).toHaveBeenCalledTimes(1);
+
+    const second = definition.onSubmit.call(context);
+    expect(showModal).toHaveBeenCalledTimes(1);
+    redirectTo.mock.calls[0]?.[0]?.success?.();
+    await Promise.all([first, second]);
+
+    expect(context.data.submitting).toBe(false);
+  });
+
+  it('releases a stalled report navigation through its timeout fallback', async () => {
+    vi.useFakeTimers();
+    const { context, definition, practiceSession, runtime, showToast } =
+      await loadAnswerSheetPage();
+    const question = makeQuestion({ id: 'Q-SUBMIT-NAVIGATION-TIMEOUT' });
+    runtime.saveActivePractice(
+      practiceSession.createPracticeSession([question], {
+        mode: 'random',
+        answerRevealMode: 'deferred',
+        now: 1000,
+      }),
+    );
+
+    const submission = definition.onSubmit.call(context);
+    await vi.advanceTimersByTimeAsync(5000);
+    await submission;
+
+    expect(context.data.submitting).toBe(false);
+    expect(showToast).toHaveBeenCalledWith({ title: '页面跳转超时，请重试', icon: 'none' });
   });
 });
 
@@ -224,6 +307,25 @@ describe('answer-sheet question selection', () => {
 
     expect(redirectTo).toHaveBeenCalledTimes(2);
     expect(runtime.getActivePractice()?.currentIndex).toBe(0);
+  });
+
+  it('releases a selection with no navigation callback through its timeout fallback', async () => {
+    vi.useFakeTimers();
+    const { context, definition, redirectTo, runtime, showToast } = await loadAnswerSheetPage();
+    const session = runtime.startPracticeFromQuestions(
+      [makeQuestion({ id: 'Q-SELECT-TIMEOUT-1' }), makeQuestion({ id: 'Q-SELECT-TIMEOUT-2' })],
+      'sequential',
+    );
+    if (!session || !runtime.submitActivePractice(2000)) {
+      throw new Error('submitted practice session was not created');
+    }
+
+    definition.onSelectQuestion.call(context, questionTap(1));
+    await vi.advanceTimersByTimeAsync(5000);
+    definition.onSelectQuestion.call(context, questionTap(0));
+
+    expect(redirectTo).toHaveBeenCalledTimes(2);
+    expect(showToast).toHaveBeenCalledWith({ title: '页面跳转超时，请重试', icon: 'none' });
   });
 
   it('unlocks submitted selection from the failure callback before complete for retry', async () => {

@@ -10,6 +10,21 @@
   border-radius: var(--radius-lg);
 }
 
+.retry-button {
+  width: 220rpx;
+  min-height: 72rpx;
+  margin: 20rpx 0 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 23rpx;
+  line-height: 72rpx;
+}
+
+.retry-button::after {
+  border: 0;
+}
+
 .availability-card {
   padding: 40rpx 36rpx;
   background: var(--color-text);

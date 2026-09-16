@@ -1,0 +1,189 @@
+{
+  "after_local_level_counts": {
+    "L1": 594,
+    "L2": 1050,
+    "L3": 875,
+    "L4": 1102,
+    "L5": 202
+  },
+  "appid": "wx84ecacec08ca162c",
+  "before_local_level_counts": {
+    "L1": 594,
+    "L2": 1050,
+    "L3": 875,
+    "L4": 1102,
+    "L5": 202
+  },
+  "catalog_digest": "9839504b8b0aeb03bcd0fa4d359b8bf362c799fd1a113407dc95c38632b35eee",
+  "cloud_level_counts": {
+    "L1": 594,
+    "L2": 1050,
+    "L3": 875,
+    "L4": 1102,
+    "L5": 202
+  },
+  "collections": [
+    "question_bank_config",
+    "question_bank_questions",
+    "question_bank_releases"
+  ],
+  "conflicts": [
+    {
+      "cloud_id": "QI-L3-000001",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000001",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000002",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000002",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000003",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000003",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000004",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000004",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000005",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000005",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000006",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000006",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000007",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000007",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L3-000008",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L3-000008",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000001",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000001",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000002",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000002",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000003",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000003",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000004",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000004",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000005",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000005",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000006",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000006",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000007",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000007",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L4-000008",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L4-000008",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000001",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000001",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000002",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000002",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000003",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000003",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000004",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000004",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000005",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000005",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000006",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000006",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000007",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000007",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    },
+    {
+      "cloud_id": "QI-L5-000008",
+      "kind": "id_content_mismatch",
+      "local_id": "QI-L5-000008",
+      "message": "同一题目 ID 的云端内容与本地内容不一致。"
+    }
+  ],
+  "deduplicated": 3799,
+  "environment": "cloud1-d2gglad830c91db10",
+  "generated_ids": [],
+  "questions_digest": "b1cbbb06caf19880a50ff7fe6af238a2227c248f39912f6c08b7e7be634b21d2",
+  "release_activated_at": "2026-08-30T07:40:22.029Z",
+  "release_created_at": "2026-08-30T05:16:07.357Z",
+  "release_id": "qb-20260830T051607Z-a89e77a9bfa7",
+  "release_question_count": 7933,
+  "skipped": 0,
+  "skipped_unpublished": 0,
+  "source_digest": "a89e77a9bfa7424cfad1bda31e73253dc0fc519e2b3b38d470df6a184fbca18f",
+  "synced": 0,
+  "validation_warnings": 1008
+}

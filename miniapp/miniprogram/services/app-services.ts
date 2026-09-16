@@ -8,6 +8,8 @@ import { ACCOUNT_CLEAR_PENDING_KEY, AuthService, readAuthPreference } from './au
 import { CloudSyncService } from './cloud-sync-service';
 import { ProgressService } from './progress-service';
 import { ThemeService } from './theme-service';
+import { WechatAvatarService } from './wechat-avatar-service';
+import { MembershipService } from './membership-service';
 
 const storage = new WechatStorageAdapter();
 const progressRepository = new ProgressRepository(storage);
@@ -17,6 +19,7 @@ const progress = new ProgressService(
 );
 const syncOutbox = new SyncOutbox(storage);
 const accountSyncClient = new AccountSyncClient();
+const wechatAvatar = new WechatAvatarService(undefined, undefined, storage);
 const cloudSync = new CloudSyncService(accountSyncClient, progressRepository, syncOutbox, {
   getScope: () => progress.getScope(),
   isClearPending: () => storage.get<unknown>(ACCOUNT_CLEAR_PENDING_KEY) === true,
@@ -34,6 +37,8 @@ const auth = new AuthService(
   syncOutbox,
   cloudSync,
   accountSyncClient,
+  undefined,
+  wechatAvatar,
 );
 
 export const appServices = {
@@ -42,6 +47,8 @@ export const appServices = {
   questions: new LocalQuestionRepository(QUESTION_RECORDS),
   auth,
   cloudSync,
+  wechatAvatar,
+  membership: new MembershipService(),
 };
 
 export const localDateKey = (date = new Date()): string => {

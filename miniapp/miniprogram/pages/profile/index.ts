@@ -2,6 +2,7 @@ import { CERTIFICATES } from '../../data/certificates';
 import { presentDashboard } from '../../presenters/home-presenter';
 import { presentActivityBars } from '../../presenters/profile-presenter';
 import { appServices, localDateKey } from '../../services/app-services';
+import { presentMembership } from '../../presenters/membership-presenter';
 
 const emptyDashboard = presentDashboard({
   answered: 0,
@@ -13,8 +14,40 @@ const emptyDashboard = presentDashboard({
   dailyGoal: 20,
 });
 
+const visiblePages = new WeakSet<object>();
+const pendingRecoveryRefreshes = new WeakSet<object>();
+const membershipRequests = new WeakMap<object, number>();
+let membershipRequestId = 0;
+
+const presentAccountStatus = (
+  auth: ReturnType<typeof appServices.auth.getState>,
+): {
+  accountStatus: 'guest' | 'authenticated' | 'recovering' | 'offline';
+  syncText: string;
+  accountDetail: string;
+} => {
+  if (auth.status === 'authenticated') {
+    return { accountStatus: 'authenticated', syncText: '', accountDetail: '' };
+  }
+  if (auth.preference === 'account' && !auth.temporaryGuest) {
+    return auth.status === 'checking'
+      ? {
+          accountStatus: 'recovering',
+          syncText: '正在恢复账号记录',
+          accountDetail: '正在使用本机账号缓存，恢复完成后将自动更新。',
+        }
+      : {
+          accountStatus: 'offline',
+          syncText: '账号暂离线',
+          accountDetail: '正在使用本机账号缓存，可主动登录重试。',
+        };
+  }
+  return { accountStatus: 'guest', syncText: '', accountDetail: '' };
+};
+
 Page({
   data: {
+    clearing: false,
     nickname: '仓廪小麦',
     avatarUrl: '',
     certificateTitle: '',
@@ -22,11 +55,17 @@ Page({
     activity: [] as ReturnType<typeof presentActivityBars>,
     accountStatus: 'guest',
     syncText: '',
+    accountDetail: '',
     lastSyncedAt: '',
     syncFailed: false,
+    isMember: false,
+    membershipStatus: '正在查询会员状态',
+    membershipDetail: '每日可进行3次随机练习',
+    membershipPractice: '',
   },
 
   onShow() {
+    visiblePages.add(this);
     this.getTabBar()?.setData({ value: '/pages/profile/index' });
 
     const today = localDateKey();
@@ -36,17 +75,67 @@ Page({
     );
     const auth = appServices.auth.getState();
     const sync = appServices.cloudSync.getState();
+    const account = presentAccountStatus(auth);
     this.setData({
       nickname: preferences.nickname,
       avatarUrl: preferences.avatarUrl,
       certificateTitle: certificate?.title ?? '粮油仓储管理员 · 初级',
       dashboard: presentDashboard(appServices.progress.getDashboard(today)),
       activity: presentActivityBars(appServices.progress.getActivity(today, 7)),
-      accountStatus: auth.status === 'authenticated' ? 'authenticated' : 'guest',
-      syncText: syncLabel(sync.status, sync.pendingCount),
+      accountStatus: account.accountStatus,
+      syncText: account.syncText || syncLabel(sync.status, sync.pendingCount),
+      accountDetail: account.accountDetail,
       lastSyncedAt: formatSyncedAt(appServices.cloudSync.getLastSyncedAt()),
       syncFailed: sync.status === 'failed',
     });
+    void this.loadMembership();
+
+    if (auth.status === 'checking' && !pendingRecoveryRefreshes.has(this)) {
+      pendingRecoveryRefreshes.add(this);
+      void appServices.auth.initialize().finally(() => {
+        pendingRecoveryRefreshes.delete(this);
+        if (!visiblePages.has(this) || appServices.auth.getState().status === 'checking') return;
+        void this.onShow();
+      });
+    }
+  },
+
+  onHide() {
+    visiblePages.delete(this);
+    membershipRequests.delete(this);
+  },
+
+  onUnload() {
+    visiblePages.delete(this);
+    membershipRequests.delete(this);
+  },
+
+  async loadMembership() {
+    const request = ++membershipRequestId;
+    membershipRequests.set(this, request);
+    try {
+      const membership = await appServices.membership.getStatus();
+      if (membershipRequests.get(this) !== request) return;
+      const view = presentMembership(membership);
+      this.setData({
+        membershipStatus: view.statusText,
+        isMember: view.isMember,
+        membershipDetail: view.detailText,
+        membershipPractice: view.freePracticeText,
+      });
+    } catch {
+      if (membershipRequests.get(this) !== request) return;
+      this.setData({
+        isMember: false,
+        membershipStatus: '会员状态暂未更新',
+        membershipDetail: '进入会员中心可重新查询',
+        membershipPractice: '',
+      });
+    }
+  },
+
+  onAvatarError() {
+    this.setData({ avatarUrl: '' });
   },
 
   onOpenEditProfile() {
@@ -79,20 +168,29 @@ Page({
   },
 
   async onClearLearningData() {
-    const result = await wx.showModal({
-      title: '清除学习数据',
-      content: '练习记录、错题、收藏和未完成练习将被清除；昵称、头像、每日目标和答题主题会保留。',
-      confirmText: '清除',
-      confirmColor: '#c44747',
-    });
-    if (!result.confirm) return;
-    const completed = await appServices.auth.clearLearningData();
-    if (!completed) {
-      void wx.showToast({ title: '清除未完成，请重试', icon: 'none' });
-      return;
+    if (this.data.clearing) return;
+    this.setData({ clearing: true });
+    try {
+      for (const title of ['清除学习数据', '再次确认清除']) {
+        const result = await wx
+          .showModal({
+            title,
+            content: '学习记录将永久清除，无法恢复；资料与设置保留。',
+            confirmText: '清除',
+            confirmColor: '#c44747',
+          })
+          .catch(() => null);
+        if (!result?.confirm) return;
+      }
+      const completed = await appServices.auth.clearLearningData().catch(() => false);
+      if (completed) void this.onShow();
+      void wx.showToast({
+        title: completed ? '学习数据已清除' : '清除未完成，请重试',
+        icon: 'none',
+      });
+    } finally {
+      this.setData({ clearing: false });
     }
-    void this.onShow();
-    void wx.showToast({ title: '学习数据已清除', icon: 'none' });
   },
 });
 
@@ -103,14 +201,13 @@ const syncLabel = (
   if (status === 'syncing') return '同步中';
   if (status === 'pending') return `待同步${pending > 0 ? `（${pending} 项）` : ''}`;
   if (status === 'failed') return '同步失败';
-  if (status === 'conflict') return '已恢复云端记录';
+  if (status === 'conflict') return '同步已暂停';
   return '已同步';
 };
 
 const formatSyncedAt = (value: string | null): string => {
   if (!value) return '暂未同步';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
+  return Number.isNaN(Date.parse(value))
     ? '暂未同步'
     : `最近同步：${value.replace('T', ' ').slice(0, 16)}`;
 };

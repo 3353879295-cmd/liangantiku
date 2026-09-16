@@ -65,7 +65,7 @@ afterEach(() => {
 });
 
 describe('quality inspector practice entry', () => {
-  it("offers the quality inspector's three released levels while keeping warehouse levels released", () => {
+  it('offers all five quality inspector levels while keeping warehouse levels released', () => {
     expect(
       CERTIFICATES.filter(({ occupation }) => occupation === '4-08-05-01').map(
         ({ title, shortTitle, level, availability }) => ({
@@ -98,13 +98,13 @@ describe('quality inspector practice entry', () => {
         title: '粮油质量检验员 · 技师',
         shortTitle: '质检员技师',
         level: 2,
-        availability: 'coming-soon',
+        availability: 'available',
       },
       {
         title: '粮油质量检验员 · 高级技师',
         shortTitle: '质检员高级技师',
         level: 1,
-        availability: 'coming-soon',
+        availability: 'available',
       },
     ]);
     expect(
@@ -128,11 +128,114 @@ describe('quality inspector practice entry', () => {
     ).toBeNull();
   });
 
-  it('rejects inspector deep links for unreleased levels without blocking warehouse levels', async () => {
+  it('opens valid inspector l2 and l1 deep links while rejecting invalid parameters', async () => {
     const parsePracticeRoute = await loadParsePracticeRoute();
 
+    for (const level of ['2', '1']) {
+      for (const mode of ['chapter', 'sequential', 'random', 'mock', 'wrong', 'favorite']) {
+        expect(parsePracticeRoute({ occupation: '4-08-05-01', level, mode })).toEqual({
+          resume: false,
+          input: {
+            occupation: '4-08-05-01',
+            level: Number(level),
+            mode,
+            ...(mode === 'random' ? { limit: 10 } : {}),
+          },
+        });
+      }
+    }
     expect(
-      parsePracticeRoute({ occupation: '4-08-05-01', level: '2', mode: 'sequential' }),
+      parsePracticeRoute({
+        occupation: '4-08-05-01',
+        level: '2',
+        mode: 'chapter',
+        chapterId: 'inspector-import-c01',
+      }),
+    ).toEqual({
+      resume: false,
+      input: {
+        occupation: '4-08-05-01',
+        level: 2,
+        mode: 'chapter',
+        chapterId: 'inspector-import-c01',
+      },
+    });
+    expect(
+      parsePracticeRoute({
+        occupation: '4-08-05-01',
+        level: '2',
+        mode: 'sequential',
+        module: '质检员综合理论',
+      }),
+    ).toEqual({
+      resume: false,
+      input: {
+        occupation: '4-08-05-01',
+        level: 2,
+        mode: 'sequential',
+        module: '质检员综合理论',
+      },
+    });
+    expect(
+      parsePracticeRoute({
+        occupation: '4-08-05-01',
+        level: '1',
+        mode: 'chapter',
+        sectionId: 'inspector-import-c01-s01',
+        module: '质检员综合理论',
+      }),
+    ).toEqual({
+      resume: false,
+      input: {
+        occupation: '4-08-05-01',
+        level: 1,
+        mode: 'chapter',
+        sectionId: 'inspector-import-c01-s01',
+        module: '质检员综合理论',
+      },
+    });
+    for (const options of [
+      {
+        occupation: '4-08-05-01',
+        level: '2',
+        mode: 'chapter',
+        chapterId: 'inspector-import-c01',
+        sectionId: 'inspector-import-c01-s01',
+      },
+      { occupation: '4-08-05-01', level: '2', mode: 'chapter', chapterId: 'unknown' },
+      { occupation: '4-08-05-01', level: '2', mode: 'chapter', chapterId: 'warehouse-l2-c03' },
+      { occupation: '4-08-05-01', level: '2', mode: 'chapter', chapterId: 'inspector-c07' },
+      { occupation: '4-08-05-01', level: '2', mode: 'chapter', sectionId: 'inspector-c07-s02' },
+      {
+        occupation: '4-08-05-01',
+        level: '3',
+        mode: 'chapter',
+        chapterId: 'inspector-import-c01',
+        sectionId: 'inspector-c07-s02',
+      },
+      { occupation: '4-08-05-01', level: '2', mode: 'chapter', module: '数据处理与质量控制' },
+      {
+        occupation: '4-08-05-01',
+        level: '3',
+        mode: 'chapter',
+        module: '职业道德与实验室安全',
+        chapterId: 'inspector-import-c01',
+      },
+    ]) {
+      expect(parsePracticeRoute(options)).toBeNull();
+    }
+    expect(
+      parsePracticeRoute({ occupation: 'unknown', level: '2', mode: 'sequential' }),
+    ).toBeNull();
+    expect(
+      parsePracticeRoute({ occupation: '4-08-05-01', level: '6', mode: 'sequential' }),
+    ).toBeNull();
+    expect(parsePracticeRoute({ occupation: '4-08-05-01', level: '2', mode: 'bad' })).toBeNull();
+    expect(
+      parsePracticeRoute({ occupation: '4-08-05-01', level: '2', mode: 'random', limit: '20' }),
+    ).toBeNull();
+    expect(
+      parsePracticeRoute({ occupation: '4-08-05-01', level: '1', mode: 'random', types: 'single' }),
     ).toBeNull();
     expect(
       parsePracticeRoute({ occupation: '4-02-06-01', level: '2', mode: 'sequential' }),

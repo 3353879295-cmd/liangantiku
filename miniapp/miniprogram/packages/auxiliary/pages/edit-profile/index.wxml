@@ -1,5 +1,5 @@
 <view class="page-shell page-shell--secondary edit-page">
-  <app-topbar title="编辑资料" subtitle="资料保存在本机" fallback-tab="profile" />
+  <app-topbar title="编辑资料" subtitle="管理你的显示资料" fallback-tab="profile" />
 
   <view class="edit-card matte-card">
     <view class="field-label">昵称</view>
@@ -40,7 +40,7 @@
 
   <view class="privacy-note matte-card">
     <t-icon name="lock-on" size="30rpx" />
-    <text>这里只保存昵称和小程序内置头像路径，不会保存相册临时文件，也不会上传到云端。</text>
+    <text>内置头像不会上传；微信头像会上传至云存储，随账号同步，并会在注销账号时清理。</text>
   </view>
 
   <button class="save-button" bindtap="onSave">保存资料</button>

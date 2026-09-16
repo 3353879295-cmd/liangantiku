@@ -107,6 +107,28 @@ def test_exact_duplicate_is_an_error():
     assert [issue.code for issue in report.errors] == ["exact_duplicate"]
 
 
+def test_technical_positive_and_negative_signs_are_not_exact_duplicates():
+    positive = Question.model_validate(
+        valid_question_data(
+            stem="ESI+ 模式下应选择哪个选项？",
+            answer=["A"],
+        )
+    )
+    negative = Question.model_validate(
+        valid_question_data(
+            id="WH-L5-000002",
+            stem="ESI- 模式下应选择哪个选项？",
+            answer=["C"],
+        )
+    )
+
+    report = validate_dataset(
+        [positive, negative], active_sources(), taxonomy(), catalog()
+    )
+
+    assert "exact_duplicate" not in [issue.code for issue in report.errors]
+
+
 def test_invalid_validity_window_is_an_error():
     question = Question.model_validate(valid_question_data())
     question.valid_until = date(2025, 12, 31)

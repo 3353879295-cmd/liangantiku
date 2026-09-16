@@ -8,6 +8,7 @@ const {
   validateQuestionState,
   validateSession,
   validatePractice,
+  isCloudAvatarFileID,
 } = require('./validation');
 
 const MAX_SNAPSHOT_RESPONSE_BYTES = 900 * 1024;
@@ -19,6 +20,7 @@ const emptyAccount = () => ({
   revision: 0,
   nickname: '仓廪小麦',
   avatar_url: '',
+  avatar_file_ids: [],
   selected_certificate_key: '4-02-06-01:5',
   daily_goal: 20,
   answer_theme: 'light',
@@ -105,8 +107,9 @@ const camelCaseDailyTotals = (totals) =>
     ]),
   );
 
-const toSnapshot = (account, progress, now) => ({
+const toSnapshot = (account, progress, accountKey, now) => ({
   schemaVersion: 1,
+  avatarUploadPathPrefix: `account-avatars/${accountKey}`,
   profileRevision: account.revision,
   progressRevision: progress.revision,
   syncedAt: now(),
@@ -144,21 +147,45 @@ const toSnapshot = (account, progress, now) => ({
   },
 });
 
-const snapshotResponse = (account, progress, now) => {
-  const response = { ok: true, data: toSnapshot(account, progress, now) };
+const snapshotResponse = (account, progress, accountKey, now) => {
+  const response = { ok: true, data: toSnapshot(account, progress, accountKey, now) };
   if (Buffer.byteLength(JSON.stringify(response), 'utf8') > MAX_SNAPSHOT_RESPONSE_BYTES) {
     throw new AccountSyncError('ACCOUNT_SYNC_UNAVAILABLE');
   }
   return response;
 };
 
+const accountAvatarFileIDs = (account, accountKey) =>
+  [
+    ...new Set([
+      ...(Array.isArray(account.avatar_file_ids) ? account.avatar_file_ids : []),
+      account.avatar_url,
+    ]),
+  ].filter((fileID) => isCloudAvatarFileID(fileID, accountKey));
+
+const deleteStatusesSucceeded = (requestedFileIDs, files) =>
+  Array.isArray(files) &&
+  files.length === requestedFileIDs.length &&
+  files.every(
+    (file, index) =>
+      file &&
+      file.fileID === requestedFileIDs[index] &&
+      (file.status === 0 || file.status === -503003),
+  );
+
 const createHandler =
-  ({ store, hash, now = () => new Date().toISOString(), inTransaction = false }) =>
+  ({
+    store,
+    hash,
+    now = () => new Date().toISOString(),
+    deleteFiles = async () => [],
+    inTransaction = false,
+  }) =>
   async (event, context) => {
     if (!inTransaction && typeof store.transaction === 'function') {
       return store
         .transaction((transactionStore) =>
-          createHandler({ store: transactionStore, hash, now, inTransaction: true })(
+          createHandler({ store: transactionStore, hash, now, deleteFiles, inTransaction: true })(
             event,
             context,
           ),
@@ -191,7 +218,7 @@ const createHandler =
           progress = emptyProgress();
           await store.createProgress(progressId, progress);
         }
-        return snapshotResponse(account, progress, now);
+        return snapshotResponse(account, progress, key, now);
       }
       if (request.action === 'deleteAccount') {
         if (!account) return { ok: true, data: { schemaVersion: 1, done: true, stage: 'done' } };
@@ -203,6 +230,21 @@ const createHandler =
         if (recordIds.length > 0) {
           await store.removeRecords(recordIds);
           return { ok: true, data: { schemaVersion: 1, done: false, stage: 'records' } };
+        }
+        const avatarFileIDs = accountAvatarFileIDs(account, key);
+        const batch = avatarFileIDs.slice(0, 50);
+        if (batch.length > 0 && !deleteStatusesSucceeded(batch, await deleteFiles(batch))) {
+          throw new AccountSyncError('ACCOUNT_SYNC_UNAVAILABLE');
+        }
+        if (batch.length > 0) {
+          account = {
+            ...account,
+            avatar_file_ids: avatarFileIDs.slice(batch.length),
+            avatar_url: '',
+          };
+          await store.saveAccount(accountId, account);
+          if (account.avatar_file_ids.length > 0)
+            return { ok: true, data: { schemaVersion: 1, done: false, stage: 'account' } };
         }
         if (progress) await store.removeProgress(progressId);
         await store.removeAccount(accountId);
@@ -222,11 +264,11 @@ const createHandler =
             return { ok: false, error: { code: 'ACCOUNT_SYNC_UNAVAILABLE' } };
           }
         }
-        progress = emptyProgress();
+        progress = { ...progress, ...emptyProgress() };
         await store.saveProgress(progressId, progress);
         account = { ...account, learning_clear_state: 'idle' };
         await store.saveAccount(accountId, account);
-        return snapshotResponse(account, progress, now);
+        return snapshotResponse(account, progress, key, now);
       }
       if (account.status === 'deleting') throw new AccountSyncError('ACCOUNT_DELETING');
       if (account.status !== 'active' || account.learning_clear_state !== 'idle') {
@@ -234,7 +276,7 @@ const createHandler =
       }
 
       if (request.action === 'updateProfile') {
-        validateProfile(request);
+        validateProfile(request, key);
         const matches =
           account.nickname === request.nickname && account.avatar_url === request.avatarUrl;
         if (!matches && request.expectedRevision !== account.revision) {
@@ -245,6 +287,9 @@ const createHandler =
             ...account,
             nickname: request.nickname,
             avatar_url: request.avatarUrl,
+            avatar_file_ids: isCloudAvatarFileID(request.avatarUrl, key)
+              ? [...new Set([...accountAvatarFileIDs(account, key), request.avatarUrl])]
+              : accountAvatarFileIDs(account, key),
             revision: account.revision + 1,
           };
           await store.saveAccount(accountId, account);
@@ -406,7 +451,7 @@ const createHandler =
           await store.saveProgress(progressId, progress);
         }
       }
-      return snapshotResponse(account, progress, now);
+      return snapshotResponse(account, progress, key, now);
     } catch (error) {
       if (inTransaction) throw error;
       return toErrorResponse(error);

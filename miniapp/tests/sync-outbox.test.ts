@@ -133,4 +133,42 @@ describe('SyncOutbox', () => {
 
     expect(new SyncOutbox(storage).list()).toEqual([]);
   });
+
+  it('persists a conflict block, resets sending commands, and only clear removes it', () => {
+    const storage = new MemoryStorage();
+    const outbox = new SyncOutbox(
+      storage,
+      () => 1,
+      () => 'id-1',
+    );
+    outbox.enqueue({
+      action: 'setFavorite',
+      schemaVersion: 1,
+      expectedRevision: 4,
+      questionId: 'q1',
+      favorite: true,
+    });
+    outbox.takeNext();
+    outbox.block();
+    outbox.enqueue({
+      action: 'recordPractice',
+      schemaVersion: 1,
+      expectedRevision: 5,
+      sessionId: 's1',
+      mode: 'random',
+      answers: [],
+    });
+    const preserved = outbox.list();
+
+    expect(outbox.isBlocked).toBe(true);
+    expect(outbox.takeNext()).toBeNull();
+    expect(outbox.list()).toEqual(preserved);
+    const restored = new SyncOutbox(storage);
+    expect(restored.isBlocked).toBe(true);
+    expect(restored.list()).toEqual(preserved);
+    outbox.rebase(8, 9);
+    expect(outbox.list()[0]?.expectedRevision).toBe(4);
+    outbox.clear();
+    expect(outbox.isBlocked).toBe(false);
+  });
 });

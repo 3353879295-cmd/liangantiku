@@ -121,12 +121,15 @@
 }
 
 .question-stem {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 34rpx;
   font-weight: 550;
   line-height: 1.65;
 }
 
 .multiple-tip {
+  overflow-wrap: anywhere;
   display: block;
   margin-top: 18rpx;
   color: var(--color-text-secondary);
@@ -142,7 +145,7 @@
 }
 
 .footer-spacer {
-  height: 160rpx;
+  height: calc(160rpx + env(safe-area-inset-bottom));
 }
 
 .practice-footer {
@@ -254,4 +257,17 @@
   50% {
     transform: translateX(-14rpx);
   }
+}
+
+.practice-quota {
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+}
+
+.practice-retry {
+  margin: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text);
 }

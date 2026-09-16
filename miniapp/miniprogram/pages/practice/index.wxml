@@ -1,6 +1,7 @@
 <view class="practice-page {{themeClass}}">
   <app-topbar title="答题练习" subtitle="{{modeLabel}}" fallback-tab="home" />
   <view wx:if="{{!loading && question}}">
+    <view wx:if="{{freePracticeText}}" class="practice-quota">{{freePracticeText}}</view>
     <view
       class="practice-content {{transitionClass}}"
       bindtouchstart="onTouchStart"
@@ -50,7 +51,7 @@
         expected-text="{{expectedText}}"
         explanation="{{question.explanation}}"
         knowledge-point="{{question.knowledgePoint}}"
-        common-mistake="{{question.commonMistake}}"
+        common-mistake="{{question.commonMistake || ''}}"
         standard-reference="{{question.standardReference}}"
         question-id="{{question.id}}"
       />
@@ -84,9 +85,12 @@
     title="{{errorTitle}}"
     description="{{errorDescription}}"
   />
+  <empty-state wx:else kind="loading" title="正在准备题目" description="准备完成后即可开始作答" />
   <app-toast
     visible="{{toastVisible}}"
     message="{{toastMessage}}"
     bind:close="onToastClose"
   />
+  <button wx:if="{{!loading && !sessionReady}}" class="practice-retry" bindtap="onRetryLoad">重新尝试</button>
+  <membership-prompt visible="{{memberPromptVisible}}" bind:close="onCloseMemberPrompt" bind:confirm="onOpenMember" />
 </view>

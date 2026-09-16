@@ -10,7 +10,13 @@
     <text>正在读取当前题库</text>
   </view>
 
+  <view wx:elif="{{loadError}}" class="setup-loading matte-card">
+    <text>{{loadError}}</text>
+    <button class="setup-retry" bindtap="onRetryLoad">重新读取</button>
+  </view>
+
   <block wx:else>
+    <view class="quota-note">{{freePracticeText}}</view>
     <view class="fixed-practice-card matte-card">
       <view class="fixed-practice-card__header">
         <view class="fixed-practice-card__mark"><t-icon name="swap" size="36rpx" /></view>
@@ -37,8 +43,10 @@
 
     <button
       class="start-button"
-      disabled="{{!canStart}}"
+      disabled="{{!canStart || starting}}"
+      loading="{{starting}}"
       bindtap="onStart"
     >开始 {{questionCount}} 题</button>
   </block>
+  <membership-prompt visible="{{memberPromptVisible}}" bind:close="onCloseMemberPrompt" bind:confirm="onOpenMember" />
 </view>

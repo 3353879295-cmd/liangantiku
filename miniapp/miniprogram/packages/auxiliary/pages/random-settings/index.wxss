@@ -2,6 +2,12 @@
   padding-bottom: calc(36rpx + env(safe-area-inset-bottom));
 }
 
+.quota-note {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+}
+
 .setup-loading {
   display: flex;
   min-height: 140rpx;
@@ -10,6 +16,20 @@
   gap: 14rpx;
   color: var(--color-text-secondary);
   font-size: 23rpx;
+}
+
+.setup-retry {
+  min-height: 72rpx;
+  margin: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 22rpx;
+  line-height: 72rpx;
+}
+
+.setup-retry::after {
+  border: 0;
 }
 
 .fixed-practice-card {

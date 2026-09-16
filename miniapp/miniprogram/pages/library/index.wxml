@@ -12,6 +12,11 @@
 
   <view wx:elif="{{loading}}" class="loading-card">正在读取当前教材目录…</view>
 
+  <view wx:elif="{{loadError}}" class="loading-card">
+    <text>{{loadError}}</text>
+    <button class="retry-button" bindtap="onRetryLoad">重新读取</button>
+  </view>
+
   <block wx:else>
     <view class="catalog-context">
       <view>

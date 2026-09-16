@@ -25,16 +25,106 @@ var require_account_key = __commonJS({
 var require_cloud_store = __commonJS({
   "cloudfunctions/accountSync/lib/cloud-store.js"(exports2, module2) {
     "use strict";
+    var defaultDiagnosticLogger = require("node:console");
+    var DIAGNOSTIC_REVISION = "account-sync-store-progress-replacement-20260908-v1";
+    var SAFE_ERROR_NAMES = /* @__PURE__ */ new Set(["Error", "TypeError", "RangeError"]);
+    var SAFE_ENUM_CODE = /^[A-Z][A-Z0-9_]{0,63}$/;
+    var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    var safeErrorMetadata = (error) => {
+      const metadata = { name: "UnknownError" };
+      if (!error || typeof error !== "object") return metadata;
+      try {
+        if (SAFE_ERROR_NAMES.has(error.name)) metadata.name = error.name;
+        for (const key of ["errCode", "code"]) {
+          const value = error[key];
+          if (typeof value === "number" && Number.isFinite(value)) {
+            metadata[key] = value;
+            break;
+          }
+          if (typeof value === "string" && SAFE_ENUM_CODE.test(value)) {
+            metadata[key] = value;
+            break;
+          }
+        }
+      } catch {
+        return metadata;
+      }
+      return metadata;
+    };
+    var safeUpdateMetadata = (result) => {
+      const metadata = {};
+      if (!result || typeof result !== "object") return metadata;
+      try {
+        if (typeof result.updated === "number" && Number.isFinite(result.updated)) {
+          metadata.updated = result.updated;
+        }
+        if (typeof result.requestId === "string" && UUID.test(result.requestId)) {
+          metadata.sdkRequestId = result.requestId;
+        }
+      } catch {
+        return metadata;
+      }
+      return metadata;
+    };
+    var emitDiagnostic = (logger2, event, metadata = {}) => {
+      try {
+        if (logger2 && typeof logger2.info === "function") {
+          logger2.info("[accountSync] store diagnostic", {
+            revision: DIAGNOSTIC_REVISION,
+            event,
+            ...metadata
+          });
+        }
+      } catch {
+        return void 0;
+      }
+    };
     var CloudStore = class _CloudStore {
-      constructor(database, serverDate = () => database.serverDate()) {
+      constructor(database, serverDate = () => database.serverDate(), diagnosticLogger = defaultDiagnosticLogger, transactionAttempt) {
         this.database = database;
         this.serverDate = serverDate;
+        this.diagnosticLogger = diagnosticLogger;
+        this.transactionAttempt = transactionAttempt;
       }
       async transaction(work) {
-        const result = await this.database.runTransaction(
-          async (transaction) => work(new _CloudStore(transaction, this.serverDate))
-        );
-        return result && typeof result === "object" && Object.hasOwn(result, "result") ? result.result : result;
+        let attempts = 0;
+        let latestAttempt;
+        emitDiagnostic(this.diagnosticLogger, "transaction.started");
+        try {
+          const result = await this.database.runTransaction(async (transaction) => {
+            const attempt = { number: ++attempts, stage: "callback_started" };
+            latestAttempt = attempt;
+            emitDiagnostic(this.diagnosticLogger, "transaction.attempt_started", {
+              attempt: attempt.number
+            });
+            try {
+              const callbackResult = await work(
+                new _CloudStore(transaction, this.serverDate, this.diagnosticLogger, attempt)
+              );
+              attempt.stage = "callback_completed";
+              emitDiagnostic(this.diagnosticLogger, "transaction.callback_completed", {
+                attempt: attempt.number
+              });
+              return callbackResult;
+            } catch (error) {
+              attempt.stage = "callback_failed";
+              emitDiagnostic(this.diagnosticLogger, "transaction.callback_failed", {
+                attempt: attempt.number,
+                ...safeErrorMetadata(error)
+              });
+              throw error;
+            }
+          });
+          emitDiagnostic(this.diagnosticLogger, "transaction.committed", { attempts });
+          return result && typeof result === "object" && Object.hasOwn(result, "result") ? result.result : result;
+        } catch (error) {
+          emitDiagnostic(this.diagnosticLogger, "transaction.failed", {
+            attempts,
+            phase: attempts === 0 ? "start" : latestAttempt && latestAttempt.stage === "callback_completed" ? "commit" : "callback",
+            ...safeErrorMetadata(error)
+          });
+          throw error;
+        }
       }
       async getAccount(id) {
         const result = await this.database.collection("user_accounts").doc(id).get();
@@ -70,9 +160,28 @@ var require_cloud_store = __commonJS({
         });
       }
       async saveProgress(id, value) {
-        await this.database.collection("user_progress").doc(id).update({
-          data: { ..._CloudStore.withoutDocumentId(value), updated_at: this.serverDate() }
+        const attempt = this.transactionAttempt;
+        if (attempt) attempt.stage = "progress_update_started";
+        emitDiagnostic(this.diagnosticLogger, "progress_update.started", {
+          ...attempt ? { attempt: attempt.number } : {}
         });
+        try {
+          const result = await this.database.collection("user_progress").doc(id).set({
+            data: { ..._CloudStore.withoutDocumentId(value), updated_at: this.serverDate() }
+          });
+          if (attempt) attempt.stage = "progress_update_completed";
+          emitDiagnostic(this.diagnosticLogger, "progress_update.completed", {
+            ...attempt ? { attempt: attempt.number } : {},
+            ...safeUpdateMetadata(result)
+          });
+        } catch (error) {
+          if (attempt) attempt.stage = "progress_update_failed";
+          emitDiagnostic(this.diagnosticLogger, "progress_update.failed", {
+            ...attempt ? { attempt: attempt.number } : {},
+            ...safeErrorMetadata(error)
+          });
+          throw error;
+        }
       }
       async getRecord(id) {
         const result = await this.database.collection("user_practice_records").doc(id).get();
@@ -152,6 +261,10 @@ var require_validation = __commonJS({
       "/assets/avatars/field.svg",
       "/assets/avatars/book.svg"
     ]);
+    var CLOUD_ENVIRONMENT_ID = "cloud1-d2gglad830c91db10";
+    var CLOUD_AVATAR_FILE_ID = new RegExp(
+      `^cloud://${CLOUD_ENVIRONMENT_ID}(?:\\.[a-z0-9-]+)?/account-avatars/([a-f0-9]{64})/([a-z0-9-]{8,128})\\.(?:jpg|jpeg|png|webp)$`
+    );
     var isRecord = (value) => typeof value === "object" && value !== null && !Array.isArray(value);
     var isKnownAction = (action) => typeof action === "string" && Object.prototype.hasOwnProperty.call(ACTION_FIELDS, action);
     var invalid = () => {
@@ -164,6 +277,12 @@ var require_validation = __commonJS({
       const date = /* @__PURE__ */ new Date(`${value}T00:00:00.000Z`);
       return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === value;
     };
+    var isCloudAvatarFileID = (value, accountKey) => {
+      if (typeof value !== "string" || typeof accountKey !== "string") return false;
+      const match = CLOUD_AVATAR_FILE_ID.exec(value);
+      return match?.[1] === accountKey;
+    };
+    var isAvatarUrl = (value, accountKey) => typeof value === "string" && value.length <= 256 && (value === "" || AVATAR_PATHS.has(value) || isCloudAvatarFileID(value, accountKey));
     var validateEvent = (event) => {
       if (!isRecord(event) || typeof event.action !== "string") invalid();
       if (event.schemaVersion !== 1) throw new AccountSyncError("SCHEMA_INCOMPATIBLE");
@@ -174,8 +293,8 @@ var require_validation = __commonJS({
         invalid();
       return event;
     };
-    var validateProfile = (event) => {
-      if (typeof event.nickname !== "string" || !event.nickname.trim() || Array.from(event.nickname).length > 12 || typeof event.avatarUrl !== "string" || event.avatarUrl !== "" && !AVATAR_PATHS.has(event.avatarUrl)) {
+    var validateProfile = (event, accountKey) => {
+      if (typeof event.nickname !== "string" || !event.nickname.trim() || Array.from(event.nickname).length > 12 || !isAvatarUrl(event.avatarUrl, accountKey)) {
         invalid();
       }
     };
@@ -225,7 +344,8 @@ var require_validation = __commonJS({
       validatePreferences,
       validateQuestionState,
       validateSession,
-      validatePractice
+      validatePractice,
+      isCloudAvatarFileID
     };
   }
 });
@@ -243,7 +363,8 @@ var require_handler = __commonJS({
       validatePreferences,
       validateQuestionState,
       validateSession,
-      validatePractice
+      validatePractice,
+      isCloudAvatarFileID
     } = require_validation();
     var MAX_SNAPSHOT_RESPONSE_BYTES = 900 * 1024;
     var emptyAccount = () => ({
@@ -253,6 +374,7 @@ var require_handler = __commonJS({
       revision: 0,
       nickname: "\u4ED3\u5EEA\u5C0F\u9EA6",
       avatar_url: "",
+      avatar_file_ids: [],
       selected_certificate_key: "4-02-06-01:5",
       daily_goal: 20,
       answer_theme: "light",
@@ -321,8 +443,9 @@ var require_handler = __commonJS({
         { answered: total.answered, correct: total.correct, durationMs: total.duration_ms }
       ])
     );
-    var toSnapshot = (account, progress, now) => ({
+    var toSnapshot = (account, progress, accountKey, now) => ({
       schemaVersion: 1,
+      avatarUploadPathPrefix: `account-avatars/${accountKey}`,
       profileRevision: account.revision,
       progressRevision: progress.revision,
       syncedAt: now(),
@@ -359,17 +482,32 @@ var require_handler = __commonJS({
         }
       }
     });
-    var snapshotResponse = (account, progress, now) => {
-      const response = { ok: true, data: toSnapshot(account, progress, now) };
+    var snapshotResponse = (account, progress, accountKey, now) => {
+      const response = { ok: true, data: toSnapshot(account, progress, accountKey, now) };
       if (Buffer2.byteLength(JSON.stringify(response), "utf8") > MAX_SNAPSHOT_RESPONSE_BYTES) {
         throw new AccountSyncError("ACCOUNT_SYNC_UNAVAILABLE");
       }
       return response;
     };
-    var createHandler = ({ store, hash, now = () => (/* @__PURE__ */ new Date()).toISOString(), inTransaction = false }) => async (event, context) => {
+    var accountAvatarFileIDs = (account, accountKey) => [
+      .../* @__PURE__ */ new Set([
+        ...Array.isArray(account.avatar_file_ids) ? account.avatar_file_ids : [],
+        account.avatar_url
+      ])
+    ].filter((fileID) => isCloudAvatarFileID(fileID, accountKey));
+    var deleteStatusesSucceeded = (requestedFileIDs, files) => Array.isArray(files) && files.length === requestedFileIDs.length && files.every(
+      (file, index) => file && file.fileID === requestedFileIDs[index] && (file.status === 0 || file.status === -503003)
+    );
+    var createHandler = ({
+      store,
+      hash,
+      now = () => (/* @__PURE__ */ new Date()).toISOString(),
+      deleteFiles = async () => [],
+      inTransaction = false
+    }) => async (event, context) => {
       if (!inTransaction && typeof store.transaction === "function") {
         return store.transaction(
-          (transactionStore) => createHandler({ store: transactionStore, hash, now, inTransaction: true })(
+          (transactionStore) => createHandler({ store: transactionStore, hash, now, deleteFiles, inTransaction: true })(
             event,
             context
           )
@@ -394,7 +532,7 @@ var require_handler = __commonJS({
             progress = emptyProgress();
             await store.createProgress(progressId, progress);
           }
-          return snapshotResponse(account, progress, now);
+          return snapshotResponse(account, progress, key, now);
         }
         if (request.action === "deleteAccount") {
           if (!account) return { ok: true, data: { schemaVersion: 1, done: true, stage: "done" } };
@@ -406,6 +544,21 @@ var require_handler = __commonJS({
           if (recordIds.length > 0) {
             await store.removeRecords(recordIds);
             return { ok: true, data: { schemaVersion: 1, done: false, stage: "records" } };
+          }
+          const avatarFileIDs = accountAvatarFileIDs(account, key);
+          const batch = avatarFileIDs.slice(0, 50);
+          if (batch.length > 0 && !deleteStatusesSucceeded(batch, await deleteFiles(batch))) {
+            throw new AccountSyncError("ACCOUNT_SYNC_UNAVAILABLE");
+          }
+          if (batch.length > 0) {
+            account = {
+              ...account,
+              avatar_file_ids: avatarFileIDs.slice(batch.length),
+              avatar_url: ""
+            };
+            await store.saveAccount(accountId, account);
+            if (account.avatar_file_ids.length > 0)
+              return { ok: true, data: { schemaVersion: 1, done: false, stage: "account" } };
           }
           if (progress) await store.removeProgress(progressId);
           await store.removeAccount(accountId);
@@ -425,18 +578,18 @@ var require_handler = __commonJS({
               return { ok: false, error: { code: "ACCOUNT_SYNC_UNAVAILABLE" } };
             }
           }
-          progress = emptyProgress();
+          progress = { ...progress, ...emptyProgress() };
           await store.saveProgress(progressId, progress);
           account = { ...account, learning_clear_state: "idle" };
           await store.saveAccount(accountId, account);
-          return snapshotResponse(account, progress, now);
+          return snapshotResponse(account, progress, key, now);
         }
         if (account.status === "deleting") throw new AccountSyncError("ACCOUNT_DELETING");
         if (account.status !== "active" || account.learning_clear_state !== "idle") {
           throw new AccountSyncError("ACCOUNT_DELETING");
         }
         if (request.action === "updateProfile") {
-          validateProfile(request);
+          validateProfile(request, key);
           const matches = account.nickname === request.nickname && account.avatar_url === request.avatarUrl;
           if (!matches && request.expectedRevision !== account.revision) {
             throw new AccountSyncError("REVISION_CONFLICT");
@@ -446,6 +599,7 @@ var require_handler = __commonJS({
               ...account,
               nickname: request.nickname,
               avatar_url: request.avatarUrl,
+              avatar_file_ids: isCloudAvatarFileID(request.avatarUrl, key) ? [.../* @__PURE__ */ new Set([...accountAvatarFileIDs(account, key), request.avatarUrl])] : accountAvatarFileIDs(account, key),
               revision: account.revision + 1
             };
             await store.saveAccount(accountId, account);
@@ -595,7 +749,7 @@ var require_handler = __commonJS({
             await store.saveProgress(progressId, progress);
           }
         }
-        return snapshotResponse(account, progress, now);
+        return snapshotResponse(account, progress, key, now);
       } catch (error) {
         if (inTransaction) throw error;
         return toErrorResponse(error);
@@ -621,7 +775,8 @@ var getRuntime = () => {
     cloud,
     handler: createHandler({
       store: new CloudStore(cloud.database({ throwOnNotFound: false })),
-      hash: createAccountKey
+      hash: createAccountKey,
+      deleteFiles: async (fileIDs) => (await cloud.deleteFile({ fileList: fileIDs })).fileList
     }),
     isKnownAction
   };

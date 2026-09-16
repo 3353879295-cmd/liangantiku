@@ -2,6 +2,9 @@ import { CERTIFICATES } from '../../data/certificates';
 import { HOME_ACTIONS, presentHomeCertificate } from '../../presenters/home-presenter';
 import type { HomeAction } from '../../presenters/home-presenter';
 import { appServices, localDateKey } from '../../services/app-services';
+import { MembershipError } from '../../repositories/membership-client';
+import { presentMembership } from '../../presenters/membership-presenter';
+import { getPendingRandomStart } from '../../services/random-practice-access';
 import type { CertificateKey } from '../../types/domain';
 
 interface HomeActionCard extends HomeAction {
@@ -30,6 +33,35 @@ const actions: HomeActionCard[] = HOME_ACTIONS.map((action) => ({
 }));
 
 const initialCertificate = presentHomeCertificate(CERTIFICATES, defaultCertificateKey(), 0);
+const visiblePages = new WeakSet<object>();
+const pendingRecoveryRefreshes = new WeakSet<object>();
+const pendingHomeEntries = new WeakSet<object>();
+const certificateRequestVersions = new WeakMap<object, number>();
+const membershipRequestVersions = new WeakMap<object, number>();
+const entryVersions = new WeakMap<object, number>();
+
+const navigate = (url: string) =>
+  new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      if (error) reject(error);
+      else resolve();
+    };
+    const timeout = setTimeout(() => finish(new Error('页面跳转超时，请重试')), 5000);
+    try {
+      const result = wx.navigateTo({
+        url,
+        success: () => finish(),
+        fail: () => finish(new Error('页面跳转失败，请重试')),
+      });
+      void Promise.resolve(result).catch(() => finish(new Error('页面跳转失败，请重试')));
+    } catch {
+      finish(new Error('页面跳转失败，请重试'));
+    }
+  });
 
 Page({
   data: {
@@ -43,10 +75,15 @@ Page({
     resumeText: '选择题库，开始今天的第一次练习',
     resumeActionText: '去学习',
     actions,
+    freePracticeText: '',
+    showMembershipPrompt: false,
+    randomStarting: false,
     loading: true,
   },
 
   onShow() {
+    visiblePages.add(this);
+    if (this.data.randomStarting) this.setData({ randomStarting: false });
     this.getTabBar()?.setData({ value: '/pages/home/index' });
 
     const app = getApp<IAppOption>();
@@ -63,40 +100,91 @@ Page({
     const today = localDateKey();
     const preferences = appServices.progress.getPreferences();
     const session = appServices.progress.restoreSession();
-    const hasResume = session?.status === 'active';
+    const pending = getPendingRandomStart();
+    const hasActiveSession = session?.status === 'active';
+    const hasUnrecordedResult = session?.status === 'submitted' && !session.progressRecorded;
+    const hasResume = hasActiveSession || Boolean(pending);
     app.globalData.selectedCertificateKey = preferences.selectedCertificateKey;
     this.setData({
       nickname: preferences.nickname,
       avatarUrl: preferences.avatarUrl,
       preparationDays: appServices.progress.getPreparationDays(today),
       hasResume,
-      resumeText: hasResume
+      resumeText: hasActiveSession
         ? `继续第 ${session.currentIndex + 1} 题 · 共 ${session.questionIds.length} 题`
-        : '选择题库，开始今天的第一次练习',
-      resumeActionText: hasResume ? '继续' : '去学习',
+        : hasUnrecordedResult
+          ? '查看上次练习结果'
+          : pending
+            ? '恢复上次随机练习'
+            : '选择题库，开始今天的第一次练习',
+      resumeActionText: hasUnrecordedResult ? '查看结果' : hasResume ? '继续' : '去学习',
     });
     void this.loadCertificate(preferences.selectedCertificateKey);
+    void this.loadMembership();
+
+    if (appServices.auth.getState().status === 'checking' && !pendingRecoveryRefreshes.has(this)) {
+      pendingRecoveryRefreshes.add(this);
+      void appServices.auth.initialize().finally(() => {
+        pendingRecoveryRefreshes.delete(this);
+        if (!visiblePages.has(this) || appServices.auth.getState().status === 'checking') return;
+        void this.onShow();
+      });
+    }
+  },
+
+  onHide() {
+    visiblePages.delete(this);
+    certificateRequestVersions.set(this, (certificateRequestVersions.get(this) ?? 0) + 1);
+    membershipRequestVersions.set(this, (membershipRequestVersions.get(this) ?? 0) + 1);
+    entryVersions.set(this, (entryVersions.get(this) ?? 0) + 1);
+  },
+
+  onUnload() {
+    visiblePages.delete(this);
+    certificateRequestVersions.set(this, (certificateRequestVersions.get(this) ?? 0) + 1);
+    membershipRequestVersions.set(this, (membershipRequestVersions.get(this) ?? 0) + 1);
+    entryVersions.set(this, (entryVersions.get(this) ?? 0) + 1);
+  },
+
+  async loadMembership() {
+    const version = (membershipRequestVersions.get(this) ?? 0) + 1;
+    membershipRequestVersions.set(this, version);
+    try {
+      const membership = await appServices.membership.getStatus();
+      if (membershipRequestVersions.get(this) !== version) return;
+      this.setData({ freePracticeText: presentMembership(membership).freePracticeText });
+    } catch {
+      if (membershipRequestVersions.get(this) !== version) return;
+      this.setData({ freePracticeText: '' });
+    }
   },
 
   async loadCertificate(key: CertificateKey) {
     const certificate = getCertificate(key);
     if (!certificate) return;
+    const version = (certificateRequestVersions.get(this) ?? 0) + 1;
+    certificateRequestVersions.set(this, version);
     this.setData({
       selectedKey: certificate.key,
       certificate: presentHomeCertificate(CERTIFICATES, certificate.key, 0),
       loading: true,
     });
 
-    const questions = await appServices.questions.list({
-      occupation: certificate.occupation,
-      level: certificate.level,
-    });
-    if (this.data.selectedKey !== certificate.key) return;
-
-    this.setData({
-      certificate: presentHomeCertificate(CERTIFICATES, certificate.key, questions.length),
-      loading: false,
-    });
+    try {
+      const questions = await appServices.questions.list({
+        occupation: certificate.occupation,
+        level: certificate.level,
+      });
+      if (certificateRequestVersions.get(this) !== version) return;
+      this.setData({
+        certificate: presentHomeCertificate(CERTIFICATES, certificate.key, questions.length),
+        loading: false,
+      });
+    } catch {
+      if (certificateRequestVersions.get(this) !== version) return;
+      this.setData({ loading: false });
+      void wx.showToast({ title: '题库读取失败，请稍后重试', icon: 'none' });
+    }
   },
 
   onCertificateChange(event: WechatMiniprogram.CustomEvent<{ key: CertificateKey }>) {
@@ -107,37 +195,106 @@ Page({
     void this.loadCertificate(key);
   },
 
-  onResume() {
-    if (this.data.hasResume) {
-      void wx.navigateTo({ url: '/pages/practice/index?resume=1' });
-      return;
+  async onResume() {
+    if (pendingHomeEntries.has(this)) return;
+    pendingHomeEntries.add(this);
+    const version = entryVersions.get(this) ?? 0;
+    try {
+      if (this.data.hasResume) {
+        await navigate('/pages/practice/index?resume=1');
+        return;
+      }
+      await this.openStartRoute('/pages/library/index');
+    } catch (error) {
+      if ((entryVersions.get(this) ?? 0) === version) this.showNavigationError(error);
+    } finally {
+      pendingHomeEntries.delete(this);
     }
-    this.openStartRoute('/pages/library/index');
   },
 
-  onAction(event: WechatMiniprogram.TouchEvent) {
+  async onAction(event: WechatMiniprogram.TouchEvent) {
+    if (pendingHomeEntries.has(this)) return;
     const id = String(event.currentTarget.dataset['id']) as HomeAction['id'];
     const action = actions.find((candidate) => candidate.id === id);
     if (!action) return;
-    let route = action.route;
-    if (id === 'wrong' || id === 'favorite') {
-      const certificate = getCertificate(this.data.selectedKey);
-      if (!certificate) return;
-      route += `&occupation=${certificate.occupation}&level=${certificate.level}`;
+    pendingHomeEntries.add(this);
+    const version = entryVersions.get(this) ?? 0;
+    try {
+      let route = action.route;
+      if (id === 'wrong' || id === 'favorite') {
+        const certificate = getCertificate(this.data.selectedKey);
+        if (!certificate) return;
+        route += `&occupation=${certificate.occupation}&level=${certificate.level}`;
+      }
+      if (id === 'random') {
+        if (getPendingRandomStart()) {
+          await navigate('/pages/practice/index?resume=1');
+          return;
+        }
+        this.setData({ randomStarting: true });
+        try {
+          const membership = await appServices.membership.checkPermission('randomPractice');
+          if (!visiblePages.has(this) || (entryVersions.get(this) ?? 0) !== version) return;
+          this.setData({ freePracticeText: presentMembership(membership).freePracticeText });
+        } catch (error) {
+          if (!visiblePages.has(this) || (entryVersions.get(this) ?? 0) !== version) return;
+          if (error instanceof MembershipError && error.code === 'DAILY_LIMIT_REACHED') {
+            this.setData({ showMembershipPrompt: true });
+            return;
+          }
+          void wx.showToast({ title: '随机练习服务暂不可用，请稍后再试', icon: 'none' });
+          return;
+        } finally {
+          if (visiblePages.has(this)) this.setData({ randomStarting: false });
+        }
+      }
+      if ((entryVersions.get(this) ?? 0) !== version) return;
+      await this.openStartRoute(route);
+    } catch (error) {
+      if ((entryVersions.get(this) ?? 0) === version) this.showNavigationError(error);
+    } finally {
+      pendingHomeEntries.delete(this);
     }
-    this.openStartRoute(route);
   },
 
   openStartRoute(route: string) {
     const certificate = this.data.certificate;
     if (this.data.loading || !certificate.canStart) {
       void wx.showToast({ title: '该等级题库待补充', icon: 'none' });
-      return;
+      return Promise.resolve();
     }
-    void wx.navigateTo({ url: route });
+    return navigate(route);
   },
 
-  onOpenMember() {
-    void wx.navigateTo({ url: '/packages/auxiliary/pages/member/index' });
+  async onOpenMember() {
+    if (pendingHomeEntries.has(this)) return;
+    pendingHomeEntries.add(this);
+    const version = entryVersions.get(this) ?? 0;
+    try {
+      await navigate('/packages/auxiliary/pages/member/index');
+    } catch (error) {
+      if ((entryVersions.get(this) ?? 0) === version) this.showNavigationError(error);
+    } finally {
+      pendingHomeEntries.delete(this);
+    }
+  },
+
+  onAvatarError() {
+    this.setData({ avatarUrl: '' });
+  },
+
+  showNavigationError(error: unknown) {
+    void wx.showToast({
+      title: error instanceof Error ? error.message : '页面跳转失败，请重试',
+      icon: 'none',
+    });
+  },
+
+  onCloseMembershipPrompt() {
+    this.setData({ showMembershipPrompt: false });
+  },
+  onConfirmMembershipPrompt() {
+    this.setData({ showMembershipPrompt: false });
+    void this.onOpenMember();
   },
 });

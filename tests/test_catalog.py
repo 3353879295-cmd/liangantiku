@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -136,36 +137,10 @@ EXPECTED_OUTLINES = {
         section|warehouse-l1-c05-s00|4|本章综合考查|page=null|visible_levels=1
         """
     ),
-    "4-08-05-01": _lines(
-        """
-        part|inspector|1|粮油质检员知识目录|visible_levels=5,4,3
-        chapter|inspector-c01|1|职业道德与实验室安全|page=null|visible_levels=5,4,3
-        section|inspector-c01-s01|1|实验室安全规范|page=null|visible_levels=5,4,3
-        section|inspector-c01-s02|2|检验职业道德|page=null|visible_levels=5,4,3
-        chapter|inspector-c02|2|扦样分样与样品制备|page=null|visible_levels=5,4,3
-        section|inspector-c02-s01|1|扦样方法|page=null|visible_levels=5,4,3
-        section|inspector-c02-s02|2|样品制备|page=null|visible_levels=5,4,3
-        chapter|inspector-c03|3|试剂器皿与仪器|page=null|visible_levels=5,4,3
-        section|inspector-c03-s01|1|试剂管理|page=null|visible_levels=5,4,3
-        section|inspector-c03-s02|2|仪器校准|page=null|visible_levels=5,4,3
-        chapter|inspector-c04|4|粮油质量指标|page=null|visible_levels=5,4,3
-        section|inspector-c04-s01|1|水分指标|page=null|visible_levels=5,4,3
-        section|inspector-c04-s02|2|杂质指标|page=null|visible_levels=5,4,3
-        chapter|inspector-c05|5|理化检验方法|page=null|visible_levels=5,4,3
-        section|inspector-c05-s01|1|水分测定|page=null|visible_levels=5,4,3
-        section|inspector-c05-s02|2|杂质测定|page=null|visible_levels=5,4,3
-        chapter|inspector-c06|6|储存品质与安全指标|page=null|visible_levels=5,4,3
-        section|inspector-c06-s01|1|储存品质判定|page=null|visible_levels=5,4,3
-        section|inspector-c06-s02|2|食品安全指标|page=null|visible_levels=5,4,3
-        chapter|inspector-c07|7|数据处理与质量控制|page=null|visible_levels=5,4,3
-        section|inspector-c07-s01|1|检验数据处理|page=null|visible_levels=5,4,3
-        section|inspector-c07-s02|2|质量控制样|page=null|visible_levels=5,4,3
-        chapter|inspector-c08|8|检验记录与报告|page=null|visible_levels=5,4,3
-        section|inspector-c08-s01|1|原始记录|page=null|visible_levels=5,4,3
-        section|inspector-c08-s02|2|检验报告|page=null|visible_levels=5,4,3
-        """
-    ),
 }
+
+
+EXPECTED_INSPECTOR_OUTLINE_SHA256 = "cb6744460bbd4abe7cc5da74f50b600e4e9f662b31973db1eef3274910232989"
 
 
 def _catalog_outline(catalog, occupation_code: str) -> tuple[str, ...]:
@@ -207,10 +182,13 @@ def test_catalog_locks_every_title_page_id_order_and_visible_level():
         "4-02-06-01": "粮油仓储管理员",
         "4-08-05-01": "粮油质量检验员",
     }
-    assert {
-        code: _catalog_outline(catalog, code)
-        for code in catalog.occupations
-    } == EXPECTED_OUTLINES
+    assert _catalog_outline(catalog, "4-02-06-01") == EXPECTED_OUTLINES["4-02-06-01"]
+    inspector_outline = _catalog_outline(catalog, "4-08-05-01")
+    assert hashlib.sha256("\n".join(inspector_outline).encode()).hexdigest() == (
+        EXPECTED_INSPECTOR_OUTLINE_SHA256
+    )
+    assert 'section|inspector-basic-c03-s03|3|"中国好粮油"标准|page=null|visible_levels=5,4,3' in inspector_outline
+    assert 'chapter|inspector-l3-c29|29|黄曲霉毒素B₁的测定|page=null|visible_levels=3' in inspector_outline
 
 
 def test_runtime_document_round_trips_the_canonical_json():
@@ -221,6 +199,17 @@ def test_runtime_document_round_trips_the_canonical_json():
 
     assert runtime_document == document
     assert json.loads(json.dumps(runtime_document, ensure_ascii=False)) == document
+
+
+def test_inspector_catalog_digest_rejects_a_title_or_punctuation_mutation():
+    outline = list(_catalog_outline(load_knowledge_catalog(CATALOG_PATH), "4-08-05-01"))
+    target = 'section|inspector-basic-c03-s03|3|"中国好粮油"标准|page=null|visible_levels=5,4,3'
+    index = outline.index(target)
+    outline[index] = target.replace('"中国好粮油"标准', "中国好粮油标准")
+
+    assert hashlib.sha256("\n".join(outline).encode()).hexdigest() != (
+        EXPECTED_INSPECTOR_OUTLINE_SHA256
+    )
 
 
 def test_catalog_occupations_are_immutable():
@@ -245,26 +234,68 @@ def test_warehouse_catalog_matches_confirmed_five_level_structure():
     assert not catalog.allows("4-02-06-01", 1, "warehouse-import-c01", "warehouse-import-c01-s01")
 
 
-def test_inspector_catalog_is_independent_and_available_to_every_level():
+def test_inspector_catalog_matches_the_confirmed_textbook_level_structure():
     catalog = load_knowledge_catalog(CATALOG_PATH)
 
     assert catalog.counts("4-08-05-01") == {
-        "parts": 1,
-        "chapters": 8,
-        "sections": 16,
+        "parts": 5,
+        "chapters": 31,
+        "sections": 117,
     }
     assert catalog.allows(
         "4-08-05-01",
         5,
-        "inspector-c02",
-        "inspector-c02-s01",
+        "inspector-basic-c01",
+        "inspector-basic-c01-s01",
     )
     assert catalog.allows(
         "4-08-05-01",
         3,
-        "inspector-c08",
-        "inspector-c08-s02",
+        "inspector-l3-c30",
+        "inspector-l3-c30-s02",
     )
+    assert catalog.allows(
+        "4-08-05-01",
+        2,
+        "inspector-import-c01",
+        "inspector-import-c01-s01",
+    )
+    assert catalog.allows(
+        "4-08-05-01",
+        1,
+        "inspector-import-c01",
+        "inspector-import-c01-s01",
+    )
+    assert catalog.allows(
+        "4-08-05-01",
+        1,
+        "inspector-import-c01",
+        "inspector-import-c01-s01",
+    )
+    assert not catalog.allows(
+        "4-08-05-01",
+        2,
+        "inspector-basic-c01",
+        "inspector-basic-c01-s01",
+    )
+
+
+@pytest.mark.parametrize(
+    ("level", "expected_parts"),
+    ((5, ("inspector-basic", "inspector-l5")), (4, ("inspector-basic", "inspector-l4")), (3, ("inspector-basic", "inspector-l3")), (2, ("inspector-import",)), (1, ("inspector-import",))),
+)
+def test_inspector_visible_parts_match_its_certificate_level(level, expected_parts):
+    occupation = load_knowledge_catalog(CATALOG_PATH).occupations["4-08-05-01"]
+    visible = tuple(part.id for part in occupation.parts if level in part.levels)
+
+    assert visible == expected_parts
+    if level in {1, 2}:
+        part = next(part for part in occupation.parts if part.id == "inspector-import")
+        assert (part.title, part.chapters[0].title, part.chapters[0].sections[0].title) == (
+            "质检员综合理论",
+            "质检员综合理论",
+            "质检员综合理论",
+        )
 
 
 def test_catalog_rejects_duplicate_ids(tmp_path: Path):

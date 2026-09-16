@@ -66,7 +66,8 @@ export class SyncOutbox {
     if (
       stored.schemaVersion !== 1 ||
       !Array.isArray(stored.commands) ||
-      !stored.commands.every(isCommand)
+      !stored.commands.every(isCommand) ||
+      (stored.blocked !== undefined && typeof stored.blocked !== 'boolean')
     ) {
       return { schemaVersion: 1, commands: [] };
     }
@@ -74,6 +75,7 @@ export class SyncOutbox {
     const state: AccountOutboxState = {
       schemaVersion: 1,
       commands: stored.commands.map((command) => ({ ...clone(command), state: 'pending' })),
+      ...(stored.blocked ? { blocked: true } : {}),
     };
     this.storage.set(ACCOUNT_OUTBOX_KEY, state);
     return state;
@@ -91,6 +93,10 @@ export class SyncOutbox {
     return this.state.commands.length;
   }
 
+  get isBlocked(): boolean {
+    return this.state.blocked === true;
+  }
+
   enqueue(
     request: Exclude<
       AccountSyncRequest,
@@ -98,7 +104,7 @@ export class SyncOutbox {
     >,
   ): SyncCommand {
     const action = request.action;
-    if (COALESCIBLE_ACTIONS.has(action)) {
+    if (!this.isBlocked && COALESCIBLE_ACTIONS.has(action)) {
       const existing = [...this.state.commands]
         .reverse()
         .find((command) => command.action === action && command.state === 'pending');
@@ -127,6 +133,7 @@ export class SyncOutbox {
   }
 
   takeNext(): SyncCommand | null {
+    if (this.isBlocked) return null;
     const command = this.state.commands.find((item) => item.state === 'pending');
     if (!command) return null;
     command.state = 'sending';
@@ -141,15 +148,10 @@ export class SyncOutbox {
     this.persist();
   }
 
-  resetSending(): void {
-    let changed = false;
-    for (const command of this.state.commands) {
-      if (command.state === 'sending') {
-        command.state = 'pending';
-        changed = true;
-      }
-    }
-    if (changed) this.persist();
+  block(): void {
+    for (const command of this.state.commands) command.state = 'pending';
+    this.state.blocked = true;
+    this.persist();
   }
 
   remove(id: string): void {
@@ -166,6 +168,7 @@ export class SyncOutbox {
 
   /** Reassign only commands that have not been sent, after a cloud revision advances. */
   rebase(profileRevision: number, progressRevision: number): void {
+    if (this.isBlocked) return;
     let profile = profileRevision;
     let progress = progressRevision;
     for (const command of this.state.commands) {

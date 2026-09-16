@@ -7,7 +7,7 @@
   align-items: center;
   gap: 12rpx;
   padding: 0 4rpx;
-  color: var(--color-primary);
+  color: var(--color-primary-strong);
   font-size: 29rpx;
   font-weight: 650;
 }
@@ -28,7 +28,6 @@
   border: 1rpx solid var(--color-border);
   border-radius: 24rpx;
   background: var(--color-surface);
-  box-shadow: var(--shadow-soft);
 }
 
 .analysis__label {
@@ -43,6 +42,8 @@
   color: var(--color-text);
   font-size: 27rpx;
   line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .analysis__answer {
@@ -64,7 +65,7 @@
 }
 
 .analysis__correction-button {
-  min-height: 68rpx;
+  min-height: 44px;
   margin: 0;
   padding: 0 22rpx;
   border: 1rpx solid var(--color-border);

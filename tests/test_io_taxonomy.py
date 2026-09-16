@@ -83,6 +83,17 @@ def test_taxonomy_rejects_unknown_topic():
     )
 
 
+@pytest.mark.parametrize(
+    "level",
+    [1, 2],
+)
+def test_inspector_cloud_taxonomy_keeps_the_comprehensive_theory_path(level: int):
+    taxonomy = load_taxonomy(Path("data/taxonomy.json"))
+
+    assert taxonomy.allows("4-08-05-01", level, "质检员综合理论", "质检员综合理论")
+    assert not taxonomy.allows("4-08-05-01", level, "质检员综合理论", "错误资料")
+
+
 def test_warehouse_taxonomy_matches_visible_catalog_titles_in_order():
     catalog = load_knowledge_catalog(Path("data/knowledge_catalog.json"))
     taxonomy = load_taxonomy(Path("data/taxonomy.json"))

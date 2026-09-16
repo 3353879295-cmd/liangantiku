@@ -20,11 +20,14 @@ interface PracticePageContext {
   setData(update: Partial<PracticePageData>): void;
   renderSession: PracticePageDefinition['renderSession'];
   navigateRelative: PracticePageDefinition['navigateRelative'];
+  syncTheme(): void;
+  refreshMembership(): Promise<void>;
 }
 
 interface PracticePageDefinition {
   data: PracticePageData;
   renderSession(this: PracticePageContext, session: PracticeSession, draft?: string[]): void;
+  onLoad(this: PracticePageContext, options: Record<string, string | undefined>): Promise<void>;
   onSelectOption(
     this: PracticePageContext,
     event: WechatMiniprogram.CustomEvent<{ key: string }>,
@@ -117,6 +120,8 @@ const loadPracticePage = async (
     navigateRelative(offset) {
       registered.navigateRelative.call(this, offset);
     },
+    syncTheme() {},
+    refreshMembership: () => Promise.resolve(),
   };
   registered.renderSession.call(context, session);
   const select = (key: string) =>
@@ -146,6 +151,15 @@ afterEach(() => {
 });
 
 describe('practice page deferred selections', () => {
+  it('uses explicit pending recovery only for a resume route', async () => {
+    const { context, definition, runtime } = await loadPracticePage('immediate', [
+      makeQuestion({ id: 'Q-resume' }),
+    ]);
+    const restore = vi.spyOn(runtime, 'restorePractice');
+    await definition.onLoad.call(context, { resume: '1' });
+    expect(restore).toHaveBeenCalledWith(true);
+  });
+
   it.each([
     { label: 'multiple question', type: 'multiple' as const },
     { label: 'multi-answer case question', type: 'case' as const },
@@ -311,6 +325,24 @@ describe('practice page gesture coordination', () => {
 });
 
 describe('practice page answer-sheet navigation', () => {
+  it('releases the answer-sheet lock after a missing callback or synchronous throw', async () => {
+    vi.useFakeTimers();
+    const { context, definition, navigateTo } = await loadPracticePage('deferred', [
+      makeQuestion({ id: 'Q-navigation-timeout' }),
+    ]);
+    definition.onOpenAnswerSheet.call(context);
+    definition.onOpenAnswerSheet.call(context);
+    expect(navigateTo).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(5000);
+    navigateTo.mockImplementationOnce(() => {
+      throw new Error('navigation failed');
+    });
+    definition.onOpenAnswerSheet.call(context);
+    definition.onOpenAnswerSheet.call(context);
+    expect(navigateTo).toHaveBeenCalledTimes(3);
+    navigateTo.mock.calls[2]?.[0].complete?.();
+  });
+
   it('locks duplicate active entries and unlocks after failure for retry', async () => {
     const { context, definition, navigateTo } = await loadPracticePage('deferred', [
       makeQuestion({ id: 'Q-active-route' }),

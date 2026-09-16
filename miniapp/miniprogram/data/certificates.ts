@@ -30,7 +30,7 @@ const LEVELS = [
 
 const OCCUPATIONS = [
   ['4-02-06-01', '粮油仓储管理员', '保管员', new Set<CertificateLevel>([5, 4, 3, 2, 1])],
-  ['4-08-05-01', '粮油质量检验员', '质检员', new Set<CertificateLevel>([5, 4, 3])],
+  ['4-08-05-01', '粮油质量检验员', '质检员', new Set<CertificateLevel>([5, 4, 3, 2, 1])],
 ] as const satisfies ReadonlyArray<
   readonly [OccupationCode, string, string, ReadonlySet<CertificateLevel>]
 >;

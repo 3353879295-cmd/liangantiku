@@ -17,7 +17,7 @@
     "sync:questions": "node scripts/sync-question-bank.mjs && npm run prepare:runtime-deps"
   },
   "dependencies": {
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
