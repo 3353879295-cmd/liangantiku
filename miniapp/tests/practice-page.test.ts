@@ -1,9 +1,41 @@
+import { createRequire } from 'node:module';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeQuestion } from './factories';
 import type { PracticeSession } from '../miniprogram/services/practice-session';
 import type { StorageAdapter } from '../miniprogram/types/domain';
 import type { AnswerRevealMode, Question } from '../miniprogram/types/domain';
+import type { AccountSyncSnapshot } from '../miniprogram/types/account-sync';
+
+const require = createRequire(import.meta.url);
+const { createHandler } = require('../cloudfunctions/accountSync/lib/handler.js') as {
+  createHandler: (dependencies: {
+    store: ReturnType<typeof createSessionSyncStore>;
+    hash: () => string;
+  }) => (event: unknown, context: unknown) => Promise<{ ok: boolean; data: AccountSyncSnapshot }>;
+};
+
+// Exercise the real server serialization without connecting to a cloud account.
+const createSessionSyncStore = () => {
+  const accounts = new Map<string, unknown>();
+  const progress = new Map<string, unknown>();
+  return {
+    getAccount: (id: string) => Promise.resolve(accounts.get(id) ?? null),
+    getProgress: (id: string) => Promise.resolve(progress.get(id) ?? null),
+    createAccount: (id: string, value: unknown) => {
+      accounts.set(id, value);
+      return Promise.resolve();
+    },
+    createProgress: (id: string, value: unknown) => {
+      progress.set(id, value);
+      return Promise.resolve();
+    },
+    saveProgress: (id: string, value: unknown) => {
+      progress.set(id, value);
+      return Promise.resolve();
+    },
+  };
+};
 
 interface PracticePageData {
   draftSelection: string[];
@@ -130,6 +162,7 @@ const loadPracticePage = async (
     } as WechatMiniprogram.CustomEvent<{ key: string }>);
 
   return {
+    appServices,
     context,
     definition: registered,
     navigateTo,
@@ -261,6 +294,88 @@ describe('practice page deferred selections', () => {
     expect(context.data.showConfirm).toBe(true);
     expect(context.data.multipleTipText).toBe('本题有多个正确答案，选好后点击确认答案');
   });
+});
+
+describe('practice page after resuming and synchronizing', () => {
+  it.each(['immediate', 'deferred'] as const)(
+    'keeps answers, next-question and answer-sheet actions working after a %s cloud round trip',
+    async (mode) => {
+      vi.useFakeTimers();
+      const questions = [
+        makeQuestion({ id: 'WH-L5-000001' }),
+        makeQuestion({ id: 'WH-L5-000002' }),
+      ];
+      const {
+        appServices,
+        context,
+        definition,
+        runtime,
+        select,
+        navigateTo,
+        ProgressService,
+        ProgressRepository,
+      } = await loadPracticePage(mode, questions);
+      const repository = new ProgressRepository(new MemoryStorageAdapter());
+      appServices.progress = new ProgressService(repository, 'account');
+      appServices.progress.updatePreferences({ answerRevealMode: mode });
+      runtime.startPracticeFromQuestions(questions, 'sequential');
+      const saved = appServices.progress.restoreSession();
+      appServices.progress.saveSession(null);
+      expect(runtime.getActivePractice()).toBeNull();
+      appServices.progress.saveSession(saved);
+      vi.spyOn(appServices.questions, 'getByIds').mockResolvedValue(questions);
+      await definition.onLoad.call(context, { resume: '1' });
+
+      const server = createHandler({ store: createSessionSyncStore(), hash: () => 'a'.repeat(64) });
+      const serverContext = { APPID: 'wx-test', OPENID: 'test-user' };
+      await server({ action: 'bootstrap', schemaVersion: 1 }, serverContext);
+      let revision = 0;
+      const refreshFromServer = async () => {
+        const local = appServices.progress.restoreSession();
+        const response = await server(
+          {
+            action: 'saveActiveSession',
+            schemaVersion: 1,
+            expectedRevision: revision,
+            session: local,
+          },
+          serverContext,
+        );
+        expect(response).toMatchObject({ ok: true });
+        expect(response.data.progress.session).toEqual(local);
+        // The cloud handler writes answerRevealMode last; local serialization writes it third.
+        expect(JSON.stringify(response.data.progress.session)).not.toBe(JSON.stringify(local));
+        revision = response.data.progressRevision;
+        repository.saveAccountCache({ cacheVersion: 1, ...response.data });
+        appServices.progress.refreshAccountSnapshot();
+      };
+
+      await refreshFromServer();
+      select('A');
+      expect(context.data.draftSelection).toEqual(['A']);
+      expect(context.data.analysisVisible).toBe(mode === 'immediate');
+
+      await refreshFromServer();
+      definition.onNext.call(context);
+      expect(runtime.getActivePractice()?.currentIndex).toBe(1);
+      expect(context.data.draftSelection).toEqual([]);
+      vi.advanceTimersByTime(180);
+
+      await refreshFromServer();
+      select('B');
+      expect(runtime.getActivePractice()?.answers).toEqual({
+        'WH-L5-000001': ['A'],
+        'WH-L5-000002': ['B'],
+      });
+
+      await refreshFromServer();
+      definition.onOpenAnswerSheet.call(context);
+      expect(navigateTo).toHaveBeenCalledTimes(1);
+      expect(navigateTo.mock.calls[0]?.[0].url).toBe('/pages/answer-sheet/index');
+      navigateTo.mock.calls[0]?.[0].complete?.();
+      definition.onUnload.call(context);
+    },
+  );
 });
 
 describe('practice page gesture coordination', () => {

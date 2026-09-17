@@ -47,7 +47,7 @@ describe('member page', () => {
       '不受每日3次随机练习限制',
       '立即开通 ¥28',
       '继续支付 ¥28',
-      '请先检查支付结果',
+      '重新支付 ¥28',
       '继续支付 ¥28',
       '可以重新购买 ¥28',
     ])
@@ -56,6 +56,10 @@ describe('member page', () => {
     expect(markup).toContain("transactionStage === 'PAYMENT_UNKNOWN'");
     expect(markup).toContain("transactionStage === 'PENDING'");
     expect(markup).not.toContain('平台处理中，请检查支付结果');
+    expect(markup).not.toContain('请先检查支付结果');
+    expect(markup).toContain(
+      'disabled="{{loading || purchasing || transactionStage === \'PAID\'}}" bind:tap="onPurchase"',
+    );
     expect(markup).toContain('disabled="{{loading || purchasing}}" bind:tap="onQueryPending"');
     expect(markup).toContain('bind:tap="onRefresh"');
   });
@@ -541,73 +545,78 @@ describe('member page', () => {
     expect(membership.purchase).not.toHaveBeenCalled();
   });
 
-  it('shows a pending order and lets the user manually check its server result', async () => {
-    vi.resetModules();
-    let definition: MemberPage | undefined;
-    const membership = {
-      recoverOrders: vi.fn().mockResolvedValue(status),
-      getPendingOrderId: vi.fn(() => null),
-      getPaymentState: vi.fn(() => 'idle'),
-      getLastPurchaseResult: vi.fn(() => null),
-      subscribePayment: vi.fn(() => vi.fn()),
-      invalidateSession: vi.fn(),
-      onPaymentReturn: vi.fn(),
-      purchase: vi.fn().mockResolvedValue({
-        confirmed: false,
-        order: { orderId: 'o-pending', status: 'PENDING' },
-        membership: status,
-      }),
-      queryOrder: vi.fn().mockResolvedValue({
-        confirmed: true,
-        order: { orderId: 'o-pending', status: 'PAID' },
-        membership: { ...status, isMember: true, expiresAt: '2027-03-05T00:00:00Z' },
-      }),
-    };
-    vi.doMock('../miniprogram/packages/auxiliary/services/membership-service', () => ({
-      memberPaymentService: membership,
-    }));
-    vi.stubGlobal('wx', {
-      showToast: vi.fn(),
-      onNetworkStatusChange: vi.fn(),
-      offNetworkStatusChange: vi.fn(),
-    });
-    vi.stubGlobal('Page', (page: MemberPage) => {
-      definition = page;
-    });
-    await import('../miniprogram/packages/auxiliary/pages/member/index');
-    if (!definition) throw new Error('member page not registered');
-    const context = {
-      data: structuredClone(definition.data),
-      setData(update: Record<string, unknown>) {
-        Object.assign(this.data, update);
-      },
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      loadMembership: definition.loadMembership,
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      applyPurchaseResult: definition.applyPurchaseResult,
-      revision: 0,
-      unloaded: false,
-      hidden: false,
-    };
-    await definition.loadMembership.call(context);
-    await definition.onPurchase.call(context);
-    expect(context.data).toMatchObject({
-      pendingOrderId: 'o-pending',
-      notice: expect.stringContaining('微信平台已确认订单待支付或处理中'),
-    });
-    const markup = readFileSync(
-      resolve(import.meta.dirname, '../miniprogram/packages/auxiliary/pages/member/index.wxml'),
-      'utf8',
-    );
-    expect(markup).toContain('订单号：{{pendingOrderId}}');
-    expect(markup).toContain('复制订单号');
-    expect(markup).toContain('右上角菜单选择“反馈”');
-    await definition.onQueryPending.call(context);
-    expect(membership.queryOrder).toHaveBeenCalledWith(
-      'o-pending',
-      expect.stringMatching(/^p-[a-z0-9-]{4,32}$/i),
-    );
-  });
+  it.each(['PAYMENT_STARTING', 'PAYMENT_UNKNOWN', 'PENDING'] as const)(
+    'keeps %s retry available and lets the user manually check its server result',
+    async (stage) => {
+      vi.resetModules();
+      let definition: MemberPage | undefined;
+      const membership = {
+        recoverOrders: vi.fn().mockResolvedValue(status),
+        getPendingOrderId: vi.fn(() => null),
+        getPaymentState: vi.fn(() => 'idle'),
+        getLastPurchaseResult: vi.fn(() => null),
+        subscribePayment: vi.fn(() => vi.fn()),
+        invalidateSession: vi.fn(),
+        onPaymentReturn: vi.fn(),
+        purchase: vi.fn().mockResolvedValue({
+          confirmed: false,
+          order: { orderId: 'o-pending', status: 'PENDING' },
+          membership: status,
+        }),
+        getTransactionStage: vi.fn(() => stage),
+        queryOrder: vi.fn().mockResolvedValue({
+          confirmed: true,
+          order: { orderId: 'o-pending', status: 'PAID' },
+          membership: { ...status, isMember: true, expiresAt: '2027-03-05T00:00:00Z' },
+        }),
+      };
+      vi.doMock('../miniprogram/packages/auxiliary/services/membership-service', () => ({
+        memberPaymentService: membership,
+      }));
+      vi.stubGlobal('wx', {
+        showToast: vi.fn(),
+        onNetworkStatusChange: vi.fn(),
+        offNetworkStatusChange: vi.fn(),
+      });
+      vi.stubGlobal('Page', (page: MemberPage) => {
+        definition = page;
+      });
+      await import('../miniprogram/packages/auxiliary/pages/member/index');
+      if (!definition) throw new Error('member page not registered');
+      const context = {
+        data: structuredClone(definition.data),
+        setData(update: Record<string, unknown>) {
+          Object.assign(this.data, update);
+        },
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        loadMembership: definition.loadMembership,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        applyPurchaseResult: definition.applyPurchaseResult,
+        revision: 0,
+        unloaded: false,
+        hidden: false,
+      };
+      await definition.loadMembership.call(context);
+      await definition.onPurchase.call(context);
+      expect(membership.purchase).toHaveBeenCalledOnce();
+      expect(context.data).toMatchObject({
+        pendingOrderId: 'o-pending',
+        notice: expect.stringContaining('上次支付尚未完成，可以点击“重新支付”继续开通'),
+      });
+      const markup = readFileSync(
+        resolve(import.meta.dirname, '../miniprogram/packages/auxiliary/pages/member/index.wxml'),
+        'utf8',
+      );
+      expect(markup).toContain('订单号：{{pendingOrderId}}');
+      expect(markup).toContain('复制订单号');
+      expect(markup).toContain('右上角菜单选择“反馈”');
+      await definition.onQueryPending.call(context);
+      expect(membership.queryOrder).toHaveBeenCalledWith(
+        'o-pending',
+        expect.stringMatching(/^p-[a-z0-9-]{4,32}$/i),
+      );
+    },
+  );
 
   it('does not query a pending order while membership recovery is loading', async () => {
     vi.resetModules();
@@ -776,13 +785,19 @@ describe('member page', () => {
     await context.applyPurchaseResult({
       confirmed: false,
       paymentState: 'cancelled',
-      order: { orderId: 'cancel-order', status: 'PENDING', amount: 2800, paidAt: null },
+      order: {
+        orderId: 'cancel-order',
+        status: 'PENDING',
+        amount: 2800,
+        paidAt: null,
+        purchaseCancelled: true,
+      },
       membership: { ...status, isMember: true, expiresAt: '2027-03-05T00:00:00Z' },
     });
     expect(context.data['notice']).toContain('已取消本次支付');
     expect(context.data['notice']).not.toContain('未开通会员');
     expect(context.data['isMember']).toBe(true);
-    expect(context.data['pendingOrderId']).toBe('cancel-order');
+    expect(context.data['pendingOrderId']).toBe('');
     await context.applyPurchaseResult({
       confirmed: false,
       paymentState: 'cancelled',

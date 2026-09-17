@@ -8,6 +8,7 @@ const {
   SAFE_TERMINAL,
   hasReliableTerminalEvidence,
   hasReleasedTestHold,
+  hasCancelledPurchase,
   isUnresolved,
   isReconcilable,
   projectedOrder,
@@ -54,6 +55,7 @@ const PAYMENT_ACTIONS = new Set([
   'markPaymentUnknown',
   'getOrder',
   'recoverOrders',
+  'cancelPayment',
 ]);
 const iso = (now) => (now instanceof Date ? now : new Date(now)).toISOString();
 const dateInShanghai = (now) => {
@@ -163,11 +165,13 @@ const publicOrder = (order) => ({
   status: order.status,
   amount: order.amount,
   paidAt: order.paid_at || null,
+  ...(hasCancelledPurchase(order) ? { purchaseCancelled: true } : {}),
 });
 const canResumeVirtualPayment = (order, payment, context) =>
   Boolean(
     order &&
     !hasReleasedTestHold(order) &&
+    !hasCancelledPurchase(order) &&
     payment?.kind === 'virtual' &&
     order.account_key &&
     order.app_id === context?.APPID &&
@@ -177,6 +181,15 @@ const canResumeVirtualPayment = (order, payment, context) =>
     order.amount === AMOUNT &&
     order.currency === 'CNY',
   );
+const assertCancellableVirtualOrder = (order, accountKey, context) => {
+  if (!order || order.account_key !== accountKey) throw new MembershipError('ORDER_NOT_FOUND');
+  if (
+    order.payment_provider !== 'virtual' ||
+    order.app_id !== context.APPID ||
+    order.open_id !== context.OPENID
+  )
+    throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
+};
 const bridgeAttemptHash = (value) =>
   typeof value === 'string' ? crypto.createHash('sha256').update(value).digest('hex') : null;
 const createBridgeAttempt = () => crypto.randomBytes(32).toString('base64url');
@@ -242,7 +255,7 @@ const paymentLockId = (appid, env, wxOrderId) =>
 // Signing is intentionally outside the transaction because it exchanges a one-time login code.
 // The second transaction binds exactly that signed payload to the still-unclaimed PREPARED order.
 const authorizePreparedBridge = async (store, payment, order, context, loginCode, timestamp) => {
-  if (order.status !== 'PREPARED' || hasReleasedTestHold(order))
+  if (order.status !== 'PREPARED' || hasReleasedTestHold(order) || hasCancelledPurchase(order))
     return { order, canStartPayment: false };
   const signedPayment = await payment.createPayment(order, context, loginCode);
   const fingerprint = paymentFingerprint(signedPayment);
@@ -251,7 +264,12 @@ const authorizePreparedBridge = async (store, payment, order, context, loginCode
   const expiresAt = new Date(new Date(timestamp).valueOf() + 120000).toISOString();
   const current = await store.transaction(async (tx) => {
     const latest = await tx.getOrder(order.order_id);
-    if (!latest || latest.status !== 'PREPARED' || hasReleasedTestHold(latest))
+    if (
+      !latest ||
+      latest.status !== 'PREPARED' ||
+      hasReleasedTestHold(latest) ||
+      hasCancelledPurchase(latest)
+    )
       return latest || order;
     const next = {
       ...latest,
@@ -264,7 +282,9 @@ const authorizePreparedBridge = async (store, payment, order, context, loginCode
     await tx.saveOrder(latest.order_id, next);
     return next;
   });
-  return current?.status === 'PREPARED' && !hasReleasedTestHold(current)
+  return current?.status === 'PREPARED' &&
+    !hasReleasedTestHold(current) &&
+    !hasCancelledPurchase(current)
     ? { order: current, canStartPayment: true, payment: signedPayment, bridgeAttempt }
     : { order: current || order, canStartPayment: false };
 };
@@ -444,9 +464,13 @@ const createHandler =
               const pointed = await tx.getOrder(pointer.pending_order_id);
               if (!pointed || pointed.account_key !== accountKey)
                 throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
-              if (isUnresolved(pointed) && !hasReleasedTestHold(pointed))
+              if (
+                isUnresolved(pointed) &&
+                !hasReleasedTestHold(pointed) &&
+                !hasCancelledPurchase(pointed)
+              )
                 return { order: pointed, created: false };
-              if (hasReleasedTestHold(pointed)) {
+              if (hasReleasedTestHold(pointed) || hasCancelledPurchase(pointed)) {
                 await tx.savePendingPurchase(accountKey, null);
               } else if (!['PAID', ...SAFE_TERMINAL].includes(pointed.status)) {
                 throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
@@ -459,7 +483,8 @@ const createHandler =
               if (
                 legacy?.account_key === accountKey &&
                 isUnresolved(legacy) &&
-                !hasReleasedTestHold(legacy)
+                !hasReleasedTestHold(legacy) &&
+                !hasCancelledPurchase(legacy)
               ) {
                 await tx.savePendingPurchase(accountKey, legacy.order_id);
                 return { order: legacy, created: false };
@@ -490,7 +515,7 @@ const createHandler =
         });
         const order = created.order;
         const bridge =
-          virtual && order.status === 'PREPARED'
+          virtual && order.status === 'PREPARED' && !hasCancelledPurchase(order)
             ? await authorizePreparedBridge(
                 store,
                 payment,
@@ -520,6 +545,7 @@ const createHandler =
         if (!order || order.account_key !== accountKey)
           throw new MembershipError('ORDER_NOT_FOUND');
         if (
+          !hasCancelledPurchase(order) &&
           canReconcile(payment) &&
           (isReconcilable(order) || (payment.kind === 'virtual' && order.status === 'PAID'))
         ) {
@@ -586,6 +612,66 @@ const createHandler =
           data: { order: publicOrder(projectedOrder(order)), canStartPayment: false },
         };
       }
+      if (action === 'cancelPayment') {
+        observation = diagnostics?.start(action, event);
+        if (!validId(event.orderId)) throw new MembershipError('INVALID_REQUEST');
+        diagnosticStage = 'transaction';
+        const initial = await store.getOrder(event.orderId);
+        assertCancellableVirtualOrder(initial, accountKey, context);
+        // A cancellation only withdraws the app's intent to buy. For an order that
+        // reached the payment bridge, first accept any authoritative success that is
+        // already available. A query failure deliberately does not prevent cancelling:
+        // it remains due for server-side reconciliation and is not payment evidence.
+        if (
+          !hasCancelledPurchase(initial) &&
+          ['PAYMENT_STARTING', 'PAYMENT_UNKNOWN', 'PENDING'].includes(initial.status) &&
+          canReconcile(payment)
+        ) {
+          try {
+            await reconcileOrder(store, payment, initial, context, timestamp);
+          } catch (error) {
+            try {
+              diagnostics?.reconcileFail(initial.order_id, error);
+            } catch {
+              // Diagnostics are best effort; a logger failure must not restore a cancelled hold.
+            }
+          }
+        }
+        const result = await store.transaction(async (tx) => {
+          const current = await tx.getOrder(event.orderId);
+          assertCancellableVirtualOrder(current, accountKey, context);
+          // A paid order, or one backed by a reliable platform terminal result, is
+          // immutable. Cancelling the app's purchase intent cannot alter payment facts.
+          if (current.status === 'PAID' || hasReliableTerminalEvidence(current))
+            return { order: current, cancelled: false };
+          if (
+            !['PREPARED', 'PAYMENT_STARTING', 'PAYMENT_UNKNOWN', 'PENDING'].includes(current.status)
+          )
+            return { order: current, cancelled: false };
+          if (hasCancelledPurchase(current)) return { order: current, cancelled: true };
+          const cancelled = {
+            ...current,
+            purchase_cancelled_at: iso(timestamp),
+            updated_at: iso(timestamp),
+          };
+          await tx.saveOrder(current.order_id, cancelled);
+          await clearPointer(tx, cancelled);
+          return { order: cancelled, cancelled: true };
+        });
+        const [entitlement, usage] = await Promise.all([
+          store.getEntitlement(accountKey),
+          store.getUsage(accountKey),
+        ]);
+        diagnostics?.complete(observation, diagnosticStage);
+        return {
+          ok: true,
+          data: {
+            order: publicOrder(projectedOrder(result.order)),
+            membership: status(entitlement, usage, timestamp, paymentAvailable, unavailableReason),
+            cancelled: result.cancelled,
+          },
+        };
+      }
       if (action === 'markPaymentStarting' || action === 'markPaymentUnknown') {
         observation = diagnostics?.start(action, event);
         if (!validId(event.orderId)) throw new MembershipError('INVALID_REQUEST');
@@ -595,7 +681,8 @@ const createHandler =
           const current = await tx.getOrder(event.orderId);
           if (!current || current.account_key !== accountKey)
             throw new MembershipError('ORDER_NOT_FOUND');
-          if (hasReleasedTestHold(current)) return { order: current, bridgeLease: false };
+          if (hasReleasedTestHold(current) || hasCancelledPurchase(current))
+            return { order: current, bridgeLease: false };
           // A terminal platform result is immutable; an old app process cannot resurrect it.
           if (SAFE_TERMINAL.has(current.status) || current.status === 'PAID')
             return { order: current, bridgeLease: false };
@@ -653,18 +740,24 @@ const createHandler =
           store.listDuePendingOrders(accountKey, 1),
           requestedLocalOrder ? store.getOrder(event.localOrderId) : null,
         ]);
+        const pendingOrder = pending[0];
         const result = {
           ok: true,
           data: {
             membership: status(entitlement, usage, timestamp, paymentAvailable, unavailableReason),
-            ...(pending[0] ? { pendingOrder: publicOrder(projectedOrder(pending[0])) } : {}),
+            ...(pendingOrder ? { pendingOrder: publicOrder(projectedOrder(pendingOrder)) } : {}),
             ...(requestedLocalOrder &&
             localOrder?.account_key === accountKey &&
             localOrder.app_id === context.APPID &&
             localOrder.open_id === context.OPENID &&
             hasReleasedTestHold(localOrder)
               ? { releasedTestOrderId: event.localOrderId }
-              : {}),
+              : localOrder?.account_key === accountKey &&
+                  localOrder.app_id === context.APPID &&
+                  localOrder.open_id === context.OPENID &&
+                  hasCancelledPurchase(localOrder)
+                ? { cancelledOrderId: event.localOrderId }
+                : {}),
           },
         };
         diagnostics?.complete(observation, diagnosticStage);

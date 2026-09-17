@@ -135,7 +135,7 @@ describe('MembershipService payment transaction', () => {
     );
     expect(pay).not.toHaveBeenCalled();
   });
-  it('blocks a server-confirmed pending order from reopening the cashier', async () => {
+  it('does not reopen payment until the server releases the pending purchase', async () => {
     const db = storage(),
       scope = () => ({ accountScope: 'a', sessionScope: 's' });
     db.set('membership.payment-transaction.v2.a.s', {
@@ -164,7 +164,10 @@ describe('MembershipService payment transaction', () => {
     await expect(
       new MembershipService(client as never, db, pay, undefined, undefined, scope).purchase(),
     ).resolves.toMatchObject({ order: { status: 'PENDING' } });
-    expect(client.call.mock.calls.map(([request]) => request.action)).toEqual(['getOrder']);
+    expect(client.call.mock.calls.map(([request]) => request.action)).toEqual([
+      'getOrder',
+      'cancelPayment',
+    ]);
     expect(pay).not.toHaveBeenCalled();
   });
   it.each(['PAID', 'CLOSED', 'FAILED', 'REFUNDED'] as const)(
@@ -423,8 +426,8 @@ describe('MembershipService payment transaction', () => {
     await expect(oldPurchase).rejects.toMatchObject({ code: 'MEMBERSHIP_UNAVAILABLE' });
     expect(createCount).toBe(2);
   });
-  it('keeps cancellation PAYMENT_UNKNOWN until the authoritative query completes', async () => {
-    const markUnknown = deferred<unknown>();
+  it('keeps cancellation durable until the server releases the purchase', async () => {
+    const cancelPayment = deferred<unknown>();
     const db = storage();
     const client = {
       call: vi.fn((request: { action: string }) =>
@@ -437,8 +440,8 @@ describe('MembershipService payment transaction', () => {
             }
           : request.action === 'markPaymentStarting'
             ? { order: order('PAYMENT_STARTING'), bridgeLease: true, canStartPayment: true }
-            : request.action === 'markPaymentUnknown'
-              ? markUnknown.promise
+            : request.action === 'cancelPayment'
+              ? cancelPayment.promise
               : { order: order('PENDING'), membership: free },
       ),
     };
@@ -453,14 +456,18 @@ describe('MembershipService payment transaction', () => {
     const purchase = service.purchase();
     await vi.waitFor(() =>
       expect(client.call).toHaveBeenCalledWith(
-        { action: 'markPaymentUnknown', orderId: 'o1' },
+        { action: 'cancelPayment', orderId: 'o1' },
         expect.stringMatching(/^p-[a-z0-9-]{4,32}$/i),
         'test-account',
       ),
     );
     expect(service.getTransactionStage()).toBe('PAYMENT_UNKNOWN');
-    markUnknown.resolve({ order: order('PAYMENT_UNKNOWN') });
-    await expect(purchase).resolves.toMatchObject({ order: { status: 'PENDING' } });
+    cancelPayment.resolve({
+      order: { ...order('PAYMENT_UNKNOWN'), purchaseCancelled: true },
+      membership: free,
+    });
+    await expect(purchase).resolves.toMatchObject({ paymentState: 'cancelled' });
+    expect(service.getPendingOrderId()).toBeNull();
   });
   it('keeps PREPARED durable when the process loses mark-starting before the bridge call', async () => {
     const db = storage();

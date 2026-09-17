@@ -34,6 +34,7 @@ export type MembershipRequest =
       payment?: MembershipPayment;
     }
   | { action: 'markPaymentUnknown'; orderId: string }
+  | { action: 'cancelPayment'; orderId: string }
   | { action: 'getOrder'; orderId: string }
   | { action: 'recoverOrders'; localOrderId?: string };
 
@@ -55,6 +56,7 @@ export type MembershipResponse =
       membership: MembershipStatus;
       pendingOrder?: MembershipOrder;
       releasedTestOrderId?: string;
+      cancelledOrderId?: string;
     }
   | { allowed: boolean; membership: MembershipStatus }
   | { order: MembershipOrder; membership: MembershipStatus };
@@ -121,6 +123,7 @@ const isOrder = (value: unknown): value is MembershipOrder =>
   typeof value.orderId === 'string' &&
   isOrderStatus(value.status) &&
   value.amount === 2800 &&
+  (value.purchaseCancelled === undefined || typeof value.purchaseCancelled === 'boolean') &&
   (value.paidAt === null || isIsoDate(value.paidAt));
 
 const isPayment = (value: unknown, orderId: string): value is MembershipPayment => {
@@ -171,6 +174,7 @@ const isOrderResult = (value: unknown): value is MembershipOrderResult =>
     : value.canStartPayment !== true
       ? value.payment === undefined
       : value.order.status === 'PREPARED' &&
+        value.order.purchaseCancelled !== true &&
         value.payment !== undefined &&
         isPayment(value.payment, value.order.orderId) &&
         isBridgeAttempt(value.bridgeAttempt));
@@ -220,6 +224,7 @@ const tracedAction = (action: MembershipRequest['action']): boolean =>
     'resumePayment',
     'markPaymentStarting',
     'markPaymentUnknown',
+    'cancelPayment',
     'getOrder',
     'recoverOrders',
   ].includes(action);
@@ -229,6 +234,7 @@ const paymentAction = (action: MembershipRequest['action']): boolean =>
     'resumePayment',
     'markPaymentStarting',
     'markPaymentUnknown',
+    'cancelPayment',
     'getOrder',
     'recoverOrders',
   ].includes(action);
@@ -345,6 +351,15 @@ export class MembershipClient {
           (request.localOrderId === undefined || releasedTestOrderId !== request.localOrderId)
         )
           throw unavailable();
+        const cancelledOrderId = successData.cancelledOrderId;
+        if (
+          cancelledOrderId !== undefined &&
+          (typeof cancelledOrderId !== 'string' ||
+            !/^[A-Za-z0-9|*@-][A-Za-z0-9_|*@-]{7,31}$/.test(cancelledOrderId) ||
+            cancelledOrderId !== request.localOrderId ||
+            pendingOrder?.orderId === cancelledOrderId)
+        )
+          throw unavailable();
         diagnostic({
           action: request.action,
           phase: 'validated',
@@ -353,11 +368,16 @@ export class MembershipClient {
           orderStatus: pendingOrder?.status,
           paymentAvailable: successData.membership.paymentAvailable,
         });
-        if (pendingOrder !== undefined || releasedTestOrderId !== undefined)
+        if (
+          pendingOrder !== undefined ||
+          releasedTestOrderId !== undefined ||
+          cancelledOrderId !== undefined
+        )
           return {
             membership: successData.membership,
             ...(pendingOrder !== undefined ? { pendingOrder } : {}),
             ...(releasedTestOrderId !== undefined ? { releasedTestOrderId } : {}),
+            ...(cancelledOrderId !== undefined ? { cancelledOrderId } : {}),
           };
         return successData.membership;
       }
@@ -446,9 +466,10 @@ export class MembershipClient {
         return successData;
       }
       if (
-        request.action === 'getOrder' &&
+        (request.action === 'getOrder' || request.action === 'cancelPayment') &&
         isRecord(successData) &&
         isOrder(successData.order) &&
+        successData.order.orderId === request.orderId &&
         isStatus(successData.membership)
       ) {
         diagnostic({

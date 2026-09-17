@@ -8,15 +8,14 @@ import type { MembershipPurchaseResult } from '../../../../types/membership';
 import type { MembershipTransactionStage } from '../../../../types/membership';
 import { createPaymentTraceId, logPaymentDiagnostic } from '../../services/payment-diagnostics';
 
-const UNKNOWN_NOTICE = '支付结果暂未确认，请检查到账';
-const PENDING_NOTICE = '为避免重复扣款，正在确认上一笔订单。';
-const CANCELLED_NOTICE = '已取消本次支付。上一笔订单仍待平台确认；确认关闭后可以重新开通';
+const UNKNOWN_NOTICE = '支付结果暂未确认';
+const PENDING_NOTICE = '可点击“重新支付”，系统会先核对上一笔订单。';
+const CANCELLED_NOTICE = '已取消本次支付，可以重新开通。原订单将继续核对到账情况';
 const noticeForStage = (stage: MembershipTransactionStage | ''): string => {
   if (stage === 'PREPARED') return '订单已准备好，点击“继续支付”即可打开微信收银台。';
-  if (stage === 'PAYMENT_STARTING') return '正在确认微信收银台是否已接收订单，请勿重复操作。';
-  if (stage === 'PAYMENT_UNKNOWN')
-    return '订单状态未知，请先检查支付结果；平台明确终态前不会发起新订单。';
-  if (stage === 'PENDING') return '微信平台已确认订单待支付或处理中，请勿重复付款。';
+  if (stage === 'PAYMENT_STARTING' || stage === 'PAYMENT_UNKNOWN')
+    return `${UNKNOWN_NOTICE}。${PENDING_NOTICE}`;
+  if (stage === 'PENDING') return '上次支付尚未完成，可以点击“重新支付”继续开通。';
   if (stage === 'PAID') return '平台已确认支付，正在确认会员权益，请稍候检查结果。';
   return `${UNKNOWN_NOTICE}。${PENDING_NOTICE}`;
 };
@@ -153,15 +152,17 @@ Page({
           purchasing: paymentState === 'opening',
           notice: pendingOrderId
             ? noticeForStage(transactionStage)
-            : view.canPurchase
-              ? '会员服务已刷新。'
-              : status.paymentUnavailableReason === 'DISABLED'
-                ? '会员支付当前未启用，请稍后重试。'
-                : status.paymentUnavailableReason === 'MISSING_CONFIGURATION'
-                  ? '会员支付配置尚未完成，请稍后重试。'
-                  : status.paymentUnavailableReason === 'APP_ID_MISMATCH'
-                    ? '会员服务与当前小程序不匹配，请联系维护人员。'
-                    : '会员支付服务暂不可用，请稍后重试。',
+            : paymentState === 'cancelled'
+              ? `${CANCELLED_NOTICE}。`
+              : view.canPurchase
+                ? '会员服务已刷新。'
+                : status.paymentUnavailableReason === 'DISABLED'
+                  ? '会员支付当前未启用，请稍后重试。'
+                  : status.paymentUnavailableReason === 'MISSING_CONFIGURATION'
+                    ? '会员支付配置尚未完成，请稍后重试。'
+                    : status.paymentUnavailableReason === 'APP_ID_MISMATCH'
+                      ? '会员服务与当前小程序不匹配，请联系维护人员。'
+                      : '会员支付服务暂不可用，请稍后重试。',
         });
         logPaymentDiagnostic('refresh_success', undefined, {
           traceId,
@@ -228,12 +229,7 @@ Page({
       return;
     }
     const stage = membership.getTransactionStage?.();
-    if (
-      stage === 'PAYMENT_STARTING' ||
-      stage === 'PAYMENT_UNKNOWN' ||
-      stage === 'PENDING' ||
-      stage === 'PAID'
-    ) {
+    if (stage === 'PAID') {
       logPaymentDiagnostic('page_guard', undefined, { traceId, reason: stage });
       return;
     }
@@ -360,6 +356,15 @@ Page({
       this.setData({
         paymentState: 'succeeded',
         notice: expires ? `会员已开通，有效期至${expires}` : '会员已开通',
+        pendingOrderId: '',
+        transactionStage: '',
+      });
+      return;
+    }
+    if (result.order.purchaseCancelled && result.order.status !== 'PAID') {
+      this.setData({
+        paymentState: 'cancelled',
+        notice: `${CANCELLED_NOTICE}。`,
         pendingOrderId: '',
         transactionStage: '',
       });

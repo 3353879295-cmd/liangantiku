@@ -28,6 +28,9 @@ const { hashKey, createHandler, settleOrder, settleRefund, reconcilePendingOrder
       diagnostics?: Row | null,
     ) => Promise<number>;
   };
+const { hasCancelledPurchase } = require('../cloudfunctions/membership/lib/order-state.js') as {
+  hasCancelledPurchase: (order: Row) => boolean;
+};
 const { createEntry } = require('../cloudfunctions/membership/lib/entry.js') as {
   createEntry: (options: Row) => (event: Row) => Promise<Row>;
 };
@@ -124,6 +127,7 @@ class Store {
             ['PREPARED', 'PAYMENT_STARTING', 'PAYMENT_UNKNOWN', 'PENDING'].includes(
               String(row.status),
             ) &&
+            !hasCancelledPurchase(row) &&
             (!accountKey || row.account_key === accountKey),
         )
         .slice(0, limit),
@@ -311,6 +315,150 @@ describe('virtual membership integration', () => {
     expect(retriedData).toHaveProperty('canStartPayment', true);
     expect(retriedData).toHaveProperty('payment');
     expect(pay.createPayment).toHaveBeenCalledTimes(2);
+  });
+
+  it('releases a cancelled purchase intent for a new order without suppressing later reconciliation', async () => {
+    const store = new Store();
+    const pay = payment();
+    const handler = createHandler({ store, payment: pay, now: () => clock });
+    const first = await handler(
+      { action: 'createOrder', requestId: 'cancel-first', loginCode: 'one' },
+      context,
+    );
+    const firstId = (first.data as OrderData).order.orderId;
+    const paymentContext = await handler({ action: 'getPaymentContext' }, context);
+    const scope = (paymentContext.data as { accountScope: string }).accountScope;
+    await expect(
+      handler(
+        { action: 'cancelPayment', orderId: firstId, expectedPaymentAccountScope: scope },
+        context,
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { cancelled: true, order: { orderId: firstId, purchaseCancelled: true } },
+    });
+    await expect(
+      handler(
+        { action: 'cancelPayment', orderId: firstId, expectedPaymentAccountScope: scope },
+        context,
+      ),
+    ).resolves.toMatchObject({ ok: true, data: { cancelled: true } });
+    expect(store.pendingPurchases.get(account)).toEqual({ pending_order_id: null });
+    await expect(
+      handler({ action: 'createOrder', requestId: 'cancel-second', loginCode: 'two' }, context),
+    ).resolves.toMatchObject({ ok: true, data: { order: { status: 'PREPARED' } } });
+    const secondId = [...store.orders.keys()].find((id) => id !== firstId);
+    expect(secondId).toBeTruthy();
+    expect(store.pendingPurchases.get(account)).toEqual({ pending_order_id: secondId });
+
+    store.orders.set(firstId, { ...store.orders.get(firstId), status: 'PENDING' });
+    pay.query.mockResolvedValueOnce(proof(firstId));
+    await expect(reconcilePendingOrders(store, pay, () => clock)).resolves.toBe(1);
+    expect(store.orders.get(firstId)).toMatchObject({
+      status: 'PAID',
+      purchase_cancelled_at: clock.toISOString(),
+    });
+    expect(store.entitlements.get(account)?.renewal_payments).toHaveLength(1);
+  });
+
+  it('does not cancel another account or clear a replacement purchase pointer', async () => {
+    const store = new Store();
+    const pay = payment();
+    const handler = createHandler({ store, payment: pay, now: () => clock });
+    const first = await handler(
+      { action: 'createOrder', requestId: 'cancel-owned', loginCode: 'one' },
+      context,
+    );
+    const firstId = (first.data as OrderData).order.orderId;
+    const replacement = { ...order('Mreplacement'), status: 'PREPARED' };
+    store.orders.set('Mreplacement', replacement);
+    store.pendingPurchases.set(account, { pending_order_id: 'Mreplacement' });
+    await expect(
+      handler({ action: 'cancelPayment', orderId: firstId }, { ...context, OPENID: 'other-open' }),
+    ).resolves.toMatchObject({ ok: false, error: { code: 'ORDER_NOT_FOUND' } });
+    await expect(
+      handler({ action: 'cancelPayment', orderId: firstId }, context),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { cancelled: true },
+    });
+    expect(store.pendingPurchases.get(account)).toEqual({ pending_order_id: 'Mreplacement' });
+  });
+
+  it('leaves a paid order uncancelled', async () => {
+    const store = new Store();
+    const paid = { ...order('Mpaid-cancel'), status: 'PAID' };
+    store.orders.set('Mpaid-cancel', paid);
+    const handler = createHandler({ store, payment: payment(), now: () => clock });
+    await expect(
+      handler({ action: 'cancelPayment', orderId: 'Mpaid-cancel' }, context),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { cancelled: false, order: { status: 'PAID' } },
+    });
+    expect(store.orders.get('Mpaid-cancel')).not.toHaveProperty('purchase_cancelled_at');
+  });
+
+  it('only cancels the current virtual payment order', async () => {
+    const store = new Store();
+    const nonVirtual = { ...order('Mlegacy-cancel'), payment_provider: 'legacy' };
+    store.orders.set('Mlegacy-cancel', nonVirtual);
+    const handler = createHandler({ store, payment: payment(), now: () => clock });
+
+    await expect(
+      handler({ action: 'cancelPayment', orderId: 'Mlegacy-cancel' }, context),
+    ).resolves.toMatchObject({ ok: false, error: { code: 'MEMBERSHIP_UNAVAILABLE' } });
+    expect(store.orders.get('Mlegacy-cancel')).not.toHaveProperty('purchase_cancelled_at');
+  });
+
+  it('keeps a successful bridge payment when cancellation reconciliation finds it first', async () => {
+    const store = new Store();
+    const uncertain = { ...order('Mcancel-success'), status: 'PAYMENT_UNKNOWN' };
+    store.orders.set('Mcancel-success', uncertain);
+    const pay = payment();
+    pay.query.mockResolvedValueOnce(proof('Mcancel-success'));
+    const handler = createHandler({ store, payment: pay, now: () => clock });
+
+    await expect(
+      handler({ action: 'cancelPayment', orderId: 'Mcancel-success' }, context),
+    ).resolves.toMatchObject({ ok: true, data: { cancelled: false, order: { status: 'PAID' } } });
+    expect(store.orders.get('Mcancel-success')).not.toHaveProperty('purchase_cancelled_at');
+  });
+
+  it('cancels after an uncertain bridge query and leaves that order reconcilable', async () => {
+    const store = new Store();
+    const uncertain = { ...order('Mcancel-query-error'), status: 'PAYMENT_UNKNOWN' };
+    store.orders.set('Mcancel-query-error', uncertain);
+    const pay = payment();
+    pay.query.mockRejectedValueOnce(new Error('temporary query failure'));
+    const handler = createHandler({ store, payment: pay, now: () => clock });
+
+    await expect(
+      handler({ action: 'cancelPayment', orderId: 'Mcancel-query-error' }, context),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: { cancelled: true, order: { status: 'PAYMENT_UNKNOWN', purchaseCancelled: true } },
+    });
+    await expect(store.listDueReconcileOrders(account, 1)).resolves.toMatchObject([
+      { order_id: 'Mcancel-query-error' },
+    ]);
+  });
+
+  it('does not overwrite a payment callback that settles during cancellation', async () => {
+    const store = new Store();
+    const uncertain = { ...order('Mcancel-race'), status: 'PAYMENT_STARTING' };
+    store.orders.set('Mcancel-race', uncertain);
+    const pay = payment();
+    pay.query.mockImplementationOnce(() => {
+      store.orders.set('Mcancel-race', { ...store.orders.get('Mcancel-race'), status: 'PAID' });
+      return Promise.reject(new Error('callback won the race'));
+    });
+    const handler = createHandler({ store, payment: pay, now: () => clock });
+
+    await expect(
+      handler({ action: 'cancelPayment', orderId: 'Mcancel-race' }, context),
+    ).resolves.toMatchObject({ ok: true, data: { cancelled: false, order: { status: 'PAID' } } });
+    expect(store.orders.get('Mcancel-race')).not.toHaveProperty('purchase_cancelled_at');
   });
 
   it('does not query a PREPARED order during get/recover, but queries after bridge-start evidence', async () => {

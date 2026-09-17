@@ -46,9 +46,40 @@ let randomStart: Promise<PracticeSession | null> | null = null;
 const samePersistedSession = (
   left: PersistedPracticeSession | null,
   right: PersistedPracticeSession | null,
-): boolean =>
-  left === right ||
-  (left !== null && right !== null && JSON.stringify(left) === JSON.stringify(right));
+): boolean => {
+  if (left === right) return true;
+  if (left === null || right === null) return false;
+  if (
+    left.id !== right.id ||
+    left.mode !== right.mode ||
+    left.answerRevealMode !== right.answerRevealMode ||
+    left.currentIndex !== right.currentIndex ||
+    left.status !== right.status ||
+    left.startedAt !== right.startedAt ||
+    left.updatedAt !== right.updatedAt ||
+    left.submittedAt !== right.submittedAt ||
+    (left.progressRecorded ?? false) !== (right.progressRecorded ?? false) ||
+    left.questionIds.length !== right.questionIds.length
+  ) {
+    return false;
+  }
+  if (left.questionIds.some((questionId, index) => questionId !== right.questionIds[index])) {
+    return false;
+  }
+  const leftAnswerIds = Object.keys(left.answers);
+  const rightAnswerIds = Object.keys(right.answers);
+  if (leftAnswerIds.length !== rightAnswerIds.length) return false;
+  return leftAnswerIds.every((questionId) => {
+    const leftAnswer = left.answers[questionId];
+    const rightAnswer = right.answers[questionId];
+    return (
+      leftAnswer !== undefined &&
+      rightAnswer !== undefined &&
+      leftAnswer.length === rightAnswer.length &&
+      leftAnswer.every((option, index) => option === rightAnswer[index])
+    );
+  });
+};
 
 const clearStaleActiveSession = (): void => {
   if (

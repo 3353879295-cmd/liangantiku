@@ -1,5 +1,9 @@
 'use strict';
-const { hasReliableTerminalEvidence, hasReleasedTestHold } = require('./order-state');
+const {
+  hasReliableTerminalEvidence,
+  hasReleasedTestHold,
+  hasCancelledPurchase,
+} = require('./order-state');
 class CloudStore {
   constructor(database) {
     this.database = database;
@@ -67,6 +71,7 @@ class CloudStore {
       dueBefore,
       true,
       true,
+      true,
     );
   }
   async listDueReconcileOrders(account, limit, dueBefore) {
@@ -91,6 +96,7 @@ class CloudStore {
     dueBefore,
     filterReliableTerminals = true,
     filterReleasedTestHolds = false,
+    filterCancelledPurchases = false,
   ) {
     return this.listOrders(
       statuses,
@@ -99,6 +105,7 @@ class CloudStore {
       dueBefore,
       filterReliableTerminals,
       filterReleasedTestHolds,
+      filterCancelledPurchases,
     );
   }
   async listOrders(
@@ -108,6 +115,7 @@ class CloudStore {
     dueBefore,
     filterReliableTerminals = false,
     filterReleasedTestHolds = false,
+    filterCancelledPurchases = false,
   ) {
     const eligible = [];
     const pageSize = Math.max(20, Math.min(100, limit));
@@ -133,7 +141,8 @@ class CloudStore {
             (!filterReliableTerminals ||
               !['CLOSED', 'FAILED', 'REFUNDED'].includes(order.status) ||
               !hasReliableTerminalEvidence(order)) &&
-            (!filterReleasedTestHolds || !hasReleasedTestHold(order)),
+            (!filterReleasedTestHolds || !hasReleasedTestHold(order)) &&
+            (!filterCancelledPurchases || !hasCancelledPurchase(order)),
         ),
       );
       if (rawRows.length < pageSize) break;

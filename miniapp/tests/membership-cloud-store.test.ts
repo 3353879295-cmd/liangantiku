@@ -111,6 +111,23 @@ describe('membership cloud order selection', () => {
     await expect(store.listDuePendingOrders(account, 1)).resolves.toEqual([]);
   });
 
+  it('omits cancelled purchases from client recovery while retaining them for reconciliation', async () => {
+    const cancelled = {
+      _id: 'cancelled',
+      order_id: 'cancelled',
+      account_key: account,
+      status: 'PENDING',
+      next_check_at: '2026-09-06T00:00:00.000Z',
+      purchase_cancelled_at: '2026-09-06T00:00:00.000Z',
+    };
+    const store = new CloudStore(database([cancelled]));
+
+    await expect(store.listDuePendingOrders(account, 1)).resolves.toEqual([]);
+    await expect(store.listDueReconcileOrders(account, 1)).resolves.toMatchObject([
+      { order_id: 'cancelled', status: 'PENDING' },
+    ]);
+  });
+
   it('uses an _id cursor to reach a later unresolved order with equal check times', async () => {
     const next = '2026-09-06T00:00:00.000Z';
     const rows = Array.from({ length: 40 }, (_, index) =>

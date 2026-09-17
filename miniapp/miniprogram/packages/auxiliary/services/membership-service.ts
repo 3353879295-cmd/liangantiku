@@ -20,6 +20,7 @@ type Tx = {
   requestId: string;
   orderId: string;
   stage: MembershipTransactionStage;
+  cancelRequested?: boolean;
 };
 type Scope = {
   accountScope: string;
@@ -117,6 +118,7 @@ export class MembershipService extends BaseMembershipService {
     return (
       current?.orderId === expected.orderId &&
       current.requestId === expected.requestId &&
+      Boolean(current.cancelRequested) === Boolean(expected.cancelRequested) &&
       current.stage === expected.stage
     );
   }
@@ -176,6 +178,8 @@ export class MembershipService extends BaseMembershipService {
     if (active) return active;
     const task = (async () => {
       const recoveredTx = this.tx(s);
+      if (recoveredTx?.cancelRequested)
+        return (await this.cancelFor(recoveredTx.orderId, s, traceId)).membership;
       const r = await this.gateway.call(
         {
           action: 'recoverOrders',
@@ -189,8 +193,16 @@ export class MembershipService extends BaseMembershipService {
         typeof r === 'object' && r !== null && 'releasedTestOrderId' in r
           ? r.releasedTestOrderId
           : undefined;
+      const cancelledOrderId =
+        typeof r === 'object' && r !== null && 'cancelledOrderId' in r
+          ? r.cancelledOrderId
+          : undefined;
       const ownsRecoveredTx = this.matchesTx(this.tx(s), recoveredTx);
-      if (recoveredTx && releasedTestOrderId === recoveredTx.orderId && ownsRecoveredTx) {
+      if (
+        recoveredTx &&
+        (releasedTestOrderId === recoveredTx.orderId || cancelledOrderId === recoveredTx.orderId) &&
+        ownsRecoveredTx
+      ) {
         this.db.remove(this.key(s));
         this.results.delete(s.key);
         this.states.delete(s.key);
@@ -219,7 +231,7 @@ export class MembershipService extends BaseMembershipService {
       ) as MembershipStatus;
       const old = this.tx(s);
       if (old) return (await this.queryFor(old.orderId, s, traceId)).membership;
-      this.emit('idle', undefined, s);
+      this.emit(cancelledOrderId ? 'cancelled' : 'idle', undefined, s);
       return membership;
     })().finally(() => this.recoveries.delete(s.key));
     this.recoveries.set(s.key, task);
@@ -235,15 +247,25 @@ export class MembershipService extends BaseMembershipService {
   }
   private async purchaseInner(s: Scope, traceId: string): Promise<MembershipPurchaseResult> {
     const started = Date.now();
-    const old = this.tx(s);
+    let old = this.tx(s);
     logPaymentDiagnostic('purchase_start', undefined, { traceId, reason: old ? old.stage : 'NEW' });
-    if (old && old.stage !== 'PREPARED') {
+    if (old && (old.cancelRequested || old.stage !== 'PREPARED')) {
       logPaymentDiagnostic('guard', undefined, {
         traceId,
         reason: old.stage,
         elapsedMs: Date.now() - started,
       });
-      return this.queryFor(old.orderId, s, traceId);
+      const previous = old.cancelRequested
+        ? await this.cancelFor(old.orderId, s, traceId)
+        : await this.queryFor(old.orderId, s, traceId);
+      if (previous.confirmed || previous.order.status === 'PAID') return previous;
+      if (this.tx(s)) {
+        // This explicit tap ends the previous unpaid attempt. Refresh/recovery
+        // never creates an order, and a failed query never authorizes a retry.
+        const cancelled = await this.cancelFor(old.orderId, s, traceId);
+        if (cancelled.confirmed || this.tx(s)) return cancelled;
+      }
+      old = null;
     }
     this.preflight();
     this.emit('opening', old?.orderId, s);
@@ -277,6 +299,7 @@ export class MembershipService extends BaseMembershipService {
     this.save(tx, s);
     if (
       r.order.status !== 'PREPARED' ||
+      r.order.purchaseCancelled === true ||
       r.canStartPayment !== true ||
       !r.payment ||
       !r.bridgeAttempt
@@ -315,6 +338,43 @@ export class MembershipService extends BaseMembershipService {
     } catch (e) {
       failure = e;
     }
+    const cancelled = failure && normalizeVirtualPaymentError(failure).outcome === 'cancelled';
+    if (cancelled) {
+      // Native payment can hide/unload the page before its cancel callback.
+      // Keep that intent with the captured account/order so a relaunch can
+      // finish reporting it, without overwriting a newer purchase.
+      const current = this.tx(s);
+      if (
+        current?.orderId === tx.orderId &&
+        current.requestId === tx.requestId &&
+        !['PAID', 'CLOSED', 'FAILED', 'REFUNDED'].includes(current.stage)
+      )
+        this.db.set(this.key(s), {
+          ...current,
+          stage: 'PAYMENT_UNKNOWN',
+          cancelRequested: true,
+        });
+      let response;
+      try {
+        response = await this.gateway.call(
+          { action: 'cancelPayment', orderId: tx.orderId },
+          traceId,
+          s.accountScope,
+        );
+      } finally {
+        if (s.epoch === this.epoch && this.activeScope?.key === s.key)
+          this.emit('cancelled', tx.orderId, s);
+      }
+      await this.assert(s);
+      if (
+        typeof response !== 'object' ||
+        response === null ||
+        !('order' in response) ||
+        !('membership' in response)
+      )
+        throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
+      return this.applyOrderResult(response, tx.orderId, s, traceId);
+    }
     try {
       await this.assert(s);
       this.save({ ...tx, stage: 'PAYMENT_UNKNOWN' }, s);
@@ -346,6 +406,17 @@ export class MembershipService extends BaseMembershipService {
   async queryOrder(id: string, traceId?: string) {
     return this.queryFor(id, await this.scope(traceId), traceId);
   }
+  private async cancelFor(id: string, s: Scope, traceId?: string) {
+    const r = await this.gateway.call(
+      { action: 'cancelPayment', orderId: id },
+      traceId,
+      s.accountScope,
+    );
+    await this.assert(s);
+    if (typeof r !== 'object' || r === null || !('order' in r) || !('membership' in r))
+      throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
+    return this.applyOrderResult(r, id, s, traceId);
+  }
   private queryFor(id: string, s: Scope, traceId?: string): Promise<MembershipPurchaseResult> {
     const k = `${s.key}\0${id}`,
       active = this.queries.get(k);
@@ -367,29 +438,47 @@ export class MembershipService extends BaseMembershipService {
         r.order.orderId !== id
       )
         throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
-      const confirmed = r.order.status === 'PAID' && r.membership.isMember,
-        result: MembershipPurchaseResult = {
-          order: r.order,
-          membership: r.membership,
-          confirmed,
-          paymentState: confirmed ? 'succeeded' : this.state(r.order.status),
-        };
-      if (this.tx(s)?.orderId === id) {
-        this.save({ ...this.tx(s)!, stage: r.order.status }, s);
-        if (confirmed || ['CLOSED', 'FAILED', 'REFUNDED'].includes(r.order.status))
-          this.db.remove(this.key(s));
-      }
-      this.results.set(s.key, result);
-      logPaymentDiagnostic('query_result', undefined, {
-        traceId,
-        queryResult: r.order.status,
-        reason: confirmed ? 'ENTITLEMENT_CONFIRMED' : 'UNCONFIRMED',
-      });
-      this.emit(result.paymentState ?? 'unknown', id, s);
-      return result;
+      return this.applyOrderResult(r, id, s, traceId);
     })().finally(() => this.queries.delete(k));
     this.queries.set(k, task);
     return task;
+  }
+  private applyOrderResult(
+    r: MembershipOrderResult & { membership: MembershipStatus },
+    id: string,
+    s: Scope,
+    traceId?: string,
+  ): MembershipPurchaseResult {
+    this.assertCurrent(s);
+    if (r.order.orderId !== id) throw new MembershipError('MEMBERSHIP_UNAVAILABLE');
+    const confirmed = r.order.status === 'PAID' && r.membership.isMember,
+      result: MembershipPurchaseResult = {
+        order: r.order,
+        membership: r.membership,
+        confirmed,
+        paymentState: confirmed
+          ? 'succeeded'
+          : r.order.purchaseCancelled && r.order.status !== 'PAID'
+            ? 'cancelled'
+            : this.state(r.order.status),
+      };
+    if (this.tx(s)?.orderId === id) {
+      this.save({ ...this.tx(s)!, stage: r.order.status }, s);
+      if (
+        confirmed ||
+        (r.order.purchaseCancelled && r.order.status !== 'PAID') ||
+        ['CLOSED', 'FAILED', 'REFUNDED'].includes(r.order.status)
+      )
+        this.db.remove(this.key(s));
+    }
+    this.results.set(s.key, result);
+    logPaymentDiagnostic('query_result', undefined, {
+      traceId,
+      queryResult: r.order.status,
+      reason: confirmed ? 'ENTITLEMENT_CONFIRMED' : 'UNCONFIRMED',
+    });
+    this.emit(result.paymentState ?? 'unknown', id, s);
+    return result;
   }
 }
 export const memberPaymentService = new MembershipService();

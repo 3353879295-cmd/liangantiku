@@ -159,6 +159,7 @@ const createDiagnostics = ({ logger, now = () => Date.now(), revision = REVISION
       'markPaymentUnknown',
       'getOrder',
       'recoverOrders',
+      'cancelPayment',
     ].includes(action);
     const observation = {
       action,

@@ -48,6 +48,8 @@ export interface MembershipOrder {
   status: MembershipOrderStatus;
   amount: number;
   paidAt: string | null;
+  /** The user ended this purchase attempt; its payment may still be reconciled. */
+  purchaseCancelled?: boolean;
 }
 
 export interface MembershipPayment {

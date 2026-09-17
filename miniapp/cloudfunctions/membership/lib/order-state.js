@@ -44,6 +44,12 @@ const hasReleasedTestHold = (order) => {
     confirmedAt.toISOString() === release.confirmed_at,
   );
 };
+const hasCancelledPurchase = (order) => {
+  const cancelledAt = order?.purchase_cancelled_at;
+  if (typeof cancelledAt !== 'string') return false;
+  const cancelled = new Date(cancelledAt);
+  return !Number.isNaN(cancelled.valueOf()) && cancelled.toISOString() === cancelledAt;
+};
 const projectedOrder = (order) =>
   needsHistoricalVerification(order)
     ? { ...order, status: 'PAYMENT_UNKNOWN', historical_status: order.status }
@@ -56,5 +62,6 @@ module.exports = {
   isUnresolved,
   isReconcilable,
   hasReleasedTestHold,
+  hasCancelledPurchase,
   projectedOrder,
 };
