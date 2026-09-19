@@ -21,7 +21,7 @@ const load = async (
 ) => {
   vi.resetModules();
   let page: Definition | undefined;
-  const retryBackground = vi.fn();
+  const retryBackground = vi.fn<() => Promise<void>>(() => Promise.resolve());
   const clearLearningData = vi.fn(() => Promise.resolve(true));
   const getStatus = vi.fn<() => Promise<unknown>>();
   const authState = {
@@ -207,6 +207,46 @@ describe('profile account state', () => {
     expect(navigateTo).toHaveBeenCalledWith({
       url: '/packages/auxiliary/pages/account-data/index',
     });
+  });
+
+  it('ignores repeated sync taps and releases the busy state after failure', async () => {
+    const { context, page, retryBackground, showToast } = await load('authenticated', 'failed');
+    let fail!: (error: Error) => void;
+    retryBackground.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        fail = reject;
+      }),
+    );
+    page.onShow.call(context);
+    const first = page.onRetrySync.call(context);
+    await page.onRetrySync.call(context);
+    expect(retryBackground).toHaveBeenCalledOnce();
+    expect(context.data.syncing).toBe(true);
+    fail(new Error('offline'));
+    await first;
+    expect(context.data.syncing).toBe(false);
+    expect(showToast).toHaveBeenCalledWith({ title: '同步暂时失败，请稍后重试', icon: 'none' });
+    await page.onRetrySync.call(context);
+    expect(retryBackground).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not refresh a hidden page after sync finishes and resets busy on return', async () => {
+    const { context, page, retryBackground } = await load('authenticated', 'failed');
+    let finish!: () => void;
+    retryBackground.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    page.onShow.call(context);
+    const request = page.onRetrySync.call(context);
+    page.onHide.call(context);
+    const update = vi.spyOn(context, 'setData');
+    finish();
+    await request;
+    expect(update).not.toHaveBeenCalled();
+    page.onShow.call(context);
+    expect(context.data.syncing).toBe(false);
   });
 
   it('keeps an account recovery failure distinct from a guest session', async () => {

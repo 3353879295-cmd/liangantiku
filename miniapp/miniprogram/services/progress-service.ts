@@ -12,6 +12,7 @@ import type {
   ProgressScope,
 } from '../types/account-sync';
 import type { PracticeMode } from '../types/domain';
+import type { CertificateKey } from '../types/domain';
 
 export interface RecordAnswerInput {
   questionId: string;
@@ -316,6 +317,11 @@ export class ProgressService {
     return this.data.recentQuestionIds.slice(0, limit);
   }
 
+  /** All question ids that have been answered at least once in this scope. */
+  listCompletedQuestionIds(): string[] {
+    return Object.keys(this.data.questionTotals);
+  }
+
   getPreparationDays(today: string): number {
     const firstAnswerDate = this.data.summary.firstAnsweredAt;
     if (!firstAnswerDate) return 1;
@@ -369,6 +375,14 @@ export class ProgressService {
     return this.data.session;
   }
 
+  restoreSequentialSession(key: CertificateKey): PersistedPracticeSession | null {
+    return this.repository.loadSequentialSession(this.scope, key);
+  }
+
+  saveSequentialSession(key: CertificateKey, session: PersistedPracticeSession | null): void {
+    this.repository.saveSequentialSession(this.scope, key, session);
+  }
+
   getPreferences(): ProgressPreferences {
     return { ...this.data.preferences };
   }
@@ -414,6 +428,7 @@ export class ProgressService {
     const preferences = { ...this.data.preferences };
     this.data = { ...createEmptyProgress(), preferences };
     this.persist();
+    this.repository.removeSequentialSessions('guest');
   }
 
   consumeRecoveryNotice(): string | null {

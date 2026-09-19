@@ -3,8 +3,8 @@ import type {
   CertificateAvailability,
   OccupationCode,
   Question,
-} from '../types/domain';
-import type { Certificate } from '../data/certificates';
+} from '../../../types/domain';
+import type { Certificate } from '../../../data/certificates';
 
 export const RANDOM_QUESTION_LIMIT = 10;
 

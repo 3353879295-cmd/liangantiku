@@ -1,4 +1,4 @@
-import type { AnswerRevealMode } from '../types/domain';
+import type { AnswerRevealMode } from '../../../types/domain';
 
 export interface RevealModeOption {
   value: AnswerRevealMode;

@@ -15,7 +15,7 @@
 
   <view class="resume-card" bind:tap="onResume">
     <view class="resume-card__copy">
-      <text class="resume-card__label">{{hasResume ? '继续上次练习' : '准备开始'}}</text>
+      <text class="resume-card__label">{{hasResume ? '继续上次练习' : hasResult ? '上次练习结果' : '准备开始'}}</text>
       <view class="resume-card__title">{{resumeText}}</view>
     </view>
     <view class="resume-card__action">{{resumeActionText}}</view>
@@ -33,8 +33,9 @@
 
   <view class="section-heading">
     <view class="section-title">开始学习</view>
-    <text class="section-note">{{certificate.questionCountText}}</text>
+    <text class="section-note">{{loading ? '正在加载题库' : loadError ? '题库读取失败' : certificate.questionCountText}}</text>
   </view>
+  <button wx:if="{{loadError}}" class="load-retry" bindtap="onRetryLoad">题库暂时无法读取，点击重试</button>
   <view class="action-grid">
     <view
       wx:for="{{actions}}"
@@ -46,7 +47,7 @@
       <view class="action-card__icon"><t-icon name="{{item.icon}}" size="38rpx" /></view>
       <view class="action-card__copy">
         <view class="action-card__title">{{item.title}}</view>
-        <text class="action-card__note">{{certificate.canStart ? (item.id === 'random' && freePracticeText ? freePracticeText : item.note) : '待补充 · 暂不可开始'}}</text>
+        <text class="action-card__note">{{loading ? '题库加载中，请稍候' : loadError ? '请先重新加载题库' : certificate.canStart ? (item.id === 'random' && randomStarting ? '正在准备练习…' : item.id === 'random' && freePracticeText ? freePracticeText : item.note) : '待补充 · 暂不可开始'}}</text>
       </view>
       <t-icon wx:if="{{item.emphasized}}" name="chevron-right" size="34rpx" />
     </view>

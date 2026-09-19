@@ -255,6 +255,61 @@ describe('practice session', () => {
     });
   });
 
+  it('keeps skipped sequential questions out of scores and wrong-question review after restore', () => {
+    const questions = [
+      makeQuestion({ id: 'correct', chapterId: 'answered-chapter' }),
+      makeQuestion({ id: 'wrong', chapterId: 'answered-chapter', answer: ['B'] }),
+      makeQuestion({ id: 'skipped', chapterId: 'skipped-chapter' }),
+    ];
+    const answered = answerQuestion(
+      answerQuestion(
+        createPracticeSession(questions, { mode: 'sequential', now: 1000 }),
+        'correct',
+        ['A'],
+        1200,
+      ),
+      'wrong',
+      ['A'],
+      1300,
+    );
+    const submitted = submitSession(answered, 2000);
+    const restored = rehydratePracticeSession(serializePracticeSession(submitted), questions);
+
+    for (const result of [submitted, restored]) {
+      expect(result.report).toEqual({
+        total: 2,
+        correct: 1,
+        wrong: 1,
+        durationMs: 1000,
+        wrongQuestionIds: ['wrong'],
+        chapters: { 'answered-chapter': { total: 2, correct: 1 } },
+      });
+      expect(result.feedback['skipped']).toBeUndefined();
+      expect(result.questionIds).toEqual(['correct', 'wrong', 'skipped']);
+      expect(getAnswerSheet(result).map((item) => item.status)).toEqual([
+        'correct',
+        'wrong',
+        'unanswered',
+      ]);
+    }
+  });
+
+  it('counts an unanswered sequential group as zero attempts while mock still grades the paper', () => {
+    const questions = [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })];
+    const sequential = createPracticeSession(questions, { mode: 'sequential', now: 1000 });
+
+    expect(submitSession({ ...sequential, answers: { Q1: [] } }, 2000).report).toMatchObject({
+      total: 0,
+      correct: 0,
+      wrong: 0,
+      wrongQuestionIds: [],
+      chapters: {},
+    });
+    expect(
+      submitSession(createPracticeSession(questions, { mode: 'mock', now: 1000 }), 2000).report,
+    ).toMatchObject({ total: 2, correct: 0, wrong: 2, wrongQuestionIds: ['Q1', 'Q2'] });
+  });
+
   it('navigates by validated question index', () => {
     const questions = [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })];
     const session = createPracticeSession(questions, { mode: 'sequential', now: 1000 });

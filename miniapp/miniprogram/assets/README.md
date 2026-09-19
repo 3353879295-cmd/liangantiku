@@ -1,10 +1,10 @@
 # 实操页本地视觉素材
 
 本目录中的实操页素材均为本项目工作流内新生成的文件，页面只通过
-`/assets/practical/...` 本地路径引用。未使用外部图片网站、素材库或第三方图标包，
+`/assets/practical/...` 本地路径引用；仅在实操详情使用的主图位于 auxiliary 分包，按需下载。未使用外部图片网站、素材库或第三方图标包，
 也不将本说明作为任何外部许可证或来源声明。
 
-## `practical/rice-ear-hero.webp`
+## `/packages/auxiliary/assets/rice-ear-hero.webp`
 
 - 生成日期：2026-07-26
 - 生成工具：OpenAI 内置 ImageGen（built-in `image_gen`）

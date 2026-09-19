@@ -28,3 +28,23 @@ export interface RuntimeQuestionRecord {
   content_version: number;
   common_mistake?: string;
 }
+
+export interface RuntimeQuestionShard {
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  count: number;
+  paths: readonly RuntimeQuestionPath[];
+  load(): readonly RuntimeQuestionRecord[];
+}
+
+export interface RuntimeQuestionPath {
+  module: string;
+  chapterId: string;
+  sectionId: string;
+}
+
+export interface RuntimeQuestionBank {
+  shards: readonly RuntimeQuestionShard[];
+  counts: Readonly<Record<OccupationCode, Readonly<Record<CertificateLevel, number>>>>;
+  shardForId?(id: string): RuntimeQuestionShard | undefined;
+}

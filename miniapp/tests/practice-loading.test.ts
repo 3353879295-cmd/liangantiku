@@ -16,7 +16,11 @@ describe('practice loading lifecycle', () => {
           rejectRestore = reject;
         }),
     );
-    vi.doMock('../miniprogram/services/practice-runtime', () => ({ restorePractice }));
+    const cancelStart = vi.fn();
+    vi.doMock('../miniprogram/services/practice-runtime', () => ({
+      restorePractice,
+      getPracticeStartCancellation: () => cancelStart,
+    }));
     vi.doMock('../miniprogram/services/app-services', () => ({ appServices: {} }));
     interface Definition {
       onLoad(options: Record<string, string>): Promise<void>;
@@ -34,6 +38,7 @@ describe('practice loading lifecycle', () => {
     page.onUnload.call(context);
     rejectRestore(new Error('offline'));
     await pending;
+    expect(cancelStart).toHaveBeenCalledOnce();
     expect(showLoading).not.toHaveBeenCalled();
     expect(context.setData).not.toHaveBeenCalled();
     expect(context.renderSession).not.toHaveBeenCalled();

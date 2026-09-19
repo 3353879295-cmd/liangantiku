@@ -10,6 +10,7 @@ import {
   navigateToQuestion,
 } from '../../services/practice-session';
 import {
+  getPracticeStartCancellation,
   getActivePractice,
   restorePractice,
   saveActivePractice,
@@ -17,7 +18,7 @@ import {
 } from '../../services/practice-runtime';
 import { CERTIFICATES } from '../../data/certificates';
 import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
-import { QUESTION_RECORDS } from '../../data/question-bank';
+import { QUESTION_BANK } from '../../data/question-bank';
 import { appServices } from '../../services/app-services';
 import { MembershipError } from '../../repositories/membership-client';
 import { presentMembership } from '../../presenters/membership-presenter';
@@ -60,33 +61,6 @@ const belongsToCertificateCatalog = (
   return true;
 };
 
-const belongsToCertificateModule = (
-  occupation: OccupationCode,
-  level: CertificateLevel,
-  module?: string,
-): boolean =>
-  !module ||
-  QUESTION_RECORDS.some(
-    (question) =>
-      question.occupation === occupation && question.level === level && question.module === module,
-  );
-
-const hasMatchingRuntimeQuestion = (
-  occupation: OccupationCode,
-  level: CertificateLevel,
-  module?: string,
-  chapterId?: string,
-  sectionId?: string,
-): boolean =>
-  QUESTION_RECORDS.some(
-    (question) =>
-      question.occupation === occupation &&
-      question.level === level &&
-      (!module || question.module === module) &&
-      (!chapterId || question.chapter_id === chapterId) &&
-      (!sectionId || question.section_id === sectionId),
-  );
-
 interface TouchPoint {
   x: number;
   y: number;
@@ -96,6 +70,7 @@ interface PracticeInteractionState {
   touchStartPoint: TouchPoint | null;
   navigationLocked: boolean;
   answerSheetNavigationPending: boolean;
+  cancelStart?: () => void;
   unlockTimer?: ReturnType<typeof setTimeout>;
 }
 
@@ -141,7 +116,7 @@ const openAnswerSheet = (page: object): void => {
 
 const MODE_LABELS: Record<PracticeMode, string> = {
   chapter: '章节练习',
-  sequential: '顺序练习',
+  sequential: '全部刷题 · 当前组',
   random: '随机练习',
   mock: '模拟考试',
   wrong: '错题重练',
@@ -196,9 +171,7 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
     const sectionId = options['sectionId'] ? decodeURIComponent(options['sectionId']) : undefined;
     if (
       !belongsToCertificateCatalog(occupation, level, chapterId, sectionId) ||
-      !belongsToCertificateModule(occupation, level, module) ||
-      ((module || chapterId || sectionId) &&
-        !hasMatchingRuntimeQuestion(occupation, level, module, chapterId, sectionId))
+      !hasKnownRuntimeQuestion(occupation, level, module, chapterId, sectionId)
     ) {
       return null;
     }
@@ -221,12 +194,40 @@ export const parsePracticeRoute = (options: Record<string, string | undefined>) 
   }
 };
 
+const hasMatchingRuntimeQuestion = async (input: {
+  occupation: OccupationCode;
+  level: CertificateLevel;
+  module?: string;
+  chapterId?: string;
+  sectionId?: string;
+}): Promise<boolean> => (await appServices.questions.count(input)) > 0;
+
+const hasKnownRuntimeQuestion = (
+  occupation: OccupationCode,
+  level: CertificateLevel,
+  module?: string,
+  chapterId?: string,
+  sectionId?: string,
+): boolean =>
+  QUESTION_BANK.shards.some(
+    (shard) =>
+      shard.occupation === occupation &&
+      shard.level === level &&
+      shard.paths.some(
+        (path) =>
+          (!module || path.module === module) &&
+          (!chapterId || path.chapterId === chapterId) &&
+          (!sectionId || path.sectionId === sectionId),
+      ),
+  );
+
 Page({
   data: {
     loading: true,
     freePracticeText: '',
     memberPromptVisible: false,
     sessionReady: false,
+    allQuestionsComplete: false,
     errorTitle: '',
     errorDescription: '',
     modeLabel: '',
@@ -267,13 +268,29 @@ Page({
       return;
     }
     try {
-      const session = route.resume ? await restorePractice(true) : await startPractice(route.input);
+      const available = route.resume || (await hasMatchingRuntimeQuestion(route.input));
       if (practiceRoutes.get(this) !== options) return;
-      if (!session) {
+      if (!available) {
         this.setData({
           loading: false,
           errorTitle: '暂时没有可练习的题目',
-          errorDescription: '可以切换证书等级，或先收藏一些题目后再练习。',
+          errorDescription: '可以切换证书等级，或重新选择练习范围。',
+        });
+        return;
+      }
+      const pending = route.resume ? restorePractice(true) : startPractice(route.input);
+      getPracticeInteractionState(this).cancelStart = getPracticeStartCancellation();
+      const session = await pending;
+      if (practiceRoutes.get(this) !== options) return;
+      if (!session) {
+        const completedBank = !route.resume && route.input.mode === 'sequential';
+        this.setData({
+          loading: false,
+          allQuestionsComplete: completedBank,
+          errorTitle: completedBank ? '本题库已刷完' : '暂时没有可练习的题目',
+          errorDescription: completedBank
+            ? '全部题目都已完成，可以返回题库或复习错题与收藏。'
+            : '可以切换证书等级，或先收藏一些题目后再练习。',
         });
         return;
       }
@@ -359,6 +376,7 @@ Page({
     this.setData({
       loading: false,
       sessionReady: true,
+      allQuestionsComplete: false,
       errorTitle: '',
       modeLabel: MODE_LABELS[session.mode],
       indexText: `${session.currentIndex + 1} / ${session.questions.length}`,
@@ -558,6 +576,7 @@ Page({
   onUnload() {
     practiceRoutes.delete(this);
     const state = getPracticeInteractionState(this);
+    state.cancelStart?.();
     if (state.unlockTimer !== undefined) clearTimeout(state.unlockTimer);
     practiceInteractionStates.delete(this);
   },

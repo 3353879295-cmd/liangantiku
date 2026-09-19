@@ -35,6 +35,9 @@ interface LibraryPageData {
   comingSoon: boolean;
   loading: boolean;
   loadError: string;
+  starting: boolean;
+  completedCount: number;
+  hasSequentialResume: boolean;
 }
 
 const initialData: LibraryPageData = {
@@ -47,6 +50,9 @@ const initialData: LibraryPageData = {
   comingSoon: false,
   loading: true,
   loadError: '',
+  starting: false,
+  completedCount: 0,
+  hasSequentialResume: false,
 };
 const loadVersions = new WeakMap<object, number>();
 
@@ -82,6 +88,8 @@ Page({
       comingSoon: certificate.availability === 'coming-soon',
       loading: certificate.availability === 'available',
       loadError: '',
+      completedCount: 0,
+      hasSequentialResume: false,
     });
 
     if (certificate.availability === 'coming-soon') return;
@@ -99,7 +107,16 @@ Page({
         questions,
         getProgress: (ids) => appServices.progress.getQuestionProgress(ids),
       });
-      this.setData({ questionCount: questions.length, parts, loading: false });
+      const ids = [...new Set(questions.map((question) => question.id))];
+      const saved = appServices.progress.restoreSequentialSession(certificate.key);
+      this.setData({
+        questionCount: ids.length,
+        completedCount: appServices.progress.getQuestionProgress(ids).completed,
+        hasSequentialResume:
+          saved?.status === 'active' && saved.questionIds.some((id) => ids.includes(id)),
+        parts,
+        loading: false,
+      });
     } catch {
       if (loadVersions.get(this) !== version) return;
       this.setData({ loading: false, loadError: '题库暂时无法读取，请重试。' });
@@ -108,6 +125,34 @@ Page({
 
   onRetryLoad() {
     void this.loadCertificate(this.data.selectedKey);
+  },
+
+  async onStartAll() {
+    if (
+      this.data.loading ||
+      this.data.loadError ||
+      this.data.comingSoon ||
+      this.data.starting ||
+      !this.data.questionCount ||
+      (this.data.completedCount >= this.data.questionCount && !this.data.hasSequentialResume)
+    )
+      return;
+    const certificate = getCertificate(this.data.selectedKey);
+    if (!certificate) return;
+    this.setData({ starting: true });
+    try {
+      await wx.navigateTo({
+        url: `/pages/practice/index?occupation=${certificate.occupation}&level=${certificate.level}&mode=sequential`,
+      });
+    } catch {
+      void wx.showToast({ title: '页面未打开，请重试', icon: 'none' });
+    } finally {
+      if (loadVersions.has(this)) this.setData({ starting: false });
+    }
+  },
+
+  onUnload() {
+    loadVersions.delete(this);
   },
 
   onChapterTap(event: WechatMiniprogram.TouchEvent) {

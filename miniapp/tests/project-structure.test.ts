@@ -5,7 +5,9 @@ import { describe, expect, it } from 'vitest';
 
 import CLASSIFICATION_MANIFEST from '../../data/warehouse_classification_manifest.json';
 import INSPECTOR_SYNC_REPORT from '../../data/inspector_cloud_sync_report.json';
-import { RUNTIME_QUESTION_RECORDS } from '../miniprogram/data/questions/runtime-question-records';
+import { loadRuntimeQuestionRecords } from '../miniprogram/data/questions/runtime-question-records';
+
+const RUNTIME_QUESTION_RECORDS = loadRuntimeQuestionRecords();
 
 const miniappRoot = resolve(import.meta.dirname, '..', 'miniprogram');
 const projectRoot = resolve(miniappRoot, '..');
@@ -522,8 +524,11 @@ describe('WeChat mini program structure', () => {
 
     expect(answerSheetPosition).toBeGreaterThan(-1);
     expect(wrongReviewPosition).toBeGreaterThan(answerSheetPosition);
-    expect(reportMarkup).toMatch(
-      /<button[^>]*class="primary-button"[^>]*bindtap="onOpenAnswerSheet"[^>]*>查看答题卡<\/button>/s,
+    const answerSheetButton = reportMarkup.match(
+      /<button[^>]*bindtap="onOpenAnswerSheet"[^>]*>查看答题卡<\/button>/s,
+    )?.[0];
+    expect(answerSheetButton).toContain(
+      "class=\"{{sessionMode === 'sequential' && sequentialRemaining ? 'secondary-button' : 'primary-button'}}\"",
     );
     expect(reportSource).toContain('onOpenAnswerSheet()');
     expect(reportSource).toContain("url: '/pages/answer-sheet/index'");
@@ -715,7 +720,7 @@ describe('WeChat mini program structure', () => {
       'moisture-test.png',
     ];
 
-    const heroPath = join(practicalAssetRoot, 'rice-ear-hero.webp');
+    const heroPath = join(miniappRoot, 'packages', 'auxiliary', 'assets', 'rice-ear-hero.webp');
     expect(existsSync(heroPath)).toBe(true);
     expect(readFileSync(heroPath).byteLength).toBeGreaterThan(40_000);
     expect(readFileSync(heroPath).byteLength).toBeLessThan(100_000);
@@ -745,7 +750,7 @@ describe('WeChat mini program structure', () => {
       'utf8',
     );
     expect(detailMarkup).toContain('<app-topbar');
-    expect(detailMarkup).toContain('/assets/practical/rice-ear-hero.webp');
+    expect(detailMarkup).toContain('/packages/auxiliary/assets/rice-ear-hero.webp');
     expect(detailMarkup).not.toMatch(/https?:\/\//);
     expect(detailMarkup).toContain('现行知识依据');
     expect(detailMarkup).toContain('历史/书目参考（非现行依据）');
@@ -852,6 +857,7 @@ describe('WeChat mini program structure', () => {
       'utf8',
     );
     expect(runtimeModule).toContain("import { gunzipSync, strFromU8 } from 'fflate';");
-    expect(runtimeModule).toContain('const packed = [');
+    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_SHARDS');
+    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_COUNTS');
   });
 });

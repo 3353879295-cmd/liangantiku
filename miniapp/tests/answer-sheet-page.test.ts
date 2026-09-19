@@ -16,17 +16,26 @@ interface AnswerSheetPageModule {
 interface AnswerSheetPageData {
   items: Array<{ index: number; number: number; status: string; current: boolean }>;
   submitting: boolean;
+  loading: boolean;
+  loadError: boolean;
 }
 
 interface AnswerSheetPageContext {
   data: AnswerSheetPageData;
   setData(update: Partial<AnswerSheetPageData>): void;
   renderSheet(): void;
+  loadSheet(): Promise<void>;
+  syncTheme(): void;
 }
 
 interface AnswerSheetPageDefinition {
   data: AnswerSheetPageData;
   renderSheet(this: AnswerSheetPageContext): void;
+  onLoad(this: AnswerSheetPageContext): Promise<void>;
+  onUnload(this: AnswerSheetPageContext): void;
+  onRetryLoad(this: AnswerSheetPageContext): void;
+  loadSheet(this: AnswerSheetPageContext): Promise<void>;
+  syncTheme(this: AnswerSheetPageContext): void;
   onSelectQuestion(this: AnswerSheetPageContext, event: WechatMiniprogram.TouchEvent): void;
   onSubmit(this: AnswerSheetPageContext): Promise<void>;
 }
@@ -81,6 +90,12 @@ const loadAnswerSheetPage = async () => {
     renderSheet() {
       registered.renderSheet.call(this);
     },
+    loadSheet() {
+      return registered.loadSheet.call(this);
+    },
+    syncTheme() {
+      registered.syncTheme.call(this);
+    },
   };
 
   return {
@@ -123,6 +138,55 @@ describe('answer-sheet submit modal', () => {
       content: '未答题 0 道，提交后将生成本次结果。',
       confirmText: '确认交卷',
     });
+  });
+});
+
+describe('answer-sheet restoration', () => {
+  it('keeps a restoration failure out of the empty state and coalesces retry taps', async () => {
+    const { context, definition, runtime } = await loadAnswerSheetPage();
+    let resolveRestore!: (session: Awaited<ReturnType<typeof runtime.restorePractice>>) => void;
+    vi.spyOn(runtime, 'restorePractice')
+      .mockRejectedValueOnce(new Error('restore unavailable'))
+      .mockImplementationOnce(
+        () =>
+          new Promise<Awaited<ReturnType<typeof runtime.restorePractice>>>((resolve) => {
+            resolveRestore = resolve;
+          }),
+      );
+
+    await definition.onLoad.call(context);
+    expect(context.data.loading).toBe(false);
+    expect(context.data.loadError).toBe(true);
+
+    definition.onRetryLoad.call(context);
+    definition.onRetryLoad.call(context);
+    resolveRestore(null);
+    await Promise.resolve();
+
+    expect(runtime.restorePractice).toHaveBeenCalledTimes(2);
+    expect(context.data.loading).toBe(false);
+    expect(context.data.loadError).toBe(false);
+  });
+
+  it('does not write a late restoration response after unload', async () => {
+    const { context, definition, runtime } = await loadAnswerSheetPage();
+    let resolveRestore!: (session: Awaited<ReturnType<typeof runtime.restorePractice>>) => void;
+    vi.spyOn(runtime, 'restorePractice').mockImplementationOnce(
+      () =>
+        new Promise<Awaited<ReturnType<typeof runtime.restorePractice>>>((resolve) => {
+          resolveRestore = resolve;
+        }),
+    );
+    const setData = vi.spyOn(context, 'setData');
+
+    const loading = definition.onLoad.call(context);
+    const writesBeforeUnload = setData.mock.calls.length;
+    definition.onUnload.call(context);
+    resolveRestore(null);
+    await loading;
+
+    expect(setData).toHaveBeenCalledTimes(writesBeforeUnload);
+    expect(context.data.loading).toBe(true);
   });
 });
 

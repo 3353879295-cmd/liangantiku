@@ -18,6 +18,8 @@ const loadParsePracticeRoute = async () => {
 interface QuestionListPageDefinition {
   data: Record<string, unknown>;
   applyView(this: QuestionListPageContext): void;
+  renderView(this: QuestionListPageContext, reset: boolean): void;
+  loadSource(this: QuestionListPageContext): Promise<void>;
   onFilter(this: QuestionListPageContext, event: WechatMiniprogram.TouchEvent): void;
 }
 
@@ -25,6 +27,8 @@ interface QuestionListPageContext {
   data: Record<string, unknown>;
   setData(update: Record<string, unknown>): void;
   applyView(): void;
+  renderView(reset: boolean): void;
+  loadSource(): Promise<void>;
 }
 
 const loadQuestionListPage = async () => {
@@ -39,19 +43,32 @@ const loadQuestionListPage = async () => {
     removeStorageSync: vi.fn(),
   });
   await import('../miniprogram/pages/question-list/index');
+  const { appServices } = await import('../miniprogram/services/app-services');
   if (!definition) throw new Error('question-list Page was not registered');
 
   const registered = definition;
   const context: QuestionListPageContext = {
     data: structuredClone(registered.data),
     setData(update) {
-      Object.assign(this.data, update);
+      for (const [key, value] of Object.entries(update)) {
+        const itemIndex = /^view\.items\[(\d+)\]$/.exec(key)?.[1];
+        if (itemIndex !== undefined) {
+          const view = this.data['view'] as { items: unknown[] };
+          view.items[Number(itemIndex)] = value;
+        } else Object.assign(this.data, { [key]: value });
+      }
     },
     applyView() {
       registered.applyView.call(this);
     },
+    renderView(reset) {
+      registered.renderView.call(this, reset);
+    },
+    loadSource() {
+      return registered.loadSource.call(this);
+    },
   };
-  return { context, definition: registered };
+  return { appServices, context, definition: registered };
 };
 
 const occupationFilterEvent = (occupation: string): WechatMiniprogram.TouchEvent =>
@@ -248,7 +265,7 @@ describe('quality inspector practice entry', () => {
   it.each(['wrong', 'favorite'] as const)(
     'switches the %s review list between warehouse and inspector questions without mixing occupations',
     async (kind) => {
-      const { context, definition } = await loadQuestionListPage();
+      const { appServices, context, definition } = await loadQuestionListPage();
       const warehouse = makeQuestion({ id: `${kind}-warehouse`, occupation: '4-02-06-01' });
       const inspector = makeQuestion({
         id: `${kind}-inspector`,
@@ -256,17 +273,28 @@ describe('quality inspector practice entry', () => {
         direction: '粮油质量检验',
         chapterId: 'inspector-l5-c01',
       });
+      if (kind === 'wrong') {
+        for (const questionId of [warehouse.id, inspector.id]) {
+          appServices.progress.recordAnswer({
+            questionId,
+            correct: false,
+            durationMs: 1,
+            at: '2026-08-01',
+          });
+        }
+      } else {
+        appServices.progress.toggleFavorite(warehouse.id, 1);
+        appServices.progress.toggleFavorite(inspector.id, 2);
+      }
+      vi.spyOn(appServices.questions, 'getByIds').mockResolvedValue([warehouse, inspector]);
       context.setData({
         kind,
-        ids: [warehouse.id, inspector.id],
-        rawQuestions: [warehouse, inspector],
-        wrongRecords: [],
-        selectedAnswers: {},
         occupation: '4-02-06-01',
         level: 0,
         chapterId: '',
         includeMastered: false,
       });
+      await context.loadSource();
 
       definition.onFilter.call(context, occupationFilterEvent('4-08-05-01'));
       expect(

@@ -190,17 +190,33 @@ export function syncQuestionBank(sourceDir, targetDir, { minimumPerShard = 8, fi
     const records = loaded[filename];
     counts[filename] = records.length;
   }
-  const runtimeRecords = SHARDS.flatMap((filename) => loaded[filename]);
-  const encodedRecords = gzipSync(Buffer.from(JSON.stringify(runtimeRecords)), {
-    level: 9,
-  }).toString('base64');
-  const packedChunks = encodedRecords.match(/.{1,4096}/g) ?? [];
+  const runtimeShards = SHARDS.map((filename) => {
+    const match = filename.match(/(warehouse|inspector)_l([1-5])\.json$/u);
+    if (!match) throw new Error(`Cannot determine runtime shard metadata for ${filename}`);
+    const encoded = gzipSync(Buffer.from(JSON.stringify(loaded[filename])), { level: 9 }).toString(
+      'base64',
+    );
+    return {
+      occupation: match[1] === 'inspector' ? '4-08-05-01' : '4-02-06-01',
+      level: Number(match[2]),
+      count: loaded[filename].length,
+      paths: [
+        ...new Map(
+          loaded[filename].map((record) => [
+            `${record.module}\u0000${record.chapter_id}\u0000${record.section_id}`,
+            { module: record.module, chapterId: record.chapter_id, sectionId: record.section_id },
+          ]),
+        ).values(),
+      ],
+      chunks: encoded.match(/.{1,4096}/g) ?? [],
+    };
+  });
   const runtimeModule = `import { gunzipSync, strFromU8 } from 'fflate';
-import type { RuntimeQuestionRecord } from '../../types/runtime-question';
-
-const packed = [
-${packedChunks.map((chunk) => `  '${chunk}',`).join('\n')}
-].join('');
+import type {
+  RuntimeQuestionBank,
+  RuntimeQuestionRecord,
+  RuntimeQuestionShard,
+} from '../../types/runtime-question';
 
 const base64ToBytes = (value: string): Uint8Array => {
   if (typeof wx !== 'undefined' && typeof wx.base64ToArrayBuffer === 'function') {
@@ -210,10 +226,79 @@ const base64ToBytes = (value: string): Uint8Array => {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 };
 
-const compressed = base64ToBytes(packed);
-const records: unknown = JSON.parse(strFromU8(gunzipSync(compressed)));
+const createShard = (
+  occupation: RuntimeQuestionShard['occupation'],
+  level: RuntimeQuestionShard['level'],
+  count: number,
+  paths: RuntimeQuestionShard['paths'],
+  packed: string,
+): RuntimeQuestionShard => {
+  let records: RuntimeQuestionRecord[] | undefined;
+  return {
+    occupation,
+    level,
+    count,
+    paths,
+    load: () => {
+      if (records) return records;
+      const decoded: unknown = JSON.parse(strFromU8(gunzipSync(base64ToBytes(packed))));
+      if (!Array.isArray(decoded)) throw new Error('题库分片数据格式无效');
+      records = decoded as RuntimeQuestionRecord[];
+      return records;
+    },
+  };
+};
 
-export const RUNTIME_QUESTION_RECORDS = records as RuntimeQuestionRecord[];
+export const RUNTIME_QUESTION_SHARDS: readonly RuntimeQuestionShard[] = [
+${runtimeShards
+  .map(
+    ({ occupation, level, count, paths, chunks }) => `  createShard(
+    '${occupation}',
+    ${level},
+    ${count},
+    ${JSON.stringify(paths)},
+    [
+${chunks.map((chunk) => `      '${chunk}',`).join('\n')}
+    ].join(''),
+  ),`,
+  )
+  .join('\n')}
+];
+
+export const RUNTIME_QUESTION_COUNTS: RuntimeQuestionBank['counts'] = {
+  '4-02-06-01': {
+${runtimeShards
+  .filter(({ occupation }) => occupation === '4-02-06-01')
+  .map(({ level, count }) => `    ${level}: ${count},`)
+  .join('\n')}
+  },
+  '4-08-05-01': {
+${runtimeShards
+  .filter(({ occupation }) => occupation === '4-08-05-01')
+  .map(({ level, count }) => `    ${level}: ${count},`)
+  .join('\n')}
+  },
+};
+
+const shardForId = (id: string): RuntimeQuestionShard | undefined => {
+  const match = /^(WH|QI)-L([1-5])-/u.exec(id);
+  if (!match) return undefined;
+  const occupation = match[1] === 'QI' ? '4-08-05-01' : '4-02-06-01';
+  const level = Number(match[2]);
+  return RUNTIME_QUESTION_SHARDS.find(
+    (shard) => shard.occupation === occupation && shard.level === level,
+  );
+};
+
+export const RUNTIME_QUESTION_BANK: RuntimeQuestionBank = {
+  shards: RUNTIME_QUESTION_SHARDS,
+  counts: RUNTIME_QUESTION_COUNTS,
+  shardForId,
+};
+
+/** @deprecated Load through RUNTIME_QUESTION_BANK to avoid startup decompression. */
+export const loadRuntimeQuestionRecords = (): RuntimeQuestionRecord[] =>
+  RUNTIME_QUESTION_SHARDS.flatMap((shard) => shard.load());
 `;
   const encodedCatalog = gzipSync(Buffer.from(JSON.stringify(catalog)), { level: 9 }).toString(
     'base64',

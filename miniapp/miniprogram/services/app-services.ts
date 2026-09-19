@@ -1,4 +1,4 @@
-import { QUESTION_RECORDS } from '../data/question-bank';
+import { QUESTION_BANK } from '../data/question-bank';
 import { LocalQuestionRepository } from '../repositories/local-question-repository';
 import { AccountSyncClient } from '../repositories/account-sync-client';
 import { ProgressRepository } from '../storage/progress-repository';
@@ -44,7 +44,7 @@ const auth = new AuthService(
 export const appServices = {
   progress,
   theme: new ThemeService(progress),
-  questions: new LocalQuestionRepository(QUESTION_RECORDS),
+  questions: new LocalQuestionRepository(QUESTION_BANK),
   auth,
   cloudSync,
   wechatAvatar,

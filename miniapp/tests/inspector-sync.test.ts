@@ -108,7 +108,7 @@ describe('inspector question bank sync', () => {
     expect(counts['inspector_l2.json']).toBe(1);
     expect(counts['inspector_l1.json']).toBe(1);
     const runtimeModule = readFileSync(join(target, 'runtime-question-records.ts'), 'utf8');
-    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_RECORDS');
+    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_BANK');
   });
 
   it('rejects inspector records when their catalog path is not visible at that level', () => {

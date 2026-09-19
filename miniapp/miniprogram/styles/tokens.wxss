@@ -9,6 +9,8 @@ page {
   --color-primary-strong: #8fbd19;
   --color-primary-soft: #dff58f;
   --color-danger: #d85b52;
+  --color-success-readable: #28734f;
+  --color-danger-readable: #b43b32;
   --color-danger-soft: #fde9e6;
   --color-border: rgb(17 18 15 / 7%);
   --space-1: 8rpx;
@@ -38,6 +40,8 @@ page {
   --color-primary: #a8d63c;
   --color-primary-strong: #8fb532;
   --color-primary-soft: #33431f;
+  --color-success-readable: #6fe0aa;
+  --color-danger-readable: #ff9b90;
   --color-border: rgb(240 242 235 / 8%);
   --shadow-soft: 0 8rpx 24rpx rgb(0 0 0 / 14%);
 }

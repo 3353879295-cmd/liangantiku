@@ -3,24 +3,18 @@
   disabled="{{disabled}}"
   hover-class="option--pressed"
   hover-start-time="0"
-  aria-label="选项 {{optionKey}}，{{text}}"
+  aria-label="选项 {{optionKey}}，{{text}}{{state === 'correct' ? (selected ? '，已选，正确' : '，正确答案，未选') : state === 'wrong' ? '，已选，错误' : selected ? '，已选' : ''}}"
   aria-pressed="{{selected}}"
   bindtap="handleTap"
 >
   <text class="option__key {{keyPopActive ? 'option__key--pop' : ''}}">{{optionKey}}</text>
   <text class="option__text">{{text}}</text>
-  <t-icon
-    wx:if="{{state === 'correct'}}"
-    name="check"
-    size="36rpx"
-    color="#2f6b4f"
-    aria-hidden="{{true}}"
-  />
-  <t-icon
-    wx:elif="{{state === 'wrong'}}"
-    name="close"
-    size="36rpx"
-    color="#c44747"
-    aria-hidden="{{true}}"
-  />
+  <view wx:if="{{state !== 'idle'}}" class="option__status" aria-hidden="{{true}}">
+    <t-icon
+      name="{{state === 'wrong' ? 'close' : 'check'}}"
+      size="30rpx"
+      color="{{state === 'wrong' ? 'var(--practice-option-wrong-text, #862820)' : state === 'correct' ? 'var(--practice-option-correct-text, #164d35)' : 'var(--practice-option-selected-text, #243600)'}}"
+    />
+    <text>{{state === 'correct' ? (selected ? '选对' : '正确答案') : state === 'wrong' ? '选错' : '已选'}}</text>
+  </view>
 </button>

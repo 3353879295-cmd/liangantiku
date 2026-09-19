@@ -51,6 +51,7 @@ export interface QuestionFilter {
 }
 
 export interface QuestionRepository {
+  count(filter?: QuestionFilter): Promise<number>;
   list(filter?: QuestionFilter): Promise<Question[]>;
   getById(id: string): Promise<Question | null>;
   getByIds(ids: string[]): Promise<Question[]>;

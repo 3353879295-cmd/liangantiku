@@ -1,19 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CertificateKey } from '../miniprogram/types/domain';
-import { makeQuestion } from './factories';
 
 interface HomePageData {
   selectedKey: CertificateKey;
-  certificate: { questionCountText: string };
+  certificate: { questionCountText: string; canStart: boolean };
   loading: boolean;
+  loadError: boolean;
   hasResume: boolean;
+  hasResult: boolean;
 }
 
 interface HomePageContext {
   data: HomePageData;
   setData(update: Partial<HomePageData>): void;
   showNavigationError(error: unknown): void;
+  openStartRoute(route: string): Promise<void>;
 }
 
 interface HomePageDefinition {
@@ -23,6 +25,8 @@ interface HomePageDefinition {
   onHide(this: HomePageContext): void;
   onUnload(this: HomePageContext): void;
   onOpenMember(this: HomePageContext): Promise<void>;
+  onResume(this: HomePageContext): Promise<void>;
+  openStartRoute(this: HomePageContext, route: string): Promise<void>;
   showNavigationError(this: HomePageContext, error: unknown): void;
 }
 
@@ -58,6 +62,9 @@ const loadHomePage = async () => {
     showNavigationError(error) {
       registered.showNavigationError.call(this, error);
     },
+    openStartRoute(route) {
+      return registered.openStartRoute.call(this, route);
+    },
   };
 
   return { appServices, context, definition: registered, navigateTo, showToast, values };
@@ -66,19 +73,52 @@ const loadHomePage = async () => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe('home page certificate loading', () => {
   it('loads the selected certificate question count', async () => {
     const { appServices, context, definition } = await loadHomePage();
-    vi.spyOn(appServices.questions, 'list').mockResolvedValue([
-      makeQuestion({ id: 'HOME-CURRENT-Q1' }),
-    ]);
+    vi.spyOn(appServices.questions, 'count').mockResolvedValue(1);
+    const list = vi.spyOn(appServices.questions, 'list');
     await expect(definition.loadCertificate.call(context, '4-02-06-01:5')).resolves.toBeUndefined();
 
     expect(context.data.loading).toBe(false);
     expect(context.data.selectedKey).toBe('4-02-06-01:5');
     expect(context.data.certificate.questionCountText).toBe('1 题');
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  it('keeps the latest count when certificate requests finish out of order', async () => {
+    const { appServices, context, definition } = await loadHomePage();
+    let finishOld!: (count: number) => void;
+    vi.spyOn(appServices.questions, 'count')
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishOld = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(200);
+    const old = definition.loadCertificate.call(context, '4-02-06-01:5');
+    await definition.loadCertificate.call(context, '4-08-05-01:4');
+    finishOld(1);
+    await old;
+    expect(context.data.selectedKey).toBe('4-08-05-01:4');
+    expect(context.data.certificate.questionCountText).toBe('200 题');
+  });
+
+  it('offers recovery after a failed count and clears the error on retry', async () => {
+    const { appServices, context, definition, showToast } = await loadHomePage();
+    vi.spyOn(appServices.questions, 'count')
+      .mockRejectedValueOnce(new Error('unavailable'))
+      .mockResolvedValueOnce(42);
+    await definition.loadCertificate.call(context, '4-02-06-01:5');
+    expect(context.data.loadError).toBe(true);
+    await definition.openStartRoute.call(context, '/pages/library/index');
+    expect(showToast).toHaveBeenLastCalledWith({ title: '题库读取失败，请点击重试', icon: 'none' });
+    await definition.loadCertificate.call(context, '4-02-06-01:5');
+    expect(context.data.loadError).toBe(false);
+    expect(context.data.certificate.canStart).toBe(true);
   });
 
   it('keeps the home page visible and refreshes it after account recovery changes the cache', async () => {
@@ -122,7 +162,7 @@ describe('home page certificate loading', () => {
               ? { status: 'active', currentIndex: 0, questionIds: ['RECOVERY-Q1'] }
               : null,
         },
-        questions: { list: vi.fn(() => Promise.resolve([makeQuestion({ id: 'RECOVERY-Q1' })])) },
+        questions: { count: vi.fn(() => Promise.resolve(1)) },
         membership: { getStatus: vi.fn(() => Promise.resolve({})) },
       },
       localDateKey: () => '2026-09-02',
@@ -157,6 +197,7 @@ describe('home page certificate loading', () => {
         registered.onShow.call(this);
       },
       showNavigationError() {},
+      openStartRoute: () => Promise.resolve(),
       setData(update) {
         Object.assign(this.data, update);
       },
@@ -174,6 +215,22 @@ describe('home page certificate loading', () => {
 });
 
 describe('home page navigation', () => {
+  it('opens the unrecorded result shown on the resume card', async () => {
+    const { context, definition, navigateTo } = await loadHomePage();
+    context.data.hasResult = true;
+    navigateTo.mockImplementation((options) => options.success?.());
+    await definition.onResume.call(context);
+    expect(navigateTo).toHaveBeenCalledWith(
+      expect.objectContaining({ url: '/pages/report/index' }),
+    );
+  });
+
+  it('describes loading accurately and does not navigate before the bank is ready', async () => {
+    const { context, definition, navigateTo, showToast } = await loadHomePage();
+    await definition.openStartRoute.call(context, '/pages/library/index');
+    expect(navigateTo).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith({ title: '题库正在加载，请稍候', icon: 'none' });
+  });
   it('sends a pending random start directly to resume without an allowance precheck', async () => {
     const { appServices, context, definition, navigateTo, values } = await loadHomePage();
     values.set('membership.pending-random.v1', {

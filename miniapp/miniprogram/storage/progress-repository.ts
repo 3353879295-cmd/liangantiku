@@ -1,6 +1,7 @@
-import { migrateProgress } from './migrations';
-import type { MigrationResult, CurrentProgressData } from './migrations';
+import { isPersistedSession, migrateProgress } from './migrations';
+import type { MigrationResult, CurrentProgressData, PersistedPracticeSession } from './migrations';
 import type { StorageAdapter } from '../types/domain';
+import type { CertificateKey } from '../types/domain';
 import type { ProgressScope } from '../types/account-sync';
 import {
   ACCOUNT_SYNC_SCHEMA_VERSION,
@@ -14,6 +15,19 @@ export const GUEST_PROGRESS_KEY = 'grain-practice:guest-progress';
 export const ACCOUNT_CACHE_KEY = 'grain-practice:account-cache';
 export const STORAGE_KEY = GUEST_PROGRESS_KEY;
 export const RECOVERY_BACKUP_KEY = 'grain-practice:progress:recovery-backup';
+
+const SEQUENTIAL_CERTIFICATE_KEYS: readonly CertificateKey[] = [
+  '4-02-06-01:5',
+  '4-02-06-01:4',
+  '4-02-06-01:3',
+  '4-02-06-01:2',
+  '4-02-06-01:1',
+  '4-08-05-01:5',
+  '4-08-05-01:4',
+  '4-08-05-01:3',
+  '4-08-05-01:2',
+  '4-08-05-01:1',
+];
 
 export interface RecoveryBackup {
   capturedAt: number;
@@ -108,6 +122,10 @@ export class ProgressRepository {
     return scope === 'guest' ? GUEST_PROGRESS_KEY : ACCOUNT_CACHE_KEY;
   }
 
+  private sequentialKeyFor(scope: ProgressScope, key: CertificateKey): string {
+    return `grain-practice:${scope}:sequential:${key}`;
+  }
+
   load(scope: ProgressScope = 'guest'): MigrationResult {
     const storageKey = this.keyFor(scope);
     let value = this.storage.get<unknown>(storageKey);
@@ -169,7 +187,35 @@ export class ProgressRepository {
     this.storage.set(ACCOUNT_CACHE_KEY, clone(cache));
   }
 
+  loadSequentialSession(
+    scope: ProgressScope,
+    key: CertificateKey,
+  ): PersistedPracticeSession | null {
+    const value = this.storage.get<unknown>(this.sequentialKeyFor(scope, key));
+    return isPersistedSession(value) && value.mode === 'sequential' ? clone(value) : null;
+  }
+
+  saveSequentialSession(
+    scope: ProgressScope,
+    key: CertificateKey,
+    session: PersistedPracticeSession | null,
+  ): void {
+    const storageKey = this.sequentialKeyFor(scope, key);
+    if (session === null) {
+      this.storage.remove(storageKey);
+      return;
+    }
+    this.storage.set(storageKey, clone(session));
+  }
+
+  removeSequentialSessions(scope: ProgressScope): void {
+    for (const key of SEQUENTIAL_CERTIFICATE_KEYS) {
+      this.storage.remove(this.sequentialKeyFor(scope, key));
+    }
+  }
+
   remove(scope: ProgressScope): void {
     this.storage.remove(this.keyFor(scope));
+    this.removeSequentialSessions(scope);
   }
 }

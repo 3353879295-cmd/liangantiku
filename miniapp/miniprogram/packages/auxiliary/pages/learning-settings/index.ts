@@ -1,4 +1,4 @@
-import { presentRevealModes } from '../../../../presenters/learning-settings-presenter';
+import { presentRevealModes } from '../../presenters/learning-settings-presenter';
 import { appServices } from '../../../../services/app-services';
 import type { AnswerRevealMode, AnswerTheme } from '../../../../types/domain';
 

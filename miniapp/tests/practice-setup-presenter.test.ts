@@ -5,7 +5,7 @@ import {
   buildRandomPracticeRoute,
   presentMockPracticeInfo,
   presentRandomPracticeSetup,
-} from '../miniprogram/presenters/practice-setup-presenter';
+} from '../miniprogram/packages/auxiliary/presenters/practice-setup-presenter';
 import type { Certificate } from '../miniprogram/data/certificates';
 import type { CertificateKey, QuestionType } from '../miniprogram/types/domain';
 import { makeQuestion } from './factories';

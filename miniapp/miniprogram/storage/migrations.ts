@@ -265,7 +265,7 @@ const isLegacyPersistedSession = (value: unknown): value is LegacyPersistedPract
   return value.progressRecorded === undefined || typeof value.progressRecorded === 'boolean';
 };
 
-const isPersistedSession = (value: unknown): value is PersistedPracticeSession => {
+export const isPersistedSession = (value: unknown): value is PersistedPracticeSession => {
   const answerRevealMode = isRecord(value) ? value.answerRevealMode : undefined;
   return isLegacyPersistedSession(value) && isAnswerRevealMode(answerRevealMode);
 };

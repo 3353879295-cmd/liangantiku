@@ -4,7 +4,7 @@ import { basename, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { PRACTICAL_SKILLS, getPracticalSkill } from '../miniprogram/data/practical-skills';
-import { QUESTION_RECORDS } from '../miniprogram/data/question-bank';
+import { loadQuestionRecords } from '../miniprogram/data/question-bank';
 
 const miniprogramRoot = resolve(import.meta.dirname, '..', 'miniprogram');
 const sourceCatalog = new Map<
@@ -132,7 +132,7 @@ describe('practical skill catalog', () => {
   });
 
   it('links every skill only to published questions for the same occupation', () => {
-    const questions = new Map(QUESTION_RECORDS.map((question) => [question.id, question]));
+    const questions = new Map(loadQuestionRecords().map((question) => [question.id, question]));
 
     for (const skill of PRACTICAL_SKILLS) {
       expect(skill.relatedQuestionIds.length, `${skill.id} needs related practice`).toBeGreaterThan(

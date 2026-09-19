@@ -72,6 +72,7 @@ Page({
     avatarUrl: '',
     preparationDays: 1,
     hasResume: false,
+    hasResult: false,
     resumeText: '选择题库，开始今天的第一次练习',
     resumeActionText: '去学习',
     actions,
@@ -79,6 +80,7 @@ Page({
     showMembershipPrompt: false,
     randomStarting: false,
     loading: true,
+    loadError: false,
   },
 
   onShow() {
@@ -110,6 +112,7 @@ Page({
       avatarUrl: preferences.avatarUrl,
       preparationDays: appServices.progress.getPreparationDays(today),
       hasResume,
+      hasResult: Boolean(hasUnrecordedResult),
       resumeText: hasActiveSession
         ? `继续第 ${session.currentIndex + 1} 题 · 共 ${session.questionIds.length} 题`
         : hasUnrecordedResult
@@ -168,31 +171,37 @@ Page({
       selectedKey: certificate.key,
       certificate: presentHomeCertificate(CERTIFICATES, certificate.key, 0),
       loading: true,
+      loadError: false,
     });
 
     try {
-      const questions = await appServices.questions.list({
+      const questionCount = await appServices.questions.count({
         occupation: certificate.occupation,
         level: certificate.level,
       });
       if (certificateRequestVersions.get(this) !== version) return;
       this.setData({
-        certificate: presentHomeCertificate(CERTIFICATES, certificate.key, questions.length),
+        certificate: presentHomeCertificate(CERTIFICATES, certificate.key, questionCount),
         loading: false,
       });
     } catch {
       if (certificateRequestVersions.get(this) !== version) return;
-      this.setData({ loading: false });
-      void wx.showToast({ title: '题库读取失败，请稍后重试', icon: 'none' });
+      this.setData({ loading: false, loadError: true });
     }
   },
 
   onCertificateChange(event: WechatMiniprogram.CustomEvent<{ key: CertificateKey }>) {
     const key = event.detail.key;
     if (!CERTIFICATES.some((certificate) => certificate.key === key)) return;
+    if (key === this.data.selectedKey && !this.data.loadError) return;
+    entryVersions.set(this, (entryVersions.get(this) ?? 0) + 1);
     appServices.progress.updatePreferences({ selectedCertificateKey: key });
     getApp<IAppOption>().globalData.selectedCertificateKey = key;
     void this.loadCertificate(key);
+  },
+
+  onRetryLoad() {
+    void this.loadCertificate(this.data.selectedKey);
   },
 
   async onResume() {
@@ -202,6 +211,10 @@ Page({
     try {
       if (this.data.hasResume) {
         await navigate('/pages/practice/index?resume=1');
+        return;
+      }
+      if (this.data.hasResult) {
+        await navigate('/pages/report/index');
         return;
       }
       await this.openStartRoute('/pages/library/index');
@@ -229,6 +242,10 @@ Page({
       if (id === 'random') {
         if (getPendingRandomStart()) {
           await navigate('/pages/practice/index?resume=1');
+          return;
+        }
+        if (this.data.loading || this.data.loadError || !this.data.certificate.canStart) {
+          await this.openStartRoute(route);
           return;
         }
         this.setData({ randomStarting: true });
@@ -259,8 +276,15 @@ Page({
 
   openStartRoute(route: string) {
     const certificate = this.data.certificate;
-    if (this.data.loading || !certificate.canStart) {
-      void wx.showToast({ title: '该等级题库待补充', icon: 'none' });
+    if (this.data.loading || this.data.loadError || !certificate.canStart) {
+      void wx.showToast({
+        title: this.data.loading
+          ? '题库正在加载，请稍候'
+          : this.data.loadError
+            ? '题库读取失败，请点击重试'
+            : '该等级题库待补充',
+        icon: 'none',
+      });
       return Promise.resolve();
     }
     return navigate(route);

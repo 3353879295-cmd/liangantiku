@@ -15,6 +15,7 @@ const emptyDashboard = presentDashboard({
 });
 
 const visiblePages = new WeakSet<object>();
+const pendingSyncPages = new WeakSet<object>();
 const pendingRecoveryRefreshes = new WeakSet<object>();
 const membershipRequests = new WeakMap<object, number>();
 let membershipRequestId = 0;
@@ -48,6 +49,7 @@ const presentAccountStatus = (
 Page({
   data: {
     clearing: false,
+    syncing: false,
     nickname: '仓廪小麦',
     avatarUrl: '',
     certificateTitle: '',
@@ -77,6 +79,7 @@ Page({
     const sync = appServices.cloudSync.getState();
     const account = presentAccountStatus(auth);
     this.setData({
+      syncing: pendingSyncPages.has(this),
       nickname: preferences.nickname,
       avatarUrl: preferences.avatarUrl,
       certificateTitle: certificate?.title ?? '粮油仓储管理员 · 初级',
@@ -163,8 +166,20 @@ Page({
   },
 
   async onRetrySync() {
-    await appServices.auth.retryBackground();
-    void this.onShow();
+    if (pendingSyncPages.has(this)) return;
+    pendingSyncPages.add(this);
+    this.setData({ syncing: true });
+    try {
+      await appServices.auth.retryBackground();
+      if (visiblePages.has(this)) void this.onShow();
+    } catch {
+      if (visiblePages.has(this)) {
+        void wx.showToast({ title: '同步暂时失败，请稍后重试', icon: 'none' });
+      }
+    } finally {
+      pendingSyncPages.delete(this);
+      if (visiblePages.has(this)) this.setData({ syncing: false });
+    }
   },
 
   async onClearLearningData() {

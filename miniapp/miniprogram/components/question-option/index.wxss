@@ -6,7 +6,7 @@
   min-height: 96rpx;
   margin: 0;
   padding: 20rpx 24rpx;
-  border: 1rpx solid transparent;
+  border: 3rpx solid transparent;
   border-radius: 34rpx;
   background: var(--color-surface);
   color: var(--color-option-text);
@@ -27,23 +27,36 @@
   opacity: 1;
 }
 
+/* Keep answer feedback visible after native buttons become read-only. */
+.option.option--idle,
+.option.option--idle[disabled] {
+  background: var(--color-surface);
+  color: var(--color-option-text);
+}
+
 .option--pressed {
   transform: scale(0.982);
 }
 
-.option--selected {
-  border-color: rgb(114 145 36 / 16%);
-  background: var(--practice-option-selected-background, #dff58f);
+.option.option--selected,
+.option.option--selected[disabled] {
+  border-color: var(--practice-option-selected-accent, #536f13);
+  background: var(--practice-option-selected-background, #e7f2c9);
+  color: var(--practice-option-selected-text, #243600);
 }
 
-.option--correct {
-  border-color: rgb(47 107 79 / 16%);
-  background: var(--practice-option-correct-background, #e4f4df);
+.option.option--correct,
+.option.option--correct[disabled] {
+  border-color: var(--practice-option-correct-accent, #28734f);
+  background: var(--practice-option-correct-background, #e3f3eb);
+  color: var(--practice-option-correct-text, #164d35);
 }
 
-.option--wrong {
-  border-color: rgb(196 71 71 / 16%);
-  background: var(--practice-option-wrong-background, #fde9e6);
+.option.option--wrong,
+.option.option--wrong[disabled] {
+  border-color: var(--practice-option-wrong-accent, #b43b32);
+  background: var(--practice-option-wrong-background, #fff0ee);
+  color: var(--practice-option-wrong-text, #862820);
 }
 
 .option__key {
@@ -55,25 +68,25 @@
   height: 56rpx;
   margin-right: 20rpx;
   border-radius: 50%;
-  background: #eef6d8;
-  color: #3f5d18;
+  background: var(--color-surface-secondary);
+  color: var(--color-option-text);
   font-size: 26rpx;
   font-weight: 600;
 }
 
 .option--selected .option__key {
-  background: var(--color-primary);
-  color: #11120f;
+  background: var(--practice-option-selected-accent, #536f13);
+  color: var(--practice-option-selected-key-text, #fff);
 }
 
 .option--correct .option__key {
-  background: #cdecc4;
-  color: #2f6b4f;
+  background: var(--practice-option-correct-accent, #28734f);
+  color: var(--practice-option-correct-key-text, #fff);
 }
 
 .option--wrong .option__key {
-  background: #f6d0cc;
-  color: #a43d3d;
+  background: var(--practice-option-wrong-accent, #b43b32);
+  color: var(--practice-option-wrong-key-text, #fff);
 }
 
 .option__key--pop {
@@ -82,22 +95,35 @@
 
 .option__text {
   flex: 1;
+  min-width: 0;
   color: var(--color-option-text);
   font-size: 28rpx;
   font-weight: 600;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .option--selected .option__text {
-  color: var(--practice-option-selected-text, #272d23);
+  color: var(--practice-option-selected-text, #243600);
 }
 
 .option--correct .option__text {
-  color: var(--practice-option-correct-text, #285b43);
+  color: var(--practice-option-correct-text, #164d35);
 }
 
 .option--wrong .option__text {
-  color: var(--practice-option-wrong-text, #8d3535);
+  color: var(--practice-option-wrong-text, #862820);
+}
+
+.option__status {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6rpx;
+  margin-left: 16rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 @keyframes option-key-pop {

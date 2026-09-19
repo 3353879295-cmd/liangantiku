@@ -93,9 +93,10 @@ describe('question bank sync', () => {
     expect(Object.keys(counts)).toEqual(SHARDS);
     expect(counts[firstShard]).toBe(1);
     const runtimeModule = readFileSync(join(target, 'runtime-question-records.ts'), 'utf8');
-    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_RECORDS');
+    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_BANK');
+    expect(runtimeModule).toContain('export const RUNTIME_QUESTION_COUNTS');
     expect(runtimeModule).toContain("import { gunzipSync, strFromU8 } from 'fflate';");
-    expect(runtimeModule).toContain('const base64ToBytes');
+    expect(runtimeModule).toContain('const createShard');
     expect(runtimeModule).not.toContain("from './");
     const catalogModule = readFileSync(join(target, 'runtime-knowledge-catalog.ts'), 'utf8');
     expect(catalogModule).toContain('export const RUNTIME_KNOWLEDGE_CATALOG');

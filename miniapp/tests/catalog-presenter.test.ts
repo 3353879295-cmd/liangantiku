@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { KNOWLEDGE_CATALOG } from '../miniprogram/data/knowledge-catalog';
-import { QUESTION_RECORDS } from '../miniprogram/data/question-bank';
+import { loadQuestionRecords } from '../miniprogram/data/question-bank';
 import * as catalogPresenter from '../miniprogram/presenters/catalog-presenter';
 import { LocalQuestionRepository } from '../miniprogram/repositories/local-question-repository';
 import type { CertificateLevel, OccupationCode } from '../miniprogram/types/domain';
@@ -277,7 +277,7 @@ describe('presentCatalogParts', () => {
   });
 
   it('preserves canonical zero-question sections from the runtime catalog', async () => {
-    const repository = new LocalQuestionRepository(QUESTION_RECORDS);
+    const repository = new LocalQuestionRepository(loadQuestionRecords());
     const questions = await repository.list();
     const canonicalSectionIds = Object.values(KNOWLEDGE_CATALOG.occupations).flatMap((occupation) =>
       occupation.parts.flatMap((part) =>

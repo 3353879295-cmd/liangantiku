@@ -29,7 +29,7 @@
     >
       登录并重试
     </button>
-    <button wx:elif="{{syncFailed}}" class="account-status-card__button" bind:tap="onRetrySync">
+    <button wx:elif="{{syncFailed}}" class="account-status-card__button" loading="{{syncing}}" disabled="{{syncing}}" bind:tap="onRetrySync">
       重试同步
     </button>
   </view>
@@ -133,5 +133,5 @@
     </button>
   </view>
 
-  <view class="version">粮安题库 0.1.0 · 题目解析仅用于学习参考</view>
+  <view class="version">粮安题库 · 题目解析仅用于学习参考</view>
 </view>

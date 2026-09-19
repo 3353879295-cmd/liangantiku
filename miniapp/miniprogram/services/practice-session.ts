@@ -153,8 +153,12 @@ export const submitSession = (session: PracticeSession, now: number): PracticeSe
   const chapters: Record<string, ModuleReport> = {};
   const wrongQuestionIds: string[] = [];
   let correct = 0;
+  const gradedQuestions =
+    session.mode === 'sequential'
+      ? session.questions.filter((question) => session.answers[question.id]?.length)
+      : session.questions;
 
-  for (const question of session.questions) {
+  for (const question of gradedQuestions) {
     const result = gradeQuestion(question, session.answers[question.id] ?? []);
     feedback[question.id] = result;
     const previous = chapters[question.chapterId] ?? { total: 0, correct: 0 };
@@ -167,9 +171,9 @@ export const submitSession = (session: PracticeSession, now: number): PracticeSe
   }
 
   const report: PracticeReport = {
-    total: session.questions.length,
+    total: gradedQuestions.length,
     correct,
-    wrong: session.questions.length - correct,
+    wrong: gradedQuestions.length - correct,
     durationMs: Math.max(0, now - session.startedAt),
     wrongQuestionIds,
     chapters,

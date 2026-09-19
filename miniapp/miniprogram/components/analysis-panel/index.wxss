@@ -7,13 +7,13 @@
   align-items: center;
   gap: 12rpx;
   padding: 0 4rpx;
-  color: var(--color-primary-strong);
+  color: var(--color-success-readable);
   font-size: 29rpx;
   font-weight: 650;
 }
 
 .analysis__result--wrong {
-  color: var(--color-danger);
+  color: var(--color-danger-readable);
 }
 
 .analysis__cards {

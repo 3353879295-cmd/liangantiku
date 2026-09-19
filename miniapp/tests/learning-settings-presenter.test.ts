@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { presentRevealModes } from '../miniprogram/presenters/learning-settings-presenter';
+import { presentRevealModes } from '../miniprogram/packages/auxiliary/presenters/learning-settings-presenter';
 import type { AnswerRevealMode } from '../miniprogram/types/domain';
 
 interface RevealModeOption {

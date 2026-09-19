@@ -189,6 +189,7 @@ export class CloudSyncService {
   /** Replace a completed clear snapshot and rebase deferred profile writes. */
   replaceAfterLearningClear(snapshot: AccountSyncSnapshot): void {
     this.saveSnapshot(snapshot);
+    this.repository.removeSequentialSessions('account');
     this.outbox.rebase(snapshot.profileRevision, snapshot.progressRevision);
     this.refreshState(this.outbox.size === 0 ? 'idle' : 'pending', null);
   }

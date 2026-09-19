@@ -1,6 +1,6 @@
 .list-page {
   min-height: 100vh;
-  padding-bottom: 160rpx;
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
   background: var(--color-bg);
   color: var(--color-text);
 }
@@ -84,13 +84,19 @@
 }
 
 .filter-chip {
+  display: inline-flex;
   flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
   padding: 14rpx 20rpx;
   border: 1rpx solid var(--color-border);
   border-radius: 999rpx;
   background: var(--color-surface);
   color: var(--color-text-secondary);
-  font-size: 23rpx;
+  font-size: 26rpx;
 }
 
 .filter-chip--active {
@@ -104,6 +110,7 @@
   display: flex;
   align-items: center;
   gap: 8rpx;
+  min-height: 44px;
   margin-top: 22rpx;
   color: var(--color-text-secondary);
   font-size: 23rpx;
@@ -121,6 +128,13 @@
   color: var(--color-text-secondary);
   font-size: 22rpx;
   line-height: 1.5;
+}
+
+.list-progress {
+  margin-top: 22rpx;
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  text-align: right;
 }
 
 .question-list {
@@ -203,9 +217,13 @@
 
 .analysis-toggle {
   gap: 4rpx;
+  min-height: 44px;
 }
 
 .mastered-action {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--color-text-secondary);
 }
 
@@ -213,6 +231,24 @@
   padding: 2rpx 28rpx 30rpx;
   border-top: 1rpx solid var(--color-border);
   background: var(--color-bg);
+}
+
+.load-more {
+  margin-top: 24rpx;
+  text-align: center;
+}
+
+.load-more__button {
+  min-width: 210rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: 999rpx;
+  background: var(--color-surface);
+  color: var(--color-primary-strong);
+  font-size: 24rpx;
+}
+
+.load-more__button::after {
+  border: 0;
 }
 
 .list-footer {

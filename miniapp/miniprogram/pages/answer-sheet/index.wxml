@@ -8,7 +8,18 @@
     </view>
   </view>
 
-  <view wx:if="{{ready}}">
+  <view wx:if="{{loading}}" class="sheet-state">
+    <t-icon name="loading" size="30rpx" />
+    <text>正在恢复练习…</text>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="sheet-state sheet-state--error">
+    <view class="sheet-state__title">练习恢复失败</view>
+    <text>请重试后再查看答题进度。</text>
+    <button class="sheet-retry" bindtap="onRetryLoad">重新加载</button>
+  </view>
+
+  <view wx:elif="{{ready}}">
     <view class="sheet-summary">
       <view>
         <text class="sheet-summary__eyebrow">答题进度</text>
@@ -42,8 +53,7 @@
     </view>
   </view>
 
-  <empty-state
-    wx:else
+  <empty-state wx:else
     kind="empty"
     title="没有进行中的练习"
     description="请先从题库选择一种练习方式。"

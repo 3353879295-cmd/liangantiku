@@ -19,14 +19,22 @@
 
   <block wx:else>
     <view class="catalog-context">
-      <view>
+      <view class="catalog-context__info">
         <text class="catalog-context__label">当前题库</text>
         <view class="catalog-context__title">{{occupationTitle}} · {{levelName}}</view>
         <text class="catalog-context__meta">
           {{questionCount ? '已收录 ' + questionCount + ' 题' : '题目待补充'}}
         </text>
+        <text wx:if="{{questionCount}}" class="catalog-context__meta">已完成 {{completedCount}} 题 · 每组 20 题</text>
+        <text wx:if="{{questionCount}}" class="catalog-context__hint">按顺序刷完全部，退出后可继续</text>
       </view>
-      <view class="catalog-context__status">{{questionCount ? '可练习' : '待补充'}}</view>
+      <button
+        class="catalog-context__status"
+        loading="{{starting}}"
+        disabled="{{starting || !questionCount || (completedCount >= questionCount && !hasSequentialResume)}}"
+        aria-label="{{hasSequentialResume ? '继续当前题库的全部题目练习' : '按顺序练习当前题库全部未完成题目'}}"
+        bindtap="onStartAll"
+      >{{!questionCount ? '待补充' : hasSequentialResume ? '继续刷题' : completedCount >= questionCount ? '已刷完' : '全部刷题'}}</button>
     </view>
 
     <view wx:if="{{parts.length}}" class="catalog">

@@ -96,6 +96,19 @@
   color: var(--color-primary);
 }
 
+.catalog-context__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalog-context__hint {
+  display: block;
+  margin-top: 12rpx;
+  color: rgb(255 255 255 / 80%);
+  font-size: 21rpx;
+  line-height: 1.5;
+}
+
 .catalog-context__title {
   margin-top: 8rpx;
   font-size: 31rpx;
@@ -119,8 +132,21 @@
 }
 
 .catalog-context__status {
-  padding: 11rpx 18rpx;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 22rpx;
   font-size: 22rpx;
+  line-height: 44px;
+  white-space: nowrap;
+}
+
+.catalog-context__status::after {
+  border: 0;
+}
+
+.catalog-context__status[disabled] {
+  background: var(--color-primary-soft);
+  color: #243600;
 }
 
 .catalog {

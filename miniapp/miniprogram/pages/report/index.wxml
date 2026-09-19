@@ -8,15 +8,26 @@
     </view>
   </view>
 
-  <view wx:if="{{ready && view}}">
+  <view wx:if="{{loading}}" class="report-state">
+    <t-icon name="loading" size="30rpx" />
+    <text>正在恢复练习结果…</text>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="report-state report-state--error">
+    <view class="report-state__title">练习结果恢复失败</view>
+    <text>请重试后再查看本次成绩。</text>
+    <button class="report-retry" bindtap="onRetryLoad">重新加载</button>
+  </view>
+
+  <view wx:elif="{{ready && view}}">
     <view class="result-kicker">本次练习</view>
     <view class="score-block">
       <view class="score-ring">
         <text class="score-ring__value">{{view.scoreText}}</text>
         <text class="score-ring__unit">分</text>
       </view>
-      <view class="score-block__title">练习完成</view>
-      <text class="score-block__note">每次看清错因，下一组会更稳。</text>
+      <view class="score-block__title">{{sessionMode === 'sequential' ? (sequentialRemaining ? '本组练习完成' : '本题库已刷完') : '练习完成'}}</view>
+      <text class="score-block__note">{{sessionMode === 'sequential' ? sequentialProgressText : '每次看清错因，下一组会更稳。'}}</text>
     </view>
 
     <view class="report-stats">
@@ -38,18 +49,18 @@
       </view>
     </view>
 
-    <button class="primary-button" bindtap="onOpenAnswerSheet">查看答题卡</button>
+    <button wx:if="{{sessionMode === 'sequential' && sequentialRemaining}}" class="primary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onContinueSequential">继续下一组 · 剩余 {{sequentialRemaining}} 题</button>
+    <button class="{{sessionMode === 'sequential' && sequentialRemaining ? 'secondary-button' : 'primary-button'}}" bindtap="onOpenAnswerSheet">查看答题卡</button>
     <button
       class="secondary-button {{hasWrong ? '' : 'secondary-button--disabled'}}"
       disabled="{{!hasWrong}}"
       bindtap="onReviewWrong"
     >{{hasWrong ? '查看本次错题解析' : '本组没有错题'}}</button>
-    <button class="secondary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onRetry">再练一次</button>
+    <button wx:if="{{sessionMode !== 'sequential'}}" class="secondary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onRetry">再练一次</button>
     <view class="home-link" bind:tap="onBackHome">返回首页</view>
   </view>
 
-  <empty-state
-    wx:else
+  <empty-state wx:else
     kind="empty"
     title="暂时没有练习结果"
     description="完成一组题目后，这里会显示成绩和薄弱模块。"

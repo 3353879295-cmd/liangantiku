@@ -2,8 +2,8 @@ import { CERTIFICATES } from '../../../../data/certificates';
 import {
   buildRandomPracticeRoute,
   presentRandomPracticeSetup,
-} from '../../../../presenters/practice-setup-presenter';
-import type { RandomPracticeSetupViewModel } from '../../../../presenters/practice-setup-presenter';
+} from '../../presenters/practice-setup-presenter';
+import type { RandomPracticeSetupViewModel } from '../../presenters/practice-setup-presenter';
 import { appServices } from '../../../../services/app-services';
 import { presentMembership } from '../../../../presenters/membership-presenter';
 import { MembershipError } from '../../../../repositories/membership-client';

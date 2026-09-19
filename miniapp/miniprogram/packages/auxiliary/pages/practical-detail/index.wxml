@@ -9,7 +9,7 @@
     <view class="detail-hero">
       <image
         class="detail-hero__image"
-        src="/assets/practical/rice-ear-hero.webp"
+        src="/packages/auxiliary/assets/rice-ear-hero.webp"
         mode="aspectFill"
         aria-label="成熟稻穗近景"
       />
@@ -73,18 +73,20 @@
 
     <view class="detail-section">
       <view class="detail-section__title">关联练习</view>
-      <view wx:if="{{!relatedReady}}" class="related-state related-state--loading">
+      <view wx:if="{{relatedLoading || !relatedReady}}" class="related-state related-state--loading">
         <t-icon name="loading" size="30rpx" />
         <text>正在读取关联题目…</text>
       </view>
       <view wx:elif="{{relatedLoadError}}" class="related-state related-state--error">
         <view class="related-state__title">关联题目加载失败</view>
         <text>请检查后重试，本次不会创建练习记录。</text>
-        <button class="related-retry" bindtap="onRetryRelatedQuestions">重新加载</button>
+        <button class="related-retry" loading="{{relatedLoading}}" disabled="{{relatedLoading}}" bindtap="onRetryRelatedQuestions">重新加载</button>
       </view>
       <button
         wx:elif="{{relatedQuestions.length}}"
         class="related-button"
+        loading="{{startingRelatedPractice}}"
+        disabled="{{startingRelatedPractice}}"
         bindtap="onStartRelatedPractice"
       >练习 {{relatedQuestions.length}} 道关联题</button>
       <view wx:else class="related-state related-state--empty">

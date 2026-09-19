@@ -10,6 +10,7 @@ import type { PracticeMode } from '../../types/domain';
 
 const pendingQuestionSelections = new WeakSet<object>();
 const pendingSubmissions = new WeakSet<object>();
+const pendingSheetRestores = new WeakSet<object>();
 const visibleSheets = new WeakSet<object>();
 
 const redirectToReport = () =>
@@ -60,9 +61,12 @@ export const buildAnswerSheetSubmitModal = (
   const isMock = mode === 'mock';
   return {
     title: isMock ? '确认交卷' : '结束本次练习',
-    content: unanswered
-      ? `未答题 ${unanswered} 道，提交后将按未答处理。`
-      : '未答题 0 道，提交后将生成本次结果。',
+    content:
+      mode === 'sequential' && unanswered
+        ? `未答题 ${unanswered} 道，会保留到后续练习，不计入已完成题目。`
+        : unanswered
+          ? `未答题 ${unanswered} 道，提交后将按未答处理。`
+          : '未答题 0 道，提交后将生成本次结果。',
     confirmText: isMock ? '确认交卷' : '确认结束',
   };
 };
@@ -70,6 +74,8 @@ export const buildAnswerSheetSubmitModal = (
 Page({
   data: {
     ready: false,
+    loading: true,
+    loadError: false,
     modeText: '',
     answeredText: '',
     submitted: false,
@@ -83,16 +89,31 @@ Page({
   async onLoad() {
     visibleSheets.add(this);
     this.syncTheme();
+    await this.loadSheet();
+  },
+
+  async loadSheet() {
+    if (pendingSheetRestores.has(this)) return;
+    pendingSheetRestores.add(this);
+    if (visibleSheets.has(this)) this.setData({ loading: true, loadError: false });
     try {
       await restorePractice();
     } catch (error) {
-      void wx.showToast({
-        title: error instanceof Error ? error.message : '练习恢复失败，请重试',
-        icon: 'none',
-      });
+      if (visibleSheets.has(this)) {
+        this.setData({ loading: false, loadError: true });
+        void wx.showToast({
+          title: error instanceof Error ? error.message : '练习恢复失败，请重试',
+          icon: 'none',
+        });
+      }
       return;
+    } finally {
+      pendingSheetRestores.delete(this);
     }
-    this.renderSheet();
+    if (visibleSheets.has(this)) {
+      this.renderSheet();
+      this.setData({ loading: false, loadError: false });
+    }
   },
 
   onShow() {
@@ -101,12 +122,12 @@ Page({
     if (getActivePractice()) this.renderSheet();
   },
 
-  onHide() {
+  onUnload() {
     visibleSheets.delete(this);
   },
 
-  onUnload() {
-    visibleSheets.delete(this);
+  onRetryLoad() {
+    void this.loadSheet();
   },
 
   syncTheme() {
@@ -120,7 +141,7 @@ Page({
   renderSheet() {
     const session = getActivePractice();
     if (!session) {
-      this.setData({ ready: false });
+      this.setData({ ready: false, items: [] });
       return;
     }
     const sheet = getAnswerSheet(session);

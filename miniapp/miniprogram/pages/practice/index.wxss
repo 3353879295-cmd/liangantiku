@@ -1,10 +1,16 @@
 .practice-page {
-  --practice-option-selected-background: #dff58f;
-  --practice-option-selected-text: #272d23;
-  --practice-option-correct-background: #e4f4df;
-  --practice-option-correct-text: #285b43;
-  --practice-option-wrong-background: #fde9e6;
-  --practice-option-wrong-text: #8d3535;
+  --practice-option-selected-background: #e7f2c9;
+  --practice-option-selected-text: #243600;
+  --practice-option-selected-accent: #536f13;
+  --practice-option-selected-key-text: #fff;
+  --practice-option-correct-background: #e3f3eb;
+  --practice-option-correct-text: #164d35;
+  --practice-option-correct-accent: #28734f;
+  --practice-option-correct-key-text: #fff;
+  --practice-option-wrong-background: #fff0ee;
+  --practice-option-wrong-text: #862820;
+  --practice-option-wrong-accent: #b43b32;
+  --practice-option-wrong-key-text: #fff;
 
   box-sizing: border-box;
   min-height: 100vh;
@@ -17,12 +23,18 @@
 }
 
 .practice-page.theme-night {
-  --practice-option-selected-background: #33431f;
-  --practice-option-selected-text: #eef2e8;
-  --practice-option-correct-background: #20382a;
-  --practice-option-correct-text: #d8ecdd;
-  --practice-option-wrong-background: #412726;
-  --practice-option-wrong-text: #f3d9d5;
+  --practice-option-selected-background: #303e1b;
+  --practice-option-selected-text: #f2f8e4;
+  --practice-option-selected-accent: #b8ec32;
+  --practice-option-selected-key-text: #202c0d;
+  --practice-option-correct-background: #173c2e;
+  --practice-option-correct-text: #d8f8e7;
+  --practice-option-correct-accent: #6fe0aa;
+  --practice-option-correct-key-text: #103323;
+  --practice-option-wrong-background: #492421;
+  --practice-option-wrong-text: #ffe4df;
+  --practice-option-wrong-accent: #ff9b90;
+  --practice-option-wrong-key-text: #40201b;
 }
 
 .practice-content {
@@ -71,7 +83,7 @@
   padding: 16rpx 22rpx;
   border-radius: 999rpx;
   background: var(--color-surface);
-  color: var(--color-primary);
+  color: var(--practice-option-selected-text);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -110,7 +122,7 @@
   padding: 8rpx 14rpx;
   border-radius: 999rpx;
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--practice-option-selected-text);
   font-size: 22rpx;
   font-weight: 600;
 }

@@ -19,6 +19,48 @@
   padding-right: 92rpx;
 }
 
+.sheet-state {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 28rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 25rpx;
+  line-height: 1.6;
+  box-shadow: var(--shadow-soft);
+}
+
+.sheet-state--error {
+  display: block;
+  background: var(--color-danger-soft);
+}
+
+.sheet-state__title {
+  margin-bottom: 8rpx;
+  color: var(--color-danger);
+  font-size: 28rpx;
+  font-weight: 650;
+}
+
+.sheet-retry {
+  width: fit-content;
+  min-height: 72rpx;
+  margin: 22rpx 0 0;
+  padding: 0 28rpx;
+  border-radius: 22rpx;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 24rpx;
+  font-weight: 650;
+  line-height: 72rpx;
+}
+
+.sheet-retry::after {
+  display: none;
+}
+
 .sheet-summary {
   display: flex;
   align-items: center;

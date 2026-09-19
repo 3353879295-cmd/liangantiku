@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { QUESTION_RECORDS } from '../miniprogram/data/question-bank';
+import { loadQuestionRecords } from '../miniprogram/data/question-bank';
 import { LocalQuestionRepository } from '../miniprogram/repositories/local-question-repository';
 import { buildPaper } from '../miniprogram/services/paper-builder';
 
@@ -13,11 +13,12 @@ afterEach(() => {
 
 describe('published inspector runtime bank', () => {
   it('keeps warehouse unchanged and publishes all five isolated inspector levels', () => {
-    const warehouse = QUESTION_RECORDS.filter(({ occupation }) => occupation === WAREHOUSE);
-    const inspector = QUESTION_RECORDS.filter(({ occupation }) => occupation === INSPECTOR);
+    const questionRecords = loadQuestionRecords();
+    const warehouse = questionRecords.filter(({ occupation }) => occupation === WAREHOUSE);
+    const inspector = questionRecords.filter(({ occupation }) => occupation === INSPECTOR);
 
     expect(warehouse).toHaveLength(3605);
-    expect(QUESTION_RECORDS).toHaveLength(7428);
+    expect(questionRecords).toHaveLength(7428);
     expect(inspector).toHaveLength(3823);
     expect(
       Object.fromEntries(
@@ -30,7 +31,7 @@ describe('published inspector runtime bank', () => {
   });
 
   it('isolates both occupations and every inspector level in sequential, random and mock papers', async () => {
-    const repository = new LocalQuestionRepository(QUESTION_RECORDS);
+    const repository = new LocalQuestionRepository(loadQuestionRecords());
     const warehouse = await repository.list({ occupation: WAREHOUSE, level: 4 });
 
     expect(warehouse).toHaveLength(564);

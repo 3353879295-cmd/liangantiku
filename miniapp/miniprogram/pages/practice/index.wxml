@@ -91,6 +91,6 @@
     message="{{toastMessage}}"
     bind:close="onToastClose"
   />
-  <button wx:if="{{!loading && !sessionReady}}" class="practice-retry" bindtap="onRetryLoad">重新尝试</button>
+  <button wx:if="{{!loading && !sessionReady && !allQuestionsComplete}}" class="practice-retry" bindtap="onRetryLoad">重新尝试</button>
   <membership-prompt visible="{{memberPromptVisible}}" bind:close="onCloseMemberPrompt" bind:confirm="onOpenMember" />
 </view>
