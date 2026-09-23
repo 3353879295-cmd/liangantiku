@@ -11,6 +11,8 @@ interface LibraryData {
   loadError: string;
   comingSoon: boolean;
   starting: boolean;
+  showingAll: boolean;
+  parts: Array<{ chapters: Array<{ canStart: boolean }> }>;
 }
 
 interface LibraryContext {
@@ -23,6 +25,7 @@ interface LibraryDefinition {
   loadCertificate(this: LibraryContext, key: CertificateKey): Promise<void>;
   onStartAll(this: LibraryContext): Promise<void>;
   onUnload(this: LibraryContext): void;
+  onToggleCatalog(this: LibraryContext): void;
 }
 
 const loadLibrary = async () => {
@@ -126,5 +129,22 @@ describe('all-bank practice entry', () => {
     resolveQuestions(bank);
     await loading;
     expect(setData).not.toHaveBeenCalled();
+  });
+
+  it('defaults to chapters with questions and restores the complete catalog on request', async () => {
+    const { page, context } = await loadLibrary();
+    await page.loadCertificate.call(context, '4-08-05-01:4');
+
+    expect(context.data.showingAll).toBe(false);
+    expect(
+      context.data.parts.flatMap((part) => part.chapters).every((chapter) => chapter.canStart),
+    ).toBe(true);
+
+    page.onToggleCatalog.call(context);
+
+    expect(context.data.showingAll).toBe(true);
+    expect(
+      context.data.parts.flatMap((part) => part.chapters).some((chapter) => !chapter.canStart),
+    ).toBe(true);
   });
 });

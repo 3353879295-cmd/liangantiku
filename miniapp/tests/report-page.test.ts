@@ -20,6 +20,12 @@ interface ReportDefinition {
   onRetryLoad(this: ReportContext): void;
   loadReport(this: ReportContext): Promise<void>;
   syncTheme(this: ReportContext): void;
+  onPracticeChapter(this: ReportContext, event: WechatMiniprogram.TouchEvent): Promise<void>;
+  onRetryWrong(this: ReportContext): Promise<void>;
+  onRetry(this: ReportContext): Promise<void>;
+  onReviewWrong(this: ReportContext): void;
+  onOpenAnswerSheet(this: ReportContext): void;
+  onResumePendingPractice(this: ReportContext): Promise<void>;
 }
 
 const loadReportPage = async (restorePractice: ReturnType<typeof vi.fn>) => {
@@ -27,18 +33,23 @@ const loadReportPage = async (restorePractice: ReturnType<typeof vi.fn>) => {
   let definition: ReportDefinition | undefined;
   const recordActivePractice = vi.fn();
   const submitActivePractice = vi.fn(() => null);
+  const getActivePractice = vi.fn();
+  const startPracticeFromQuestions = vi.fn();
   vi.doMock('../miniprogram/services/practice-runtime', () => ({
-    getActivePractice: vi.fn(),
+    getActivePractice,
+    getPracticeStartCancellation: vi.fn(() => vi.fn()),
     recordActivePractice,
     restorePractice,
-    startPracticeFromQuestions: vi.fn(),
+    startPracticeFromQuestions,
     startRandomPracticeFromQuestions: vi.fn(),
     submitActivePractice,
   }));
   vi.doMock('../miniprogram/services/app-services', () => ({
     appServices: { theme: { get: vi.fn(() => 'light'), toggle: vi.fn(() => 'night') } },
   }));
-  vi.stubGlobal('wx', { showToast: vi.fn(), navigateTo: vi.fn(), switchTab: vi.fn() });
+  const navigateTo = vi.fn();
+  const redirectTo = vi.fn().mockResolvedValue(undefined);
+  vi.stubGlobal('wx', { showToast: vi.fn(), navigateTo, redirectTo, switchTab: vi.fn() });
   vi.stubGlobal('Page', (value: ReportDefinition) => {
     definition = value;
   });
@@ -58,7 +69,16 @@ const loadReportPage = async (restorePractice: ReturnType<typeof vi.fn>) => {
       registered.syncTheme.call(this);
     },
   };
-  return { context, definition: registered, recordActivePractice, submitActivePractice };
+  return {
+    context,
+    definition: registered,
+    getActivePractice,
+    recordActivePractice,
+    navigateTo,
+    redirectTo,
+    startPracticeFromQuestions,
+    submitActivePractice,
+  };
 };
 
 afterEach(() => {
@@ -114,5 +134,63 @@ describe('report restoration', () => {
     expect(context.data.loading).toBe(true);
     expect(submitActivePractice).not.toHaveBeenCalled();
     expect(recordActivePractice).not.toHaveBeenCalled();
+  });
+
+  it('keeps the original result mapping and retries all wrong questions after navigation fails', async () => {
+    const restorePractice = vi.fn();
+    const {
+      context,
+      definition,
+      navigateTo,
+      redirectTo,
+      startPracticeFromQuestions,
+      submitActivePractice,
+    } = await loadReportPage(restorePractice);
+    const wrongQuestions = Array.from({ length: 25 }, (_, index) => ({
+      id: `wrong-${index}`,
+      chapterId: 'warehouse-l5-c04',
+      occupation: '4-02-06-01',
+      level: 5,
+    }));
+    const session = {
+      id: 'original-result',
+      mode: 'chapter',
+      questions: wrongQuestions,
+      report: {
+        total: 25,
+        correct: 0,
+        wrong: 25,
+        durationMs: 0,
+        wrongQuestionIds: wrongQuestions.map((question) => question.id),
+        chapters: { 'warehouse-l5-c04': { total: 25, correct: 0 } },
+      },
+    };
+    submitActivePractice.mockReturnValue(session as never);
+    startPracticeFromQuestions.mockReturnValue({ id: 'retry-wrong' });
+    redirectTo
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('navigation failed'))
+      .mockResolvedValueOnce(undefined);
+
+    await definition.onLoad.call(context);
+    await definition.onPracticeChapter.call(context, {
+      currentTarget: { dataset: { chapterId: 'warehouse-l5-c04' } },
+    } as unknown as WechatMiniprogram.TouchEvent);
+    expect(redirectTo).toHaveBeenCalledWith({
+      url: '/pages/practice/index?occupation=4-02-06-01&level=5&mode=chapter&chapterId=warehouse-l5-c04',
+    });
+
+    await definition.onRetryWrong.call(context);
+    expect(context.data).toMatchObject({ pendingPractice: true });
+    definition.onReviewWrong.call(context);
+    definition.onOpenAnswerSheet.call(context);
+    await definition.onRetry.call(context);
+    await definition.onRetryWrong.call(context);
+    expect(startPracticeFromQuestions).toHaveBeenCalledWith(wrongQuestions, 'wrong', 25);
+    expect(startPracticeFromQuestions).toHaveBeenCalledTimes(1);
+    expect(navigateTo).not.toHaveBeenCalled();
+
+    await definition.onResumePendingPractice.call(context);
+    expect(redirectTo).toHaveBeenLastCalledWith({ url: '/pages/practice/index?resume=1' });
   });
 });

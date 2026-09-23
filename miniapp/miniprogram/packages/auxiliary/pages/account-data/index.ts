@@ -1,97 +1,130 @@
 import { appServices } from '../../../../services/app-services';
 
 const homeUrl = '/pages/home/index';
+const mountedPages = new WeakSet<object>();
+const pendingPages = new WeakSet<object>();
+const authSubscriptions = new WeakMap<object, () => void>();
+
+const refreshPage = (page: { setData(update: Record<string, unknown>): void }) => {
+  const authenticated = appServices.auth.getState().status === 'authenticated';
+  const sync = appServices.cloudSync.getState();
+  page.setData({
+    available: authenticated,
+    syncText: syncLabel(sync.status),
+    retryVisible: sync.status === 'failed',
+    syncNotice: sync.notice ?? '',
+    busy: pendingPages.has(page),
+  });
+};
+
+const unsubscribe = (page: object) => {
+  authSubscriptions.get(page)?.();
+  authSubscriptions.delete(page);
+};
 
 Page({
   data: {
     available: false,
     syncText: '未登录',
     retryVisible: false,
+    syncNotice: '',
     busy: false,
   },
 
   onShow() {
-    const authenticated = appServices.auth.getState().status === 'authenticated';
-    const sync = appServices.cloudSync.getState();
-    this.setData({
-      available: authenticated,
-      syncText: syncLabel(sync.status, sync.pendingCount),
-      retryVisible: sync.status === 'pending' || sync.status === 'failed',
-      busy: false,
-    });
+    mountedPages.add(this);
+    if (!authSubscriptions.has(this)) {
+      authSubscriptions.set(
+        this,
+        appServices.auth.subscribe(() => {
+          if (mountedPages.has(this)) refreshPage(this);
+        }),
+      );
+    }
+    refreshPage(this);
+  },
+
+  onHide() {
+    mountedPages.delete(this);
+    unsubscribe(this);
+  },
+
+  onUnload() {
+    mountedPages.delete(this);
+    unsubscribe(this);
   },
 
   async onRetrySync() {
     if (!this.data.available || this.data.busy) return;
+    pendingPages.add(this);
     this.setData({ busy: true });
-    await appServices.auth.retryBackground();
-    this.setData({ busy: false });
-    void this.onShow();
+    try {
+      await appServices.auth.retryBackground();
+      if (mountedPages.has(this)) {
+        refreshPage(this);
+        const sync = appServices.cloudSync.getState();
+        void wx.showToast({
+          title: sync.status === 'idle' ? '已自动保存' : '记录已保存在本机，联网后自动保存',
+          icon: 'none',
+        });
+      }
+    } catch {
+      if (mountedPages.has(this)) void wx.showToast({ title: '同步未完成，请重试', icon: 'none' });
+    } finally {
+      pendingPages.delete(this);
+      if (mountedPages.has(this)) this.setData({ busy: false });
+    }
   },
 
   async onClearLearningData() {
     if (!this.data.available || this.data.busy) return;
+    pendingPages.add(this);
     this.setData({ busy: true });
     try {
-      if (!(await confirmRemoval(false))) return;
+      if (!(await confirmRemoval(false)) || !mountedPages.has(this)) return;
       const completed = await appServices.auth.clearLearningData();
+      if (!mountedPages.has(this)) return;
       void wx.showToast({
         title: completed ? '学习数据已清除' : '清除未完成，请重试',
         icon: 'none',
       });
-      void this.onShow();
+      if (mountedPages.has(this)) refreshPage(this);
     } catch {
-      void wx.showToast({ title: '清除未完成，请重试', icon: 'none' });
+      if (mountedPages.has(this)) void wx.showToast({ title: '清除未完成，请重试', icon: 'none' });
     } finally {
-      this.setData({ busy: false });
+      pendingPages.delete(this);
+      if (mountedPages.has(this)) this.setData({ busy: false });
     }
   },
 
   async onLogout() {
     if (!this.data.available || this.data.busy) return;
+    pendingPages.add(this);
     this.setData({ busy: true });
-    const result = await appServices.auth.logout();
-    if (!result.needsDecision) {
-      void wx.reLaunch({ url: homeUrl });
-      return;
+    try {
+      const result = await appServices.auth.logout();
+      if (!mountedPages.has(this)) return;
+      if (!result.needsDecision) {
+        await wx.reLaunch({ url: homeUrl });
+        return;
+      }
+      void wx.showToast({ title: '数据正在清理，请稍后重试退出', icon: 'none' });
+    } catch {
+      if (mountedPages.has(this)) void wx.showToast({ title: '退出未完成，请重试', icon: 'none' });
+    } finally {
+      pendingPages.delete(this);
+      if (mountedPages.has(this)) this.setData({ busy: false });
     }
-    this.setData({ busy: false });
-    const decision = await wx
-      .showModal({
-        title: '仍有未同步数据',
-        content: '请继续重试同步，或放弃未同步数据后退出登录。',
-        confirmText: '放弃数据',
-        cancelText: '继续重试',
-        confirmColor: '#c44747',
-      })
-      .catch(() => {
-        this.setData({ syncText: '确认窗口暂时无法打开，请重试。' });
-        return null;
-      });
-    if (!decision) return;
-    if (decision.confirm) {
-      this.setData({ busy: true });
-      const discarded = await appServices.auth.logout(true);
-      if (!discarded.needsDecision) void wx.reLaunch({ url: homeUrl });
-      return;
-    }
-    this.setData({ busy: true });
-    await appServices.auth.retryBackground();
-    const retried = await appServices.auth.logout();
-    if (!retried.needsDecision) {
-      void wx.reLaunch({ url: homeUrl });
-      return;
-    }
-    this.setData({ busy: false });
-    void this.onShow();
   },
 
   async onDeleteAccount() {
     if (!this.data.available || this.data.busy) return;
+    pendingPages.add(this);
     this.setData({ busy: true });
     try {
-      if (!(await confirmRemoval(true))) return;
+      if (!(await confirmRemoval(true)) || !mountedPages.has(this)) return;
       const deleted = await appServices.auth.deleteAccount();
+      if (!mountedPages.has(this)) return;
       if (!deleted) {
         void wx.showToast({ title: '账号注销未完成，请重试', icon: 'none' });
         return;
@@ -99,9 +132,11 @@ Page({
       void wx.showToast({ title: '账号已注销', icon: 'none' });
       void wx.reLaunch({ url: homeUrl });
     } catch {
-      void wx.showToast({ title: '账号注销未完成，请重试', icon: 'none' });
+      if (mountedPages.has(this))
+        void wx.showToast({ title: '账号注销未完成，请重试', icon: 'none' });
     } finally {
-      this.setData({ busy: false });
+      pendingPages.delete(this);
+      if (mountedPages.has(this)) this.setData({ busy: false });
     }
   },
 });
@@ -127,13 +162,8 @@ const confirmRemoval = async (account: boolean): Promise<boolean> => {
   return second.confirm;
 };
 
-const syncLabel = (
-  status: ReturnType<typeof appServices.cloudSync.getState>['status'],
-  pending: number,
-): string => {
-  if (status === 'syncing') return '同步中';
-  if (status === 'pending') return `待同步${pending > 0 ? `（${pending} 项）` : ''}`;
-  if (status === 'failed') return '同步失败';
-  if (status === 'conflict') return '同步已暂停';
-  return '已同步';
+const syncLabel = (status: ReturnType<typeof appServices.cloudSync.getState>['status']): string => {
+  if (status === 'syncing' || status === 'pending' || status === 'conflict') return '正在自动保存';
+  if (status === 'failed') return '已保存在本机，联网后自动保存';
+  return '已自动保存';
 };

@@ -206,6 +206,10 @@ export class MembershipError extends Error {
   }
 }
 
+export const isMembershipAccessError = (error: unknown): error is MembershipError =>
+  error instanceof MembershipError &&
+  (error.code === 'DAILY_LIMIT_REACHED' || error.code === 'MEMBERSHIP_REQUIRED');
+
 class MembershipTimeoutError extends MembershipError {}
 const unavailable = () => new MembershipError('MEMBERSHIP_UNAVAILABLE');
 

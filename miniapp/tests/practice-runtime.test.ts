@@ -4,6 +4,7 @@ import type { appServices as appServicesType } from '../miniprogram/services/app
 import type {
   resolveAnswerRevealMode as resolveAnswerRevealModeType,
   getActivePractice as getActivePracticeType,
+  setPracticePageVisible as setPracticePageVisibleType,
   restorePractice as restorePracticeType,
   saveActivePractice as saveActivePracticeType,
   startPractice as startPracticeType,
@@ -11,6 +12,7 @@ import type {
 } from '../miniprogram/services/practice-runtime';
 import type { ProgressPreferences } from '../miniprogram/storage/migrations';
 import type { PersistedPracticeSession } from '../miniprogram/storage/migrations';
+import type { MembershipStatus } from '../miniprogram/types/membership';
 import { ProgressService } from '../miniprogram/services/progress-service';
 import { ProgressRepository } from '../miniprogram/storage/progress-repository';
 import type { StorageAdapter } from '../miniprogram/types/domain';
@@ -19,6 +21,7 @@ import { makeQuestion } from './factories';
 interface RuntimeModule {
   resolveAnswerRevealMode: typeof resolveAnswerRevealModeType;
   getActivePractice: typeof getActivePracticeType;
+  setPracticePageVisible: typeof setPracticePageVisibleType;
   restorePractice: typeof restorePracticeType;
   saveActivePractice: typeof saveActivePracticeType;
   startPractice: typeof startPracticeType;
@@ -44,6 +47,17 @@ beforeAll(async () => {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  vi.spyOn(servicesModule.appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  } satisfies MembershipStatus);
 });
 
 const preferencesWith = (
@@ -82,15 +96,54 @@ describe('practice runtime reveal policy', () => {
     expect(runtime.resolveAnswerRevealMode('sequential', 'immediate')).toBe('immediate');
   });
 
-  it('locks the saved preference when starting practice from supplied questions', () => {
+  it('locks the saved preference when starting practice from supplied questions', async () => {
     const preference = vi
       .spyOn(servicesModule.appServices.progress, 'getPreferences')
       .mockReturnValue(preferencesWith('deferred'));
 
-    const session = runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+    const session = await runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
     preference.mockReturnValue(preferencesWith('immediate'));
 
     expect(session?.answerRevealMode).toBe('deferred');
+  });
+
+  it('honors the supplied-question limit for retry flows larger than the default group', async () => {
+    const questions = Array.from({ length: 25 }, (_, index) => makeQuestion({ id: `Q${index}` }));
+
+    const session = await runtime.startPracticeFromQuestions(questions, 'wrong', 25);
+
+    expect(session?.questionIds).toHaveLength(25);
+  });
+
+  it('persists elapsed foreground time when the practice page hides and resumes only when visible', async () => {
+    const saved = vi.spyOn(servicesModule.appServices.progress, 'saveSession');
+    const session = await runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+
+    runtime.setPracticePageVisible(true, 1000);
+    runtime.setPracticePageVisible(false, 1600);
+    runtime.setPracticePageVisible(true, 10_000);
+    runtime.setPracticePageVisible(false, 10_250);
+
+    expect(session?.activeDurationMs).toBe(0);
+    expect(runtime.getActivePractice()).toMatchObject({ activeDurationMs: 850 });
+    expect(servicesModule.appServices.progress.restoreSession()).toMatchObject({
+      activeDurationMs: 850,
+    });
+    expect(saved).toHaveBeenCalledTimes(3);
+  });
+
+  it('settles the current foreground segment before answer and navigation saves', async () => {
+    await runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+    runtime.setPracticePageVisible(true, 1000);
+    const active = runtime.getActivePractice();
+    if (!active) throw new Error('expected active practice');
+
+    runtime.saveActivePractice(active, 1600);
+
+    expect(servicesModule.appServices.progress.restoreSession()).toMatchObject({
+      activeDurationMs: 600,
+    });
+    expect(runtime.getActivePractice()).toMatchObject({ activeSince: 1600 });
   });
 
   it('locks the saved preference when starting repository-backed practice', async () => {
@@ -111,46 +164,47 @@ describe('practice runtime reveal policy', () => {
     expect(session?.answerRevealMode).toBe('deferred');
   });
 
-  it('forces supplied mock practice to deferred despite an immediate preference', () => {
+  it('forces supplied mock practice to deferred despite an immediate preference', async () => {
     vi.spyOn(servicesModule.appServices.progress, 'getPreferences').mockReturnValue(
       preferencesWith('immediate'),
     );
 
-    const session = runtime.startPracticeFromQuestions([makeQuestion()], 'mock');
+    const session = await runtime.startPracticeFromQuestions([makeQuestion()], 'mock');
 
     expect(session?.answerRevealMode).toBe('deferred');
   });
 
-  it('invalidates the in-memory session after the progress scope changes', () => {
+  it('invalidates the in-memory session after the progress scope changes', async () => {
     let scope: 'guest' | 'account' = 'guest';
     vi.spyOn(servicesModule.appServices.progress, 'getScope').mockImplementation(() => scope);
 
-    const session = runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+    const session = await runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
     scope = 'account';
 
     expect(session).not.toBeNull();
     expect(runtime.getActivePractice()).toBeNull();
   });
 
-  it('does not let an old page save its held session into a new progress scope', () => {
+  it('does not let an old page save its held session into a new progress scope', async () => {
     let scope: 'guest' | 'account' = 'guest';
     vi.spyOn(servicesModule.appServices.progress, 'getScope').mockImplementation(() => scope);
     const saved = vi.spyOn(servicesModule.appServices.progress, 'saveSession');
 
-    const session = runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+    const session = await runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+    saved.mockClear();
     scope = 'account';
     runtime.saveActivePractice({ ...session! });
 
-    expect(saved).toHaveBeenCalledTimes(1);
+    expect(saved).not.toHaveBeenCalled();
     expect(runtime.getActivePractice()).toBeNull();
   });
 
-  it('keeps a live session when a real account-cache refresh rebuilds equal session data', () => {
+  it('keeps a live session when a real account-cache refresh rebuilds equal session data', async () => {
     const original = servicesModule.appServices.progress;
     const progress = new ProgressService(new ProgressRepository(memoryStorage()), 'account');
     servicesModule.appServices.progress = progress;
     try {
-      const session = runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
+      const session = await runtime.startPracticeFromQuestions([makeQuestion()], 'sequential');
       const beforeRefresh = progress.restoreSession();
       progress.refreshAccountSnapshot();
 
@@ -162,12 +216,12 @@ describe('practice runtime reveal policy', () => {
     }
   });
 
-  it('keeps a live session when cloud synchronization reorders session and answer fields', () => {
+  it('keeps a live session when cloud synchronization reorders session and answer fields', async () => {
     const original = servicesModule.appServices.progress;
     const progress = new ProgressService(new ProgressRepository(memoryStorage()), 'account');
     servicesModule.appServices.progress = progress;
     try {
-      const session = runtime.startPracticeFromQuestions(
+      const session = await runtime.startPracticeFromQuestions(
         [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })],
         'sequential',
       );
@@ -196,8 +250,8 @@ describe('practice runtime reveal policy', () => {
       'status',
       (session: PersistedPracticeSession) => ({ ...session, status: 'submitted', submittedAt: 2 }),
     ],
-  ])('invalidates a live session when its persisted %s changes', (_change, change) => {
-    runtime.startPracticeFromQuestions(
+  ])('invalidates a live session when its persisted %s changes', async (_change, change) => {
+    await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })],
       'sequential',
     );
@@ -209,8 +263,11 @@ describe('practice runtime reveal policy', () => {
     expect(runtime.getActivePractice()).toBeNull();
   });
 
-  it('treats an omitted progressRecorded value as false and still invalidates a cleared session', () => {
-    const session = runtime.startPracticeFromQuestions([makeQuestion({ id: 'Q1' })], 'sequential');
+  it('treats an omitted progressRecorded value as false and still invalidates a cleared session', async () => {
+    const session = await runtime.startPracticeFromQuestions(
+      [makeQuestion({ id: 'Q1' })],
+      'sequential',
+    );
     const persisted = servicesModule.appServices.progress.restoreSession();
     const legacySession = { ...persisted! };
     delete legacySession.progressRecorded;
@@ -226,7 +283,7 @@ describe('practice runtime reveal policy', () => {
     let scope: 'guest' | 'account' = 'guest';
     vi.spyOn(servicesModule.appServices.progress, 'getScope').mockImplementation(() => scope);
     const questions = [makeQuestion({ id: 'Q1' }), makeQuestion({ id: 'Q2' })];
-    const started = runtime.startPracticeFromQuestions(questions, 'sequential');
+    const started = await runtime.startPracticeFromQuestions(questions, 'sequential');
     const persisted = servicesModule.appServices.progress.restoreSession()!;
     let latest = persisted;
     vi.spyOn(servicesModule.appServices.progress, 'restoreSession').mockImplementation(

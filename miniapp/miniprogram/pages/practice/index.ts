@@ -14,13 +14,14 @@ import {
   getActivePractice,
   restorePractice,
   saveActivePractice,
+  setPracticePageVisible,
   startPractice,
 } from '../../services/practice-runtime';
 import { CERTIFICATES } from '../../data/certificates';
 import { KNOWLEDGE_CATALOG } from '../../data/knowledge-catalog';
 import { QUESTION_BANK } from '../../data/question-bank';
 import { appServices } from '../../services/app-services';
-import { MembershipError } from '../../repositories/membership-client';
+import { MembershipError, isMembershipAccessError } from '../../repositories/membership-client';
 import { presentMembership } from '../../presenters/membership-presenter';
 import { PRACTICE_QUESTION_LIMITS, QUESTION_TYPES } from '../../types/domain';
 import type {
@@ -76,6 +77,7 @@ interface PracticeInteractionState {
 
 const practiceInteractionStates = new WeakMap<object, PracticeInteractionState>();
 const practiceRoutes = new WeakMap<object, Record<string, string | undefined>>();
+const visiblePracticePages = new WeakSet<object>();
 
 const getPracticeInteractionState = (page: object): PracticeInteractionState => {
   const current = practiceInteractionStates.get(page);
@@ -255,9 +257,19 @@ Page({
     transitionClass: '',
   },
 
-  async onLoad(options: Record<string, string | undefined>) {
+  onLoad(options: Record<string, string | undefined>) {
     practiceRoutes.set(this, options);
     this.syncTheme();
+  },
+
+  onReady(): Promise<void> | undefined {
+    const options = practiceRoutes.get(this);
+    // Show the loading state before preparing and durably saving the session.
+    if (options) return this.loadPractice(options);
+  },
+
+  async loadPractice(options: Record<string, string | undefined>): Promise<void> {
+    if (practiceRoutes.get(this) !== options) return;
     const route = parsePracticeRoute(options);
     if (!route) {
       this.setData({
@@ -295,23 +307,49 @@ Page({
         return;
       }
       this.renderSession(session);
+      if (visiblePracticePages.has(this)) setPracticePageVisible(true);
       if (session.mode === 'random') void this.refreshMembership();
     } catch (error) {
       if (practiceRoutes.get(this) !== options) return;
       const membershipError = error instanceof MembershipError;
       this.setData({
         loading: false,
+        sessionReady: false,
+        question: null,
         errorTitle: membershipError ? '暂时无法开始练习' : '题目加载失败',
         errorDescription: membershipError ? error.message : '本地题库可能尚未同步，请返回后重试。',
-        memberPromptVisible: membershipError && error.code === 'DAILY_LIMIT_REACHED',
+        memberPromptVisible: isMembershipAccessError(error),
       });
     }
   },
 
-  onShow() {
+  async onShow() {
+    visiblePracticePages.add(this);
     this.syncTheme();
     const session = getActivePractice();
-    if (this.data.sessionReady && session) this.renderSession(session);
+    if (this.data.sessionReady && session) {
+      if (session.status === 'active' && session.mode !== 'random') {
+        this.setData({ loading: true });
+        try {
+          const pending = restorePractice();
+          getPracticeInteractionState(this).cancelStart = getPracticeStartCancellation();
+          if (!(await pending) || !visiblePracticePages.has(this)) return;
+        } catch (error) {
+          if (visiblePracticePages.has(this))
+            this.setData({
+              loading: false,
+              sessionReady: false,
+              question: null,
+              errorTitle: '暂时无法继续练习',
+              errorDescription: error instanceof Error ? error.message : '请稍后重试。',
+              memberPromptVisible: isMembershipAccessError(error),
+            });
+          return;
+        }
+      }
+      setPracticePageVisible(true);
+      this.renderSession(getActivePractice() ?? session);
+    }
     if (this.data.sessionReady && session?.mode === 'random') void this.refreshMembership();
   },
 
@@ -335,7 +373,7 @@ Page({
     const options = practiceRoutes.get(this);
     if (!options || this.data.loading) return;
     this.setData({ loading: true });
-    void this.onLoad(options);
+    void this.loadPractice(options);
   },
 
   onOpenMember() {
@@ -573,7 +611,14 @@ Page({
     this.setData({ toastVisible: false });
   },
 
+  onHide() {
+    visiblePracticePages.delete(this);
+    setPracticePageVisible(false);
+  },
+
   onUnload() {
+    visiblePracticePages.delete(this);
+    setPracticePageVisible(false);
     practiceRoutes.delete(this);
     const state = getPracticeInteractionState(this);
     state.cancelStart?.();

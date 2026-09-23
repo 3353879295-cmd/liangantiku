@@ -18,6 +18,7 @@ const visiblePages = new WeakSet<object>();
 const pendingSyncPages = new WeakSet<object>();
 const pendingRecoveryRefreshes = new WeakSet<object>();
 const membershipRequests = new WeakMap<object, number>();
+const authSubscriptions = new WeakMap<object, () => void>();
 let membershipRequestId = 0;
 
 const presentAccountStatus = (
@@ -35,15 +36,50 @@ const presentAccountStatus = (
       ? {
           accountStatus: 'recovering',
           syncText: '正在恢复账号记录',
-          accountDetail: '正在使用本机账号缓存，恢复完成后将自动更新。',
+          accountDetail: '正在验证账号并恢复记录。',
         }
       : {
           accountStatus: 'offline',
           syncText: '账号暂离线',
-          accountDetail: '正在使用本机账号缓存，可主动登录重试。',
+          accountDetail: '记录仍保留，联网后自动恢复。',
         };
   }
   return { accountStatus: 'guest', syncText: '', accountDetail: '' };
+};
+
+const refreshProfile = (
+  page: {
+    setData(update: Record<string, unknown>): void;
+    loadMembership(): Promise<void>;
+  },
+  reloadMembership = false,
+) => {
+  const today = localDateKey();
+  const preferences = appServices.progress.getPreferences();
+  const certificate = CERTIFICATES.find((item) => item.key === preferences.selectedCertificateKey);
+  const auth = appServices.auth.getState();
+  const sync = appServices.cloudSync.getState();
+  const account = presentAccountStatus(auth);
+  page.setData({
+    syncing: pendingSyncPages.has(page),
+    nickname: preferences.nickname,
+    avatarUrl: preferences.avatarUrl,
+    certificateTitle: certificate?.title ?? '粮油仓储管理员 · 初级',
+    dashboard: presentDashboard(appServices.progress.getDashboard(today)),
+    activity: presentActivityBars(appServices.progress.getActivity(today, 7)),
+    accountStatus: account.accountStatus,
+    syncText: account.syncText || syncLabel(sync.status),
+    accountDetail: account.accountDetail,
+    lastSyncedAt: formatSyncedAt(appServices.cloudSync.getLastSyncedAt()),
+    syncFailed: sync.status === 'failed',
+    syncNotice: sync.notice ?? '',
+  });
+  if (reloadMembership) void page.loadMembership();
+};
+
+const unsubscribe = (page: object) => {
+  authSubscriptions.get(page)?.();
+  authSubscriptions.delete(page);
 };
 
 Page({
@@ -60,6 +96,7 @@ Page({
     accountDetail: '',
     lastSyncedAt: '',
     syncFailed: false,
+    syncNotice: '',
     isMember: false,
     membershipStatus: '正在查询会员状态',
     membershipDetail: '每日可进行3次随机练习',
@@ -69,47 +106,35 @@ Page({
   onShow() {
     visiblePages.add(this);
     this.getTabBar()?.setData({ value: '/pages/profile/index' });
+    if (!authSubscriptions.has(this)) {
+      authSubscriptions.set(
+        this,
+        appServices.auth.subscribe(() => {
+          if (visiblePages.has(this)) refreshProfile(this);
+        }),
+      );
+    }
+    refreshProfile(this, true);
 
-    const today = localDateKey();
-    const preferences = appServices.progress.getPreferences();
-    const certificate = CERTIFICATES.find(
-      (item) => item.key === preferences.selectedCertificateKey,
-    );
-    const auth = appServices.auth.getState();
-    const sync = appServices.cloudSync.getState();
-    const account = presentAccountStatus(auth);
-    this.setData({
-      syncing: pendingSyncPages.has(this),
-      nickname: preferences.nickname,
-      avatarUrl: preferences.avatarUrl,
-      certificateTitle: certificate?.title ?? '粮油仓储管理员 · 初级',
-      dashboard: presentDashboard(appServices.progress.getDashboard(today)),
-      activity: presentActivityBars(appServices.progress.getActivity(today, 7)),
-      accountStatus: account.accountStatus,
-      syncText: account.syncText || syncLabel(sync.status, sync.pendingCount),
-      accountDetail: account.accountDetail,
-      lastSyncedAt: formatSyncedAt(appServices.cloudSync.getLastSyncedAt()),
-      syncFailed: sync.status === 'failed',
-    });
-    void this.loadMembership();
-
-    if (auth.status === 'checking' && !pendingRecoveryRefreshes.has(this)) {
+    if (appServices.auth.getState().status === 'checking' && !pendingRecoveryRefreshes.has(this)) {
       pendingRecoveryRefreshes.add(this);
       void appServices.auth.initialize().finally(() => {
         pendingRecoveryRefreshes.delete(this);
         if (!visiblePages.has(this) || appServices.auth.getState().status === 'checking') return;
-        void this.onShow();
+        refreshProfile(this, true);
       });
     }
   },
 
   onHide() {
     visiblePages.delete(this);
+    unsubscribe(this);
     membershipRequests.delete(this);
   },
 
   onUnload() {
     visiblePages.delete(this);
+    unsubscribe(this);
     membershipRequests.delete(this);
   },
 
@@ -171,7 +196,7 @@ Page({
     this.setData({ syncing: true });
     try {
       await appServices.auth.retryBackground();
-      if (visiblePages.has(this)) void this.onShow();
+      if (visiblePages.has(this)) refreshProfile(this);
     } catch {
       if (visiblePages.has(this)) {
         void wx.showToast({ title: '同步暂时失败，请稍后重试', icon: 'none' });
@@ -198,7 +223,7 @@ Page({
         if (!result?.confirm) return;
       }
       const completed = await appServices.auth.clearLearningData().catch(() => false);
-      if (completed) void this.onShow();
+      if (completed) refreshProfile(this);
       void wx.showToast({
         title: completed ? '学习数据已清除' : '清除未完成，请重试',
         icon: 'none',
@@ -209,15 +234,10 @@ Page({
   },
 });
 
-const syncLabel = (
-  status: ReturnType<typeof appServices.cloudSync.getState>['status'],
-  pending: number,
-): string => {
-  if (status === 'syncing') return '同步中';
-  if (status === 'pending') return `待同步${pending > 0 ? `（${pending} 项）` : ''}`;
-  if (status === 'failed') return '同步失败';
-  if (status === 'conflict') return '同步已暂停';
-  return '已同步';
+const syncLabel = (status: ReturnType<typeof appServices.cloudSync.getState>['status']): string => {
+  if (status === 'syncing' || status === 'pending' || status === 'conflict') return '正在保存';
+  if (status === 'failed') return '已保存在本机，联网后自动保存';
+  return '已自动保存';
 };
 
 const formatSyncedAt = (value: string | null): string => {

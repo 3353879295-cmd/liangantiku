@@ -3,9 +3,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadQuestionRecords } from '../miniprogram/data/question-bank';
 import { LocalQuestionRepository } from '../miniprogram/repositories/local-question-repository';
 import { buildPaper } from '../miniprogram/services/paper-builder';
+import type { MembershipStatus } from '../miniprogram/types/membership';
 
 const WAREHOUSE = '4-02-06-01' as const;
 const INSPECTOR = '4-08-05-01' as const;
+const memberStatus: MembershipStatus = {
+  isMember: true,
+  startsAt: '2026-09-01T00:00:00.000Z',
+  expiresAt: '2026-10-01T00:00:00.000Z',
+  freeUsed: 3,
+  freeRemaining: 0,
+  freeLimit: 3,
+  freeDate: '2026-09-23',
+  serverTime: '2026-09-23T00:00:00.000Z',
+  paymentAvailable: false,
+};
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -68,6 +80,7 @@ describe('published inspector runtime bank', () => {
       });
       const { appServices } = await import('../miniprogram/services/app-services');
       const { startPractice } = await import('../miniprogram/services/practice-runtime');
+      vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue(memberStatus);
       appServices.progress.clearLearningData();
       if (mode === 'wrong') {
         for (const questionId of [inspectorId, ...excludedIds]) {

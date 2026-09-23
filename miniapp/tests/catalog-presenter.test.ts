@@ -256,7 +256,7 @@ describe('presentCatalogParts', () => {
     },
   );
 
-  it('uses stable zero text for an empty chapter without NaN or division by zero', () => {
+  it('distinguishes no questions from an unpracticed chapter without NaN', () => {
     const view = presentCatalogParts({
       catalog,
       occupation: '4-02-06-01',
@@ -268,12 +268,40 @@ describe('presentCatalogParts', () => {
     expect(view[1]?.chapters[0]).toMatchObject({
       questionCount: 0,
       questionCountText: '题目待补充',
-      progressText: '0%',
-      accuracyText: '0%',
-      wrongText: '0',
+      progressText: '—',
+      accuracyText: '—',
+      wrongText: '—',
+      statusText: '暂无题目',
       canStart: false,
     });
     expect(JSON.stringify(view)).not.toContain('NaN');
+  });
+
+  it('keeps a real zero accuracy distinct from an unpracticed chapter', () => {
+    const questions = [makeQuestion({ id: 'Q1' })];
+    const unpracticed = presentCatalogParts({
+      catalog,
+      occupation: '4-02-06-01',
+      level: 5,
+      questions,
+      getProgress: noProgress,
+    });
+    const allWrong = presentCatalogParts({
+      catalog,
+      occupation: '4-02-06-01',
+      level: 5,
+      questions,
+      getProgress: () => ({ completed: 1, attempts: 1, correctAttempts: 0, wrongQuestions: 1 }),
+    });
+
+    expect(unpracticed[1]?.chapters[0]).toMatchObject({
+      statusText: '未练习',
+      accuracyText: '未练习',
+    });
+    expect(allWrong[1]?.chapters[0]).toMatchObject({
+      statusText: '已练习',
+      accuracyText: '0%',
+    });
   });
 
   it('preserves canonical zero-question sections from the runtime catalog', async () => {
@@ -420,6 +448,7 @@ describe('catalog chapter routes', () => {
       progressText: '0%',
       accuracyText: '0%',
       wrongText: '0',
+      statusText: '未练习',
       canStart: true,
       sections: [
         {

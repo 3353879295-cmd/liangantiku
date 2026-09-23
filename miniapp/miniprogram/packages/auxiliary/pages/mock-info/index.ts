@@ -10,10 +10,13 @@ const defaultCertificate = CERTIFICATES[0];
 if (!defaultCertificate) throw new Error('at least one certificate is required');
 
 const initialView = presentMockPracticeInfo(defaultCertificate, 0);
+const loadVersions = new WeakMap<object, number>();
 
 Page({
   data: {
     loading: true,
+    state: 'loading',
+    loadError: '',
     certificate: defaultCertificate,
     ...initialView,
   },
@@ -23,30 +26,52 @@ Page({
   },
 
   async loadInfo() {
+    const version = (loadVersions.get(this) ?? 0) + 1;
+    loadVersions.set(this, version);
     const preferences = appServices.progress.getPreferences();
     const certificate = getCertificate(preferences.selectedCertificateKey);
     if (!certificate) return;
 
     this.setData({
       loading: certificate.availability === 'available',
+      state: certificate.availability === 'available' ? 'loading' : 'empty',
+      loadError: '',
       certificate,
       ...presentMockPracticeInfo(certificate, 0),
     });
     if (certificate.availability === 'coming-soon') return;
 
-    const questions = await appServices.questions.list({
-      occupation: certificate.occupation,
-      level: certificate.level,
-    });
-    if (this.data.certificate.key !== certificate.key) return;
-    this.setData({
-      loading: false,
-      ...presentMockPracticeInfo(certificate, questions.length),
-    });
+    try {
+      const questions = await appServices.questions.list({
+        occupation: certificate.occupation,
+        level: certificate.level,
+      });
+      if (loadVersions.get(this) !== version) return;
+      this.setData({
+        loading: false,
+        state: questions.length ? 'ready' : 'empty',
+        ...presentMockPracticeInfo(certificate, questions.length),
+      });
+    } catch {
+      if (loadVersions.get(this) !== version) return;
+      this.setData({
+        loading: false,
+        state: 'error',
+        loadError: '题库暂时无法读取，请重试。',
+      });
+    }
+  },
+
+  onRetryLoad() {
+    void this.loadInfo();
+  },
+
+  onUnload() {
+    loadVersions.delete(this);
   },
 
   onStart() {
-    if (this.data.loading || !this.data.canStart) {
+    if (this.data.state !== 'ready' || !this.data.canStart) {
       void wx.showToast({ title: this.data.statusText, icon: 'none' });
       return;
     }

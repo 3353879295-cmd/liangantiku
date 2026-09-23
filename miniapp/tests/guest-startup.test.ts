@@ -8,7 +8,7 @@ interface BrowsePage {
   loadCertificate(key: CertificateKey): Promise<void>;
   loadMembership(): Promise<void>;
   openStartRoute(route: string): void;
-  onResume(): void;
+  onResume(): Promise<void>;
   onCertificateChange(event: { detail: { key: CertificateKey } }): void;
 }
 
@@ -29,6 +29,7 @@ const loadApp = async (storage = new Map<string, unknown>()) => {
     reLaunch: vi.fn(),
     switchTab: vi.fn(),
     showModal: vi.fn(),
+    showToast: vi.fn(),
   };
   const callFunction = vi.fn(() => Promise.reject(new Error('offline')));
   const onNetworkStatusChange = vi.fn();
@@ -102,12 +103,10 @@ describe('guest startup and local learning', () => {
       await vi.waitFor(() => expect(home.data.loading).toBe(false));
       expect(appServices.progress.getPreferences().selectedCertificateKey).toBe('4-08-05-01:4');
       expect(home.data.certificate).toMatchObject({ canStart: true });
-      home.onResume();
-      expect(navigation.navigateTo).toHaveBeenCalledOnce();
-      expect(navigation.navigateTo).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: '/pages/library/index',
-        }),
+      await home.onResume();
+      expect(navigation.navigateTo).not.toHaveBeenCalled();
+      expect(navigation.showToast).toHaveBeenCalledWith(
+        expect.objectContaining({ title: '会员服务暂不可用，请稍后再试。' }),
       );
 
       let library: BrowsePage | undefined;
@@ -132,38 +131,23 @@ describe('guest startup and local learning', () => {
     },
   );
 
-  it('starts real basic practice offline and restores guest answers and preferences after restart', async () => {
-    const { appServices, localDateKey, storage, navigation, personalInfo, callFunction } =
-      await loadApp();
+  it('denies basic practice offline for guests', async () => {
+    const { appServices, navigation, personalInfo, callFunction } = await loadApp();
     const runtime = await import('../miniprogram/services/practice-runtime');
-    const { answerQuestion } = await import('../miniprogram/services/practice-session');
     appServices.progress.updatePreferences({ selectedCertificateKey: '4-08-05-01:4' });
-    const session = await runtime.startPractice({
-      occupation: '4-08-05-01',
-      level: 4,
-      mode: 'sequential',
-    });
-    if (!session || !session.questions[0]) throw new Error('Guest practice has no questions');
-    const question = session.questions[0];
-    runtime.saveActivePractice(answerQuestion(session, question.id, question.answer, Date.now()));
-    expect(appServices.progress.restoreSession()?.answers[question.id]).toEqual(question.answer);
-    runtime.submitActivePractice();
-    runtime.recordActivePractice();
-    const answered = appServices.progress.getDashboard(localDateKey()).answered;
-    expect(answered).toBeGreaterThan(0);
+
+    await expect(
+      runtime.startPractice({
+        occupation: '4-08-05-01',
+        level: 4,
+        mode: 'sequential',
+      }),
+    ).rejects.toMatchObject({ code: 'MEMBERSHIP_UNAVAILABLE' });
+
+    expect(runtime.getActivePractice()).toBeNull();
+    expect(appServices.progress.restoreSession()).toBeNull();
     expect(callFunction).not.toHaveBeenCalled();
     for (const call of Object.values(navigation)) expect(call).not.toHaveBeenCalled();
     for (const call of Object.values(personalInfo)) expect(call).not.toHaveBeenCalled();
-
-    const restarted = await loadApp(storage);
-    expect(restarted.appServices.auth.getState().status).toBe('guest');
-    expect(restarted.appServices.progress.getPreferences().selectedCertificateKey).toBe(
-      '4-08-05-01:4',
-    );
-    expect(restarted.appServices.progress.getDashboard(localDateKey()).answered).toBe(answered);
-    expect(restarted.appServices.progress.restoreSession()?.answers[question.id]).toEqual(
-      question.answer,
-    );
-    expect(restarted.callFunction).not.toHaveBeenCalled();
   });
 });

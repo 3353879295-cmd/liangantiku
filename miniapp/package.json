@@ -1,7 +1,7 @@
 {
   "name": "grain-cert-practice-miniapp",
   "private": true,
-  "version": "1.1.2",
+  "version": "1.1.5",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && stylelint \"miniprogram/**/*.wxss\"",

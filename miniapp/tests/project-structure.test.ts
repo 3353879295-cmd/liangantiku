@@ -252,7 +252,9 @@ describe('WeChat mini program structure', () => {
         join(miniappRoot, 'packages', 'auxiliary', 'pages', page, 'index.wxml'),
         'utf8',
       );
-      const loadingGuardIndex = markup.indexOf('wx:if="{{loading}}"');
+      const loadingGuardIndex = markup.indexOf(
+        page === 'mock-info' ? 'wx:if="{{state === \'loading\'}}"' : 'wx:if="{{loading}}"',
+      );
       const loadedContentIndex = markup.indexOf('<block wx:else>');
 
       expect(loadingGuardIndex, `${page} needs a neutral loading branch`).toBeGreaterThan(-1);
@@ -435,10 +437,22 @@ describe('WeChat mini program structure', () => {
     const practicalAssets = [...practicalSource.matchAll(/\biconAsset:\s*'([^']+)'/g)].map(
       (match) => match[1] ?? '',
     );
-    expect(practicalAssets).toHaveLength(12);
+    expect(practicalAssets).toHaveLength(6);
     for (const assetPath of practicalAssets) {
       assertLocalImagePath(practicalSourcePath, assetPath);
     }
+
+    const archivedPath = join(
+      miniappRoot,
+      '..',
+      'content',
+      'unpublished-inspector-practical-skills.ts',
+    );
+    const archivedAssets = [
+      ...readFileSync(archivedPath, 'utf8').matchAll(/\biconAsset:\s*'([^']+)'/g),
+    ];
+    expect(archivedAssets).toHaveLength(6);
+    for (const match of archivedAssets) assertLocalImagePath(archivedPath, match[1] ?? '');
 
     const avatarSourcePath = join(
       miniappRoot,
@@ -699,7 +713,8 @@ describe('WeChat mini program structure', () => {
     expect(reportSource).toContain('presentCatalogParts');
     expect(memberMarkup).toContain('¥28');
     expect(memberMarkup).toContain('半年');
-    expect(memberMarkup).toContain('不限次数');
+    expect(memberMarkup).toContain('随机练习不限次');
+    expect(memberMarkup).not.toContain('解锁完整刷题功能');
     expect(memberMarkup).not.toContain('requestPayment');
     expect(memberMarkup).not.toContain('立即支付');
     expect(memberMarkup).toContain('立即开通');

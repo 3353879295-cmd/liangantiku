@@ -114,3 +114,4 @@
 
   <empty-state wx:else title="未找到技能卡" description="这张技能卡可能已经调整，请返回实操页。" />
 </view>
+<membership-prompt visible="{{memberPromptVisible}}" bind:close="onCloseMemberPrompt" bind:confirm="onOpenMember" />

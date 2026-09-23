@@ -51,7 +51,12 @@ describe('ProgressService', () => {
     service.updatePreferences({ nickname: '云端麦穗', dailyGoal: 30 });
     service.toggleFavorite('account-q', 2);
     expect(commands).toEqual([
-      { action: 'updateProfile', nickname: '云端麦穗', avatarUrl: '' },
+      expect.objectContaining({
+        action: 'updateProfile',
+        nickname: '云端麦穗',
+        avatarUrl: '',
+        changedFields: ['nickname'],
+      }),
       expect.objectContaining({ action: 'updatePreferences', dailyGoal: 30 }),
       { action: 'setFavorite', questionId: 'account-q', favorite: true },
     ]);

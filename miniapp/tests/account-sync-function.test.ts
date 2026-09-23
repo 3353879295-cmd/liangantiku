@@ -1,5 +1,12 @@
 import { createRequire } from 'node:module';
 import { describe, expect, it, vi } from 'vitest';
+import { AccountSyncClient } from '../miniprogram/repositories/account-sync-client';
+import { AuthService } from '../miniprogram/services/auth-service';
+import { CloudSyncService } from '../miniprogram/services/cloud-sync-service';
+import { ProgressService } from '../miniprogram/services/progress-service';
+import { ProgressRepository } from '../miniprogram/storage/progress-repository';
+import { SyncOutbox } from '../miniprogram/storage/sync-outbox';
+import type { StorageAdapter } from '../miniprogram/types/domain';
 
 const require = createRequire(import.meta.url);
 const { createAccountKey } = require('../cloudfunctions/accountSync/lib/account-key.js') as {
@@ -123,6 +130,171 @@ const fillQuestionTotalsPastResponseLimit = (store: ReturnType<typeof createStor
   store.progress.get('progress_hashed')!.question_totals = questionTotals;
 };
 
+describe('automatic account recovery against the real cloud handler', () => {
+  const createDevice = (handler: ReturnType<typeof createHandler>) => {
+    const values = new Map<string, unknown>();
+    const storage: StorageAdapter = {
+      get: <T>(key: string) => (values.get(key) as T | undefined) ?? null,
+      set: (key, value) => {
+        values.set(key, value);
+      },
+      remove: (key) => {
+        values.delete(key);
+      },
+    };
+    const network = { online: true, loseNextPracticeResponse: false, openId: context.OPENID };
+    const client = new AccountSyncClient(async ({ data }) => {
+      if (!network.online) throw new Error('offline');
+      const result = await handler(data, { ...context, OPENID: network.openId });
+      if (data.action === 'recordPractice' && network.loseNextPracticeResponse) {
+        network.loseNextPracticeResponse = false;
+        throw new Error('response lost after commit');
+      }
+      return { result };
+    });
+    const repository = new ProgressRepository(storage);
+    const progress = new ProgressService(repository);
+    const outbox = new SyncOutbox(storage);
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+      maxAttempts: 1,
+      onAccountVerified: () => {
+        progress.switchScope('account');
+        progress.refreshAccountSnapshot();
+      },
+    });
+    const auth = new AuthService(storage, progress, repository, outbox, sync, client);
+    progress.setAccountMutationListener((command) => {
+      sync.enqueue(command);
+    });
+    const answer = (id: string, correct = false) =>
+      progress.recordPracticeResults(id, [
+        {
+          questionId: 'Q1',
+          correct,
+          durationMs: 1200,
+          at: '2026-09-19',
+        },
+      ]);
+    return { auth, sync, progress, outbox, repository, network, answer };
+  };
+
+  it('restores answers, wrong questions and favorites after logout and on another device', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: createAccountKey });
+    const first = createDevice(handler);
+    await expect(first.auth.login()).resolves.toBe(true);
+    first.answer('first-practice');
+    first.progress.toggleFavorite('Q1', 1);
+    await first.auth.retryBackground();
+    await first.auth.logout();
+    expect(first.repository.loadAccountCache()?.progress.summary.answered).toBe(1);
+    await expect(first.auth.login()).resolves.toBe(true);
+    const second = createDevice(handler);
+    await expect(second.auth.login()).resolves.toBe(true);
+    for (const device of [first, second]) {
+      expect(device.progress.getDashboard('2026-09-19')).toMatchObject({
+        answered: 1,
+        durationMs: 1200,
+      });
+      expect(device.progress.getWrongQuestion('Q1')?.errorCount).toBe(1);
+      expect(device.progress.isFavorite('Q1')).toBe(true);
+      expect(device.outbox.size).toBe(0);
+    }
+  });
+
+  it('merges offline practice after another device advances the revision without a conflict decision', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: createAccountKey });
+    const first = createDevice(handler);
+    const second = createDevice(handler);
+    await first.auth.login();
+    await second.auth.login();
+    first.network.online = false;
+    first.answer('offline-practice');
+    await first.sync.process();
+    expect(first.outbox.size).toBe(1);
+    second.answer('other-device-practice', true);
+    second.progress.toggleFavorite('Q1', 2);
+    await second.auth.retryBackground();
+    first.network.online = true;
+    await first.sync.process();
+    first.auth.refreshFromCache();
+    expect(first.sync.getState()).toMatchObject({ status: 'idle', pendingCount: 0 });
+    expect(first.progress.getDashboard('2026-09-19')).toMatchObject({
+      answered: 2,
+      correct: 1,
+      durationMs: 2400,
+    });
+    expect(first.progress.isFavorite('Q1')).toBe(true);
+    await second.auth.retryBackground();
+    expect(second.progress.getDashboard('2026-09-19').answered).toBe(2);
+    expect(store.records.size).toBe(2);
+  });
+
+  it('does not count a committed answer twice when its response is lost before logout', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: createAccountKey });
+    const device = createDevice(handler);
+    await device.auth.login();
+    device.network.loseNextPracticeResponse = true;
+    device.answer('lost-response-practice');
+    await device.sync.process();
+    expect(store.records.size).toBe(1);
+    expect(device.outbox.size).toBe(1);
+    await device.auth.logout();
+    await device.auth.login();
+    expect(device.outbox.size).toBe(0);
+    expect(device.progress.getDashboard('2026-09-19')).toMatchObject({
+      answered: 1,
+      durationMs: 1200,
+    });
+    expect(device.progress.getWrongQuestion('Q1')?.errorCount).toBe(1);
+    expect(store.records.size).toBe(1);
+  });
+
+  it('preserves each WeChat account independently and resumes an archived offline answer when switching back', async () => {
+    const store = createStore();
+    const device = createDevice(createHandler({ store, hash: createAccountKey }));
+    await device.auth.login();
+    device.network.online = false;
+    device.answer('account-a-offline');
+    await device.auth.logout();
+    device.network.online = true;
+    device.network.openId = 'openid-another';
+    await expect(device.auth.login()).resolves.toBe(true);
+    expect(device.progress.getDashboard('2026-09-19').answered).toBe(0);
+    expect(device.progress.getWrongQuestion('Q1')).toBeNull();
+    expect(device.outbox.size).toBe(0);
+    device.answer('account-b-answer', true);
+    await device.auth.retryBackground();
+    await device.auth.logout();
+    device.network.openId = context.OPENID;
+    await expect(device.auth.login()).resolves.toBe(true);
+    expect(device.progress.getDashboard('2026-09-19')).toMatchObject({ answered: 1, correct: 0 });
+    expect(device.outbox.size).toBe(0);
+    expect(store.records.size).toBe(2);
+  });
+
+  it('merges only changed preferences so different devices do not overwrite each other', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: createAccountKey });
+    const first = createDevice(handler);
+    const second = createDevice(handler);
+    await first.auth.login();
+    await second.auth.login();
+    first.progress.updatePreferences({ dailyGoal: 50 });
+    await first.auth.retryBackground();
+    second.progress.updatePreferences({ answerTheme: 'night' });
+    await second.auth.retryBackground();
+    expect(second.progress.getPreferences()).toMatchObject({ dailyGoal: 50, answerTheme: 'night' });
+    await first.auth.retryBackground();
+    expect(first.progress.getPreferences()).toMatchObject({ dailyGoal: 50, answerTheme: 'night' });
+    expect(first.outbox.size).toBe(0);
+    expect(second.outbox.size).toBe(0);
+  });
+});
+
 describe('accountSync handler', () => {
   it('uses the request action whitelist for safe logging', () => {
     expect(isKnownAction('bootstrap')).toBe(true);
@@ -153,6 +325,38 @@ describe('accountSync handler', () => {
     expect(JSON.stringify(response)).not.toMatch(/openid|_id/i);
     expect(store.accounts.has('account_hashed')).toBe(true);
     expect(store.progress.has('progress_hashed')).toBe(true);
+  });
+
+  it('round-trips the optional accumulated active practice duration', async () => {
+    const store = createStore();
+    const handler = createHandler({ store, hash: () => 'hashed' });
+    await handler(bootstrap, context);
+    const session = {
+      id: 'active-duration-session',
+      mode: 'sequential',
+      questionIds: ['Q1'],
+      currentIndex: 0,
+      answers: {},
+      status: 'active',
+      startedAt: 1000,
+      updatedAt: 2000,
+      activeDurationMs: 600,
+      progressRecorded: false,
+      answerRevealMode: 'immediate',
+    };
+
+    await expect(
+      handler(
+        { action: 'saveActiveSession', schemaVersion: 1, expectedRevision: 0, session },
+        context,
+      ),
+    ).resolves.toMatchObject({ ok: true, data: { progressRevision: 1 } });
+    expect(store.progress.get('progress_hashed')?.active_session).toMatchObject({
+      active_duration_ms: 600,
+    });
+    await expect(handler(bootstrap, context)).resolves.toMatchObject({
+      data: { progress: { session: { activeDurationMs: 600 } } },
+    });
   });
 
   it('rolls back account creation when bootstrap cannot create the progress document', async () => {

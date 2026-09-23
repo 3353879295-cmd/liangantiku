@@ -1,6 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { QuestionListViewModel } from '../miniprogram/presenters/question-list-presenter';
+import type { MembershipStatus } from '../miniprogram/types/membership';
+
+const memberStatus: MembershipStatus = {
+  isMember: true,
+  startsAt: '2026-09-01T00:00:00.000Z',
+  expiresAt: '2027-03-01T00:00:00.000Z',
+  freeUsed: 0,
+  freeRemaining: 3,
+  freeLimit: 3,
+  freeDate: '2026-09-23',
+  serverTime: '2026-09-23T00:00:00.000Z',
+  paymentAvailable: true,
+};
 
 interface QuestionListPageData {
   loaded: boolean;
@@ -26,7 +39,7 @@ interface QuestionListPageContext {
   syncTheme(): void;
   syncCertificateScope(): boolean;
   onLoadMore(): void;
-  onStartPractice(): void;
+  onStartPractice(): Promise<void>;
   onUnload(): void;
 }
 
@@ -40,7 +53,7 @@ interface QuestionListPageDefinition {
   syncTheme?(this: QuestionListPageContext): void;
   syncCertificateScope?(this: QuestionListPageContext): boolean;
   onLoadMore(this: QuestionListPageContext): void;
-  onStartPractice(this: QuestionListPageContext): void;
+  onStartPractice(this: QuestionListPageContext): Promise<void>;
   onUnload(this: QuestionListPageContext): void;
 }
 
@@ -64,6 +77,7 @@ const loadQuestionListPage = async () => {
 
   await import('../miniprogram/pages/question-list/index');
   const { appServices } = await import('../miniprogram/services/app-services');
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue(memberStatus);
   if (!definition) throw new Error('question-list Page was not registered');
 
   const registered = definition;
@@ -96,7 +110,7 @@ const loadQuestionListPage = async () => {
       registered.onLoadMore.call(context);
     },
     onStartPractice() {
-      registered.onStartPractice.call(context);
+      return registered.onStartPractice.call(context);
     },
     onUnload() {
       registered.onUnload.call(context);
@@ -328,13 +342,14 @@ describe('question-list page certificate scope', () => {
     const saveSession = vi.spyOn(appServices.progress, 'saveSession');
     navigateTo.mockRejectedValueOnce(new Error('navigation failed'));
 
-    context.onStartPractice();
-    context.onStartPractice();
+    const firstStart = context.onStartPractice();
+    const secondStart = context.onStartPractice();
+    await Promise.all([firstStart, secondStart]);
     expect(saveSession).toHaveBeenCalledTimes(1);
     expect(navigateTo).toHaveBeenCalledTimes(1);
 
     await flushPromises();
-    context.onStartPractice();
+    await context.onStartPractice();
     expect(saveSession).toHaveBeenCalledTimes(1);
     expect(navigateTo).toHaveBeenCalledTimes(2);
     expect(showToast).toHaveBeenCalledWith({ title: '打开练习失败，请重试', icon: 'none' });

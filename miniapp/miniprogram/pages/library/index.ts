@@ -38,6 +38,9 @@ interface LibraryPageData {
   starting: boolean;
   completedCount: number;
   hasSequentialResume: boolean;
+  showingAll: boolean;
+  availableChapterCount: number;
+  unavailableChapterCount: number;
 }
 
 const initialData: LibraryPageData = {
@@ -53,8 +56,17 @@ const initialData: LibraryPageData = {
   starting: false,
   completedCount: 0,
   hasSequentialResume: false,
+  showingAll: false,
+  availableChapterCount: 0,
+  unavailableChapterCount: 0,
 };
 const loadVersions = new WeakMap<object, number>();
+const catalogParts = new WeakMap<object, CatalogPartViewModel[]>();
+
+const filterAvailableParts = (parts: CatalogPartViewModel[]): CatalogPartViewModel[] =>
+  parts
+    .map((part) => ({ ...part, chapters: part.chapters.filter((chapter) => chapter.canStart) }))
+    .filter((part) => part.chapters.length > 0);
 
 export const buildTextbookPracticeRoute = (input: TextbookPracticeRouteInput): string | null => {
   if (input.loading || !input.questionCount) return null;
@@ -90,6 +102,9 @@ Page({
       loadError: '',
       completedCount: 0,
       hasSequentialResume: false,
+      showingAll: false,
+      availableChapterCount: 0,
+      unavailableChapterCount: 0,
     });
 
     if (certificate.availability === 'coming-soon') return;
@@ -109,13 +124,21 @@ Page({
       });
       const ids = [...new Set(questions.map((question) => question.id))];
       const saved = appServices.progress.restoreSequentialSession(certificate.key);
+      catalogParts.set(this, parts);
+      const availableChapterCount = parts
+        .flatMap((part) => part.chapters)
+        .filter((chapter) => chapter.canStart).length;
+      const unavailableChapterCount =
+        parts.flatMap((part) => part.chapters).length - availableChapterCount;
       this.setData({
         questionCount: ids.length,
         completedCount: appServices.progress.getQuestionProgress(ids).completed,
         hasSequentialResume:
           saved?.status === 'active' && saved.questionIds.some((id) => ids.includes(id)),
-        parts,
+        parts: filterAvailableParts(parts),
         loading: false,
+        availableChapterCount,
+        unavailableChapterCount,
       });
     } catch {
       if (loadVersions.get(this) !== version) return;
@@ -125,6 +148,12 @@ Page({
 
   onRetryLoad() {
     void this.loadCertificate(this.data.selectedKey);
+  },
+
+  onToggleCatalog() {
+    const showingAll = !this.data.showingAll;
+    const parts = catalogParts.get(this) ?? [];
+    this.setData({ showingAll, parts: showingAll ? parts : filterAvailableParts(parts) });
   },
 
   async onStartAll() {
@@ -153,6 +182,7 @@ Page({
 
   onUnload() {
     loadVersions.delete(this);
+    catalogParts.delete(this);
   },
 
   onChapterTap(event: WechatMiniprogram.TouchEvent) {

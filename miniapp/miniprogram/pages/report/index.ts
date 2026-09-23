@@ -3,6 +3,7 @@ import { findCatalogChapterTitle } from '../../presenters/catalog-presenter';
 import { presentReport } from '../../presenters/report-presenter';
 import {
   getActivePractice,
+  getPracticeStartCancellation,
   recordActivePractice,
   restorePractice,
   startPracticeFromQuestions,
@@ -10,12 +11,15 @@ import {
   submitActivePractice,
 } from '../../services/practice-runtime';
 import { appServices } from '../../services/app-services';
-import { MembershipError } from '../../repositories/membership-client';
+import { isMembershipAccessError } from '../../repositories/membership-client';
 
 const pendingAnswerSheetNavigations = new WeakSet<object>();
-const pendingRetryNavigations = new WeakSet<object>();
 const pendingReportRestores = new WeakSet<object>();
 const visibleReports = new WeakSet<object>();
+type ReportSession = NonNullable<ReturnType<typeof submitActivePractice>>;
+const reportSessions = new WeakMap<object, ReportSession>();
+const pendingPracticeSessions = new WeakMap<object, ReportSession>();
+const startCancellations = new WeakMap<object, () => void>();
 
 const createAnswerSheetNavigationCallbacks = (page: object) => {
   let released = false;
@@ -33,6 +37,7 @@ Page({
     loading: true,
     loadError: false,
     retrying: false,
+    pendingPractice: false,
     memberPromptVisible: false,
     view: null as ReturnType<typeof presentReport> | null,
     hasWrong: false,
@@ -60,9 +65,13 @@ Page({
       const session = submitActivePractice();
       recordActivePractice();
       if (!session?.report) {
+        reportSessions.delete(this);
+        pendingPracticeSessions.delete(this);
         this.setData({ ready: false, view: null, loading: false, loadError: false });
         return;
       }
+      reportSessions.set(this, session);
+      pendingPracticeSessions.delete(this);
       let sequentialRemaining = 0;
       let sequentialProgressText = '';
       let sequentialRoute = '';
@@ -95,14 +104,14 @@ Page({
         sequentialRemaining,
         sequentialProgressText,
         sequentialRoute,
+        pendingPractice: false,
       });
     } catch (error) {
       if (visibleReports.has(this)) {
         this.setData({
           loading: false,
           loadError: true,
-          memberPromptVisible:
-            error instanceof MembershipError && error.code === 'DAILY_LIMIT_REACHED',
+          memberPromptVisible: isMembershipAccessError(error),
         });
         void wx.showToast({
           title: error instanceof Error ? error.message : '练习恢复失败，请重试',
@@ -120,7 +129,11 @@ Page({
   },
 
   onUnload() {
+    startCancellations.get(this)?.();
+    startCancellations.delete(this);
     visibleReports.delete(this);
+    reportSessions.delete(this);
+    pendingPracticeSessions.delete(this);
   },
 
   onRetryLoad() {
@@ -136,12 +149,30 @@ Page({
   },
 
   onReviewWrong() {
-    if (!this.data.hasWrong) return;
+    if (!this.data.hasWrong || pendingPracticeSessions.has(this)) return;
     void wx.navigateTo({ url: '/pages/question-list/index?kind=session' });
   },
 
+  async onPracticeChapter(event: WechatMiniprogram.TouchEvent) {
+    if (this.data.retrying || pendingPracticeSessions.has(this)) return;
+    const chapterId = String(event.currentTarget.dataset['chapterId'] ?? '');
+    const session = reportSessions.get(this);
+    const question = session?.questions.find((item) => item.chapterId === chapterId);
+    if (!chapterId || !question) return;
+    this.setData({ retrying: true });
+    try {
+      await wx.redirectTo({
+        url: `/pages/practice/index?occupation=${question.occupation}&level=${question.level}&mode=chapter&chapterId=${encodeURIComponent(chapterId)}`,
+      });
+    } catch {
+      void wx.showToast({ title: '页面未打开，请重试', icon: 'none' });
+    } finally {
+      if (visibleReports.has(this)) this.setData({ retrying: false });
+    }
+  },
+
   onOpenAnswerSheet() {
-    if (pendingAnswerSheetNavigations.has(this)) return;
+    if (pendingPracticeSessions.has(this) || pendingAnswerSheetNavigations.has(this)) return;
     pendingAnswerSheetNavigations.add(this);
     void wx.navigateTo({
       url: '/pages/answer-sheet/index',
@@ -150,23 +181,26 @@ Page({
   },
 
   async onRetry() {
-    if (this.data.retrying) return;
-    const session = getActivePractice();
+    if (this.data.retrying || pendingPracticeSessions.has(this)) return;
+    const session = reportSessions.get(this);
     if (!session) return;
     this.setData({ retrying: true });
     try {
-      const next = pendingRetryNavigations.has(this)
-        ? session
-        : session.mode === 'random'
-          ? await startRandomPracticeFromQuestions(session.questions)
+      const pending =
+        session.mode === 'random'
+          ? startRandomPracticeFromQuestions(session.questions)
           : startPracticeFromQuestions(session.questions, session.mode);
+      startCancellations.set(this, getPracticeStartCancellation());
+      const next = await pending;
+      if (!visibleReports.has(this)) return;
       if (next) {
-        pendingRetryNavigations.add(this);
+        pendingPracticeSessions.set(this, next);
+        this.setData({ pendingPractice: true });
         await wx.redirectTo({ url: '/pages/practice/index?resume=1' });
-        pendingRetryNavigations.delete(this);
       }
     } catch (error) {
-      if (error instanceof MembershipError && error.code === 'DAILY_LIMIT_REACHED') {
+      if (!visibleReports.has(this)) return;
+      if (isMembershipAccessError(error)) {
         this.setData({ memberPromptVisible: true });
       } else {
         void wx.showToast({
@@ -175,15 +209,66 @@ Page({
         });
       }
     } finally {
-      this.setData({ retrying: false });
+      if (visibleReports.has(this)) this.setData({ retrying: false });
+    }
+  },
+
+  async onRetryWrong() {
+    if (this.data.retrying || pendingPracticeSessions.has(this)) return;
+    this.setData({ retrying: true });
+    try {
+      const session = reportSessions.get(this);
+      const wrongIds = new Set(session?.report?.wrongQuestionIds ?? []);
+      const wrongQuestions =
+        session?.questions.filter((question) => wrongIds.has(question.id)) ?? [];
+      if (!wrongQuestions.length) return;
+      const pending = startPracticeFromQuestions(wrongQuestions, 'wrong', wrongQuestions.length);
+      startCancellations.set(this, getPracticeStartCancellation());
+      const next = await pending;
+      if (!visibleReports.has(this)) return;
+      if (next) {
+        pendingPracticeSessions.set(this, next);
+        this.setData({ pendingPractice: true });
+      }
+      if (next) await wx.redirectTo({ url: '/pages/practice/index?resume=1' });
+    } catch (error) {
+      if (!visibleReports.has(this)) return;
+      if (isMembershipAccessError(error)) {
+        this.setData({ memberPromptVisible: true });
+        return;
+      }
+      void wx.showToast({
+        title: error instanceof Error ? error.message : '暂时无法开始，请重试',
+        icon: 'none',
+      });
+    } finally {
+      if (visibleReports.has(this)) this.setData({ retrying: false });
     }
   },
 
   async onContinueSequential() {
-    if (this.data.retrying || !this.data.sequentialRemaining || !this.data.sequentialRoute) return;
+    if (
+      this.data.retrying ||
+      pendingPracticeSessions.has(this) ||
+      !this.data.sequentialRemaining ||
+      !this.data.sequentialRoute
+    )
+      return;
     this.setData({ retrying: true });
     try {
       await wx.redirectTo({ url: this.data.sequentialRoute });
+    } catch {
+      void wx.showToast({ title: '页面未打开，请重试', icon: 'none' });
+    } finally {
+      if (visibleReports.has(this)) this.setData({ retrying: false });
+    }
+  },
+
+  async onResumePendingPractice() {
+    if (this.data.retrying || !pendingPracticeSessions.has(this)) return;
+    this.setData({ retrying: true });
+    try {
+      await wx.redirectTo({ url: '/pages/practice/index?resume=1' });
     } catch {
       void wx.showToast({ title: '页面未打开，请重试', icon: 'none' });
     } finally {

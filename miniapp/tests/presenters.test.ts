@@ -268,6 +268,7 @@ describe('presentReport', () => {
       durationText: '02:05',
     });
     expect(report.weakModules[0]).toMatchObject({
+      chapterId: 'warehouse-l5-c04',
       name: '第四章 粮情检查',
       accuracyText: '25%',
     });
@@ -590,7 +591,18 @@ const loadPracticePage = async (
   if (!definition) throw new Error('practice Page was not registered');
 
   appServices.progress.updatePreferences({ answerRevealMode });
-  const session = runtime.startPracticeFromQuestions([question], 'sequential');
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  });
+  const session = await runtime.startPracticeFromQuestions([question], 'sequential');
   if (!session) throw new Error('practice session was not created');
 
   const registered = definition;

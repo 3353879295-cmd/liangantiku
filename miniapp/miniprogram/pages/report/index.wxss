@@ -167,6 +167,28 @@
   font-weight: 650;
 }
 
+.module-result__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.module-result__practice {
+  margin: 0;
+  padding: 0 16rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  font-size: 20rpx;
+  font-weight: 650;
+  line-height: 52rpx;
+}
+
+.module-result__practice::after {
+  display: none;
+}
+
 .theme-night .module-result__accuracy {
   color: var(--color-primary);
 }

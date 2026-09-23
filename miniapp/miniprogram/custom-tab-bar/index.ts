@@ -12,8 +12,8 @@ const TABS: TabItem[] = [
 const TAB_VALUES = new Set(TABS.map((tab) => tab.value));
 
 interface TabBarContext {
-  data: { value: string };
-  setData(update: { value: string }): void;
+  data: { value: string; membershipPromptVisible: boolean };
+  setData(update: Partial<TabBarContext['data']>): void;
 }
 
 const tabBarInstances = new Set<TabBarContext>();
@@ -93,6 +93,7 @@ const startNextSwitch = (): void => {
 Component({
   data: {
     value: TABS[0]?.value ?? '/pages/home/index',
+    membershipPromptVisible: false,
     tabs: TABS,
   },
   lifetimes: {
@@ -111,6 +112,7 @@ Component({
   },
   methods: {
     onTabTap(event: WechatMiniprogram.BaseEvent) {
+      if (this.data.membershipPromptVisible) return;
       const value = event.currentTarget.dataset.value as string | undefined;
       if (!value || !TAB_VALUES.has(value)) return;
       if (value === currentRoute()) {

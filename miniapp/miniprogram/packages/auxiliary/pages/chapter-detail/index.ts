@@ -128,4 +128,13 @@ Page({
     });
     if (url) void wx.navigateTo({ url });
   },
+
+  onBackToAvailableCatalog() {
+    const openCatalog = () => void wx.navigateTo({ url: '/pages/library/index' });
+    try {
+      wx.navigateBack({ delta: 1, fail: openCatalog });
+    } catch {
+      openCatalog();
+    }
+  },
 });

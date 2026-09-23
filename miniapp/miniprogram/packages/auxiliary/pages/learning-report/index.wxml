@@ -29,7 +29,11 @@
     <view class="report-stats">
       <stat-card label="累计练习" value="{{answeredText}}" note="题" />
       <stat-card label="正确率" value="{{accuracyText}}" note="全部作答" />
-      <stat-card label="学习时长" value="{{durationText}}" note="{{streakText}}" />
+    </view>
+    <view class="report-duration matte-card">
+      <text class="report-duration__label">累计学习时长 · {{streakText}}</text>
+      <view class="report-duration__value">{{durationText}}</view>
+      <text class="report-duration__note">新练习仅累计答题页的前台时间，历史统计保留原值。</text>
     </view>
 
     <view class="section-heading report-section-heading">

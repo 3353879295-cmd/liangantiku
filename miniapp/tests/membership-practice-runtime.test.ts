@@ -44,7 +44,8 @@ const load = async () => {
   const validate = vi
     .spyOn(appServices.membership, 'validateRandomPractice')
     .mockResolvedValue(status);
-  return { appServices, runtime, MembershipError, questions, admit, validate };
+  const permission = vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue(status);
+  return { appServices, runtime, MembershipError, questions, admit, validate, permission };
 };
 
 describe('random practice admission at every session entry', () => {
@@ -162,7 +163,7 @@ describe('random practice admission at every session entry', () => {
 
   it('never spends quota on an empty bank and leaves a previous session intact on denial', async () => {
     const { appServices, runtime, questions, admit, MembershipError } = await load();
-    const previous = runtime.startPracticeFromQuestions(questions, 'sequential');
+    const previous = await runtime.startPracticeFromQuestions(questions, 'sequential');
     admit.mockRejectedValue(new MembershipError('DAILY_LIMIT_REACHED'));
     await expect(runtime.startPractice(input)).rejects.toMatchObject({
       code: 'DAILY_LIMIT_REACHED',
@@ -229,7 +230,7 @@ describe('random practice admission at every session entry', () => {
 
   it('keeps an active local session and a pending record when recovery cannot find every question', async () => {
     const { runtime, appServices, questions, admit } = await load();
-    const active = runtime.startPracticeFromQuestions(questions, 'sequential');
+    const active = await runtime.startPracticeFromQuestions(questions, 'sequential');
     const pending = {
       key: JSON.stringify(input),
       id: 'pending-preserved',
@@ -311,11 +312,13 @@ describe('random practice admission at every session entry', () => {
   it('does not save a report retry when scope changes after authorization resolves', async () => {
     const { runtime, appServices, questions, admit } = await load();
     let scope: 'guest' | 'account' = 'guest';
-    let scopeReads = 0;
-    vi.spyOn(appServices.progress, 'getScope').mockImplementation(() => {
-      scopeReads += 1;
-      if (scopeReads === 4) queueMicrotask(() => (scope = 'account'));
-      return scope;
+    vi.spyOn(appServices.progress, 'getScope').mockImplementation(() => scope);
+    const access = await import('../miniprogram/services/random-practice-access');
+    const authorize = access.authorizeRandomStart;
+    vi.spyOn(access, 'authorizeRandomStart').mockImplementation(async (...args) => {
+      const session = await authorize(...args);
+      scope = 'account';
+      return session;
     });
     const saved = vi.spyOn(appServices.progress, 'saveSession');
     admit.mockResolvedValue(status);

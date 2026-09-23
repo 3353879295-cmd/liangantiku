@@ -9,12 +9,37 @@ import {
   type AccountProgressSnapshot,
 } from '../types/account-sync';
 import { isProgressDataV4 } from './migrations';
+import { isSyncCommand, type SyncOutbox } from './sync-outbox';
+import type { AccountSyncSnapshot, SyncCommand } from '../types/account-sync';
 
 export const LEGACY_STORAGE_KEY = 'grain-practice:progress';
 export const GUEST_PROGRESS_KEY = 'grain-practice:guest-progress';
 export const ACCOUNT_CACHE_KEY = 'grain-practice:account-cache';
 export const STORAGE_KEY = GUEST_PROGRESS_KEY;
 export const RECOVERY_BACKUP_KEY = 'grain-practice:progress:recovery-backup';
+const ACCOUNT_SWITCH_KEY = 'grain-practice:account-switch';
+const archiveKey = (prefix: string) => `grain-practice:account-archive:${prefix || 'unverified'}`;
+
+interface AccountArchive {
+  cache: AccountCacheEnvelope;
+  commands: readonly SyncCommand[];
+  sessions: Partial<Record<CertificateKey, PersistedPracticeSession>>;
+}
+
+const isArchive = (value: unknown): value is AccountArchive => {
+  const item = value as AccountArchive | null;
+  return (
+    !!item &&
+    isAccountCacheEnvelope(item.cache) &&
+    Array.isArray(item.commands) &&
+    item.commands.every(isSyncCommand) &&
+    !!item.sessions &&
+    typeof item.sessions === 'object' &&
+    Object.values(item.sessions).every(
+      (session) => isPersistedSession(session) && session.mode === 'sequential',
+    )
+  );
+};
 
 const SEQUENTIAL_CERTIFICATE_KEYS: readonly CertificateKey[] = [
   '4-02-06-01:5',
@@ -185,6 +210,49 @@ export class ProgressRepository {
 
   saveAccountCache(cache: AccountCacheEnvelope): void {
     this.storage.set(ACCOUNT_CACHE_KEY, clone(cache));
+  }
+
+  /** Complete an interrupted local switch before any queue can be sent. */
+  recoverAccountSwitch(outbox: SyncOutbox): void {
+    const saved = this.storage.get<unknown>(ACCOUNT_SWITCH_KEY);
+    if (isArchive(saved)) this.applyAccountSwitch(saved, outbox);
+  }
+
+  switchAccount(snapshot: AccountSyncSnapshot, outbox: SyncOutbox): void {
+    const current = this.loadAccountCache();
+    if (current) {
+      const sessions: AccountArchive['sessions'] = {};
+      for (const key of SEQUENTIAL_CERTIFICATE_KEYS) {
+        const session = this.loadSequentialSession('account', key);
+        if (session) sessions[key] = session;
+      }
+      this.storage.set(archiveKey(current.avatarUploadPathPrefix), {
+        cache: current,
+        commands: outbox.list(),
+        sessions,
+      });
+    }
+    const saved = this.storage.get<unknown>(archiveKey(snapshot.avatarUploadPathPrefix));
+    const next: AccountArchive =
+      isArchive(saved) && saved.cache.avatarUploadPathPrefix === snapshot.avatarUploadPathPrefix
+        ? saved
+        : { cache: { cacheVersion: 1, ...clone(snapshot) }, commands: [], sessions: {} };
+    // This durable marker makes the multi-key cache/queue switch recoverable after restart.
+    this.storage.set(ACCOUNT_SWITCH_KEY, next);
+    this.applyAccountSwitch(next, outbox);
+  }
+
+  private applyAccountSwitch(next: AccountArchive, outbox: SyncOutbox): void {
+    outbox.clear();
+    this.remove('account');
+    this.saveAccountCache(next.cache);
+    for (const key of SEQUENTIAL_CERTIFICATE_KEYS) {
+      const session = next.sessions[key];
+      if (session) this.saveSequentialSession('account', key, session);
+    }
+    outbox.restore(next.commands);
+    this.storage.remove(archiveKey(next.cache.avatarUploadPathPrefix));
+    this.storage.remove(ACCOUNT_SWITCH_KEY);
   }
 
   loadSequentialSession(

@@ -9,33 +9,48 @@
   </view>
 
   <view class="section-heading member-section-heading">
-    <view class="section-title">会员权益</view>
-    <text class="section-note">半年内持续可用</text>
+    <view class="section-title">当前可用权益</view>
+    <text class="section-note">有效期内持续可用</text>
   </view>
   <view class="rights-card matte-card">
     <view class="right-row">
       <view class="right-row__icon"><t-icon name="chart-bar" size="34rpx" /></view>
       <view class="right-row__copy">
-          <view class="right-row__title">半年内不限次数刷题</view>
-          <text class="right-row__note">随机练习可随时开始</text>
+          <view class="right-row__title">随机练习不限次</view>
+          <text class="right-row__note">会员有效期内可随时开始随机练习</text>
       </view>
       <text class="right-row__status right-row__status--open">会员权益</text>
     </view>
     <view class="right-row">
-      <view class="right-row__icon"><t-icon name="book-open" size="34rpx" /></view>
-      <view class="right-row__copy">
-          <view class="right-row__title">解锁完整刷题功能</view>
-          <text class="right-row__note">其他会员功能逐步开放后可直接使用</text>
-      </view>
-      <text class="right-row__status">会员权益</text>
-    </view>
-    <view class="right-row">
       <view class="right-row__icon"><t-icon name="cloud-upload" size="34rpx" /></view>
       <view class="right-row__copy">
-          <view class="right-row__title">不受每日3次随机练习限制</view>
-          <text class="right-row__note">会员有效期内不限次数</text>
+          <view class="right-row__title">随机练习次数</view>
+          <text class="right-row__note">免费：每日 3 次；会员：不限次</text>
       </view>
-      <text class="right-row__status">会员权益</text>
+      <text class="right-row__status">免费 / 会员</text>
+    </view>
+    <view class="right-row">
+      <view class="right-row__icon"><t-icon name="book-open" size="34rpx" /></view>
+      <view class="right-row__copy">
+          <view class="right-row__title">章节、错题和收藏练习</view>
+          <text class="right-row__note">免费用户与会员均可使用</text>
+      </view>
+      <text class="right-row__status">免费开放</text>
+    </view>
+  </view>
+
+  <view class="section-heading member-section-heading">
+    <view class="section-title">后续权益</view>
+    <text class="section-note">以下功能尚未上线</text>
+  </view>
+  <view class="future-rights matte-card">
+    <view class="right-row">
+      <view class="right-row__icon"><t-icon name="book-open" size="34rpx" /></view>
+      <view class="right-row__copy">
+        <view class="right-row__title">更多会员学习功能</view>
+        <text class="right-row__note">正在规划中，开放时间以实际页面为准</text>
+      </view>
+      <text class="right-row__status">未上线</text>
     </view>
   </view>
 

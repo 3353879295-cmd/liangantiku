@@ -52,6 +52,17 @@ const loadPracticalDetailPage = async () => {
   const startPractice = vi.spyOn(practiceRuntime, 'startPracticeFromQuestions');
   await import('../miniprogram/packages/auxiliary/pages/practical-detail/index');
   const { appServices } = await import('../miniprogram/services/app-services');
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  });
   if (!definition) throw new Error('practical-detail Page was not registered');
 
   const registered = definition;
@@ -145,15 +156,15 @@ describe('practical detail related practice', () => {
 
     definition.onStartRelatedPractice.call(context);
     definition.onStartRelatedPractice.call(context);
-    expect(startPractice).toHaveBeenCalledTimes(1);
-    expect(navigateTo).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => expect(startPractice).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledTimes(1));
 
     const firstNavigation = navigateTo.mock.calls[0]?.[0] as { fail?: () => void } | undefined;
     firstNavigation?.fail?.();
     definition.onStartRelatedPractice.call(context);
 
     expect(startPractice).toHaveBeenCalledTimes(1);
-    expect(navigateTo).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledTimes(2));
   });
 
   it('creates a new session after a successful practice navigation returns to this page', async () => {
@@ -165,11 +176,11 @@ describe('practical detail related practice', () => {
     await definition.onLoad.call(context, { id: 'grain-condition-rounds' });
 
     definition.onStartRelatedPractice.call(context);
-    await Promise.resolve();
+    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledTimes(1));
     definition.onStartRelatedPractice.call(context);
 
-    expect(startPractice).toHaveBeenCalledTimes(2);
-    expect(navigateTo).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(startPractice).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledTimes(2));
   });
 
   it('creates a new session after failed navigation when refreshed related questions change', async () => {
@@ -183,11 +194,12 @@ describe('practical detail related practice', () => {
     await definition.onLoad.call(context, { id: 'grain-condition-rounds' });
 
     definition.onStartRelatedPractice.call(context);
+    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledTimes(1));
     const firstNavigation = navigateTo.mock.calls[0]?.[0] as { fail?: () => void } | undefined;
     firstNavigation?.fail?.();
     await definition.onRetryRelatedQuestions.call(context);
     definition.onStartRelatedPractice.call(context);
 
-    expect(startPractice).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(startPractice).toHaveBeenCalledTimes(2));
   });
 });

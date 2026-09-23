@@ -51,6 +51,9 @@ const fromStoredSession = (session) =>
     answers: session.answers,
     status: session.status,
     startedAt: session.started_at,
+    ...(session.active_duration_ms === undefined
+      ? {}
+      : { activeDurationMs: session.active_duration_ms }),
     updatedAt: session.updated_at,
     ...(session.submitted_at === undefined ? {} : { submittedAt: session.submitted_at }),
     ...(session.progress_recorded === undefined
@@ -68,6 +71,9 @@ const toStoredSession = (session) =>
     answers: session.answers,
     status: session.status,
     started_at: session.startedAt,
+    ...(session.activeDurationMs === undefined
+      ? {}
+      : { active_duration_ms: session.activeDurationMs }),
     updated_at: session.updatedAt,
     ...(session.submittedAt === undefined ? {} : { submitted_at: session.submittedAt }),
     ...(session.progressRecorded === undefined

@@ -1,6 +1,7 @@
 import type { StorageAdapter } from '../types/domain';
 import {
   type AccountOutboxState,
+  type AccountProfileSnapshot,
   type AccountSyncRequest,
   type SyncCommand,
   type SyncCommandAction,
@@ -24,8 +25,16 @@ const SYNC_ACTIONS = new Set<SyncCommandAction>([
 ]);
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const PROFILE_FIELDS = new Set<keyof AccountProfileSnapshot>([
+  'nickname',
+  'avatarUrl',
+  'selectedCertificateKey',
+  'dailyGoal',
+  'answerTheme',
+  'answerRevealMode',
+]);
 
-const isCommand = (value: unknown): value is SyncCommand => {
+export const isSyncCommand = (value: unknown): value is SyncCommand => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const item = value as Partial<SyncCommand>;
   return (
@@ -37,7 +46,13 @@ const isCommand = (value: unknown): value is SyncCommand => {
     Number.isInteger(item.expectedRevision) &&
     Number(item.expectedRevision) >= 0 &&
     Number.isFinite(item.createdAt) &&
-    (item.state === 'pending' || item.state === 'sending')
+    (item.state === 'pending' || item.state === 'sending') &&
+    (item.changedFields === undefined ||
+      (Array.isArray(item.changedFields) &&
+        item.changedFields.every(
+          (field) =>
+            typeof field === 'string' && PROFILE_FIELDS.has(field as keyof AccountProfileSnapshot),
+        )))
   );
 };
 
@@ -66,7 +81,7 @@ export class SyncOutbox {
     if (
       stored.schemaVersion !== 1 ||
       !Array.isArray(stored.commands) ||
-      !stored.commands.every(isCommand) ||
+      !stored.commands.every(isSyncCommand) ||
       (stored.blocked !== undefined && typeof stored.blocked !== 'boolean')
     ) {
       return { schemaVersion: 1, commands: [] };
@@ -101,7 +116,7 @@ export class SyncOutbox {
     request: Exclude<
       AccountSyncRequest,
       { action: 'bootstrap' | 'deleteAccount' | 'clearLearningData' }
-    >,
+    > & { changedFields?: readonly (keyof AccountProfileSnapshot)[] },
   ): SyncCommand {
     const action = request.action;
     if (!this.isBlocked && COALESCIBLE_ACTIONS.has(action)) {
@@ -109,12 +124,18 @@ export class SyncOutbox {
         .reverse()
         .find((command) => command.action === action && command.state === 'pending');
       if (existing) {
+        const changedFields =
+          request.changedFields && existing.changedFields
+            ? [...new Set([...(existing.changedFields ?? []), ...(request.changedFields ?? [])])]
+            : undefined;
         const replacement: SyncCommand = {
           ...clone(request),
           id: existing.id,
           createdAt: existing.createdAt,
           state: 'pending',
+          ...(changedFields ? { changedFields } : {}),
         };
+        if (!changedFields) Reflect.deleteProperty(replacement, 'changedFields');
         const index = this.state.commands.findIndex((command) => command.id === existing.id);
         this.state.commands[index] = replacement;
         this.persist();
@@ -148,10 +169,28 @@ export class SyncOutbox {
     this.persist();
   }
 
+  /** An invalidated in-flight request must be replayable after account recovery. */
+  resetSending(): void {
+    let changed = false;
+    for (const command of this.state.commands) {
+      if (command.state === 'sending') {
+        command.state = 'pending';
+        changed = true;
+      }
+    }
+    if (changed) this.persist();
+  }
+
   block(): void {
     for (const command of this.state.commands) command.state = 'pending';
     this.state.blocked = true;
     this.persist();
+  }
+
+  /** Resume only after bootstrap verifies the same account and its latest revisions. */
+  resumeAfterConflict(profileRevision: number, progressRevision: number): void {
+    this.state.blocked = false;
+    this.rebase(profileRevision, progressRevision);
   }
 
   remove(id: string): void {
@@ -163,6 +202,48 @@ export class SyncOutbox {
 
   clear(): void {
     this.state = { schemaVersion: 1, commands: [] };
+    this.persist();
+  }
+
+  restore(commands: readonly SyncCommand[]): boolean {
+    if (!commands.every(isSyncCommand)) return false;
+    this.state = {
+      schemaVersion: 1,
+      commands: commands.map((command) => ({ ...clone(command), state: 'pending' })),
+    };
+    this.persist();
+    return true;
+  }
+
+  mergeProfileChanges(
+    cloudProfile: AccountProfileSnapshot,
+    previousProfile: AccountProfileSnapshot,
+  ): void {
+    const projection = clone(cloudProfile);
+    const base = clone(previousProfile);
+    for (const command of this.state.commands) {
+      if (command.action !== 'updateProfile' && command.action !== 'updatePreferences') continue;
+      const fields: readonly (keyof AccountProfileSnapshot)[] =
+        command.action === 'updateProfile'
+          ? ['nickname', 'avatarUrl']
+          : ['selectedCertificateKey', 'dailyGoal', 'answerTheme', 'answerRevealMode'];
+      const values = Object.fromEntries(
+        fields.map((field) => [field, (command as unknown as AccountProfileSnapshot)[field]]),
+      ) as Partial<AccountProfileSnapshot>;
+      const changed =
+        command.changedFields?.filter((field) => fields.includes(field)) ??
+        fields.filter((field) => values[field] !== base[field]);
+      // Legacy deltas compare successive local payloads, never the merged cloud projection.
+      Object.assign(base, values);
+      for (const field of changed) Object.assign(projection, { [field]: values[field] });
+      if (command.state === 'pending') {
+        Object.assign(
+          command,
+          Object.fromEntries(fields.map((field) => [field, projection[field]])),
+          { changedFields: [...changed] },
+        );
+      }
+    }
     this.persist();
   }
 

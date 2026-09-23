@@ -4,13 +4,32 @@ import { makeQuestion } from './factories';
 
 interface ReportPage {
   data: Record<string, unknown>;
+  onLoad(): Promise<void>;
   onRetry(): Promise<void>;
+  onRetryWrong(): Promise<void>;
+  onResumePendingPractice(): Promise<void>;
+  onUnload(): void;
 }
 
 const randomSession = {
   id: 'report-random-session',
   mode: 'random' as const,
   questions: [makeQuestion({ id: 'REPORT-RANDOM-Q1' })],
+  report: {
+    total: 1,
+    correct: 1,
+    wrong: 0,
+    durationMs: 1,
+    wrongQuestionIds: [],
+    chapters: { 'warehouse-l5-c04': { total: 1, correct: 1 } },
+  },
+};
+const submittedChapter = {
+  ...randomSession,
+  id: 'submitted-report-session',
+  mode: 'chapter' as const,
+  status: 'submitted' as const,
+  report: { ...randomSession.report, wrong: 1, wrongQuestionIds: ['REPORT-RANDOM-Q1'] },
 };
 
 afterEach(() => {
@@ -25,11 +44,12 @@ describe('membership report retry', () => {
     const startRandomPracticeFromQuestions = vi.fn().mockResolvedValue(randomSession);
     vi.doMock('../miniprogram/services/practice-runtime', () => ({
       getActivePractice: vi.fn(() => randomSession),
+      getPracticeStartCancellation: vi.fn(() => vi.fn()),
       recordActivePractice: vi.fn(),
       restorePractice: vi.fn(),
       startPracticeFromQuestions: vi.fn(),
       startRandomPracticeFromQuestions,
-      submitActivePractice: vi.fn(),
+      submitActivePractice: vi.fn(() => randomSession),
     }));
     vi.doMock('../miniprogram/services/app-services', () => ({
       appServices: { theme: { get: vi.fn(() => 'light'), toggle: vi.fn(() => 'night') } },
@@ -51,14 +71,16 @@ describe('membership report retry', () => {
     await import('../miniprogram/pages/report/index');
     if (!page) throw new Error('report page was not registered');
     const context = {
+      ...page,
       data: structuredClone(page.data),
       setData(update: Record<string, unknown>) {
         Object.assign(this.data, update);
       },
     };
 
+    await page.onLoad.call(context);
     await page.onRetry.call(context);
-    await page.onRetry.call(context);
+    await page.onResumePendingPractice.call(context);
 
     expect(startRandomPracticeFromQuestions).toHaveBeenCalledTimes(1);
     expect(redirectTo).toHaveBeenCalledTimes(2);
@@ -99,4 +121,62 @@ describe('membership report retry', () => {
     expect(admit).not.toHaveBeenCalled();
     expect(validate).not.toHaveBeenCalled();
   });
+
+  it.each(['onRetry', 'onRetryWrong'] as const)(
+    'cancels a delayed full-practice %s after unload without navigating away from submitted review',
+    async (method) => {
+      vi.resetModules();
+      let page: ReportPage | undefined;
+      let release!: (value: typeof submittedChapter) => void;
+      const cancel = vi.fn();
+      const startPracticeFromQuestions = vi.fn(
+        () =>
+          new Promise<typeof submittedChapter>((resolve) => {
+            release = resolve;
+          }),
+      );
+      vi.doMock('../miniprogram/services/practice-runtime', () => ({
+        getActivePractice: vi.fn(() => submittedChapter),
+        getPracticeStartCancellation: vi.fn(() => cancel),
+        recordActivePractice: vi.fn(),
+        restorePractice: vi.fn(() => Promise.resolve(submittedChapter)),
+        startPracticeFromQuestions,
+        startRandomPracticeFromQuestions: vi.fn(),
+        submitActivePractice: vi.fn(() => submittedChapter),
+      }));
+      vi.doMock('../miniprogram/services/app-services', () => ({
+        appServices: { theme: { get: vi.fn(() => 'light'), toggle: vi.fn(() => 'night') } },
+      }));
+      const redirectTo = vi.fn();
+      vi.stubGlobal('wx', {
+        redirectTo,
+        showToast: vi.fn(),
+        navigateTo: vi.fn(),
+        switchTab: vi.fn(),
+      });
+      vi.stubGlobal('Page', (definition: ReportPage) => {
+        page = definition;
+      });
+
+      await import('../miniprogram/pages/report/index');
+      if (!page) throw new Error('report page was not registered');
+      const context = {
+        ...page,
+        data: structuredClone(page.data),
+        setData(update: Record<string, unknown>) {
+          Object.assign(this.data, update);
+        },
+      };
+      await page.onLoad.call(context);
+      const retrying = page[method].call(context);
+      await vi.waitFor(() => expect(startPracticeFromQuestions).toHaveBeenCalledOnce());
+      page.onUnload.call(context);
+      release(submittedChapter);
+      await retrying;
+
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(redirectTo).not.toHaveBeenCalled();
+      expect(context.data.pendingPractice).not.toBe(true);
+    },
+  );
 });

@@ -1,5 +1,6 @@
 import { appServices } from './services/app-services';
 import { initializeCloud } from './config/cloud';
+import { pauseActivePractice, resumeVisiblePractice } from './services/practice-runtime';
 
 const preferences = appServices.progress.getPreferences();
 
@@ -22,6 +23,10 @@ App<IAppOption>({
     });
   },
   onShow() {
+    resumeVisiblePractice();
     void appServices.auth.retryBackground();
+  },
+  onHide() {
+    pauseActivePractice();
   },
 });

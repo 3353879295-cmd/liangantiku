@@ -320,13 +320,14 @@ var require_validation = __commonJS({
         "updatedAt",
         "submittedAt",
         "progressRecorded",
-        "answerRevealMode"
+        "answerRevealMode",
+        "activeDurationMs"
       ]);
       if (!isRecord(session) || Object.keys(session).some((key) => !allowed.has(key)) || typeof session.id !== "string" || !session.id.trim() || !["chapter", "sequential", "random", "mock", "wrong", "favorite"].includes(session.mode) || !Array.isArray(session.questionIds) || session.questionIds.length === 0 || session.questionIds.length > 100 || !session.questionIds.every(isQuestionId) || new Set(session.questionIds).size !== session.questionIds.length || !Number.isInteger(session.currentIndex) || session.currentIndex < 0 || session.currentIndex >= session.questionIds.length || !isRecord(session.answers) || !Object.entries(session.answers).every(
         ([questionId, answers]) => session.questionIds.includes(questionId) && Array.isArray(answers) && answers.length > 0 && answers.length <= 10 && answers.every(
           (answer) => typeof answer === "string" && answer.length > 0 && answer.length <= 10
         )
-      ) || !["active", "submitted"].includes(session.status) || !Number.isFinite(session.startedAt) || session.startedAt < 0 || !Number.isFinite(session.updatedAt) || session.updatedAt < 0 || session.submittedAt !== void 0 && (!Number.isFinite(session.submittedAt) || session.submittedAt < 0) || session.progressRecorded !== void 0 && typeof session.progressRecorded !== "boolean" || session.status === "submitted" && session.submittedAt === void 0 || !["immediate", "deferred"].includes(session.answerRevealMode)) {
+      ) || !["active", "submitted"].includes(session.status) || !Number.isFinite(session.startedAt) || session.startedAt < 0 || !Number.isFinite(session.updatedAt) || session.updatedAt < 0 || session.submittedAt !== void 0 && (!Number.isFinite(session.submittedAt) || session.submittedAt < 0) || session.progressRecorded !== void 0 && typeof session.progressRecorded !== "boolean" || session.activeDurationMs !== void 0 && (!Number.isFinite(session.activeDurationMs) || session.activeDurationMs < 0) || session.status === "submitted" && session.submittedAt === void 0 || !["immediate", "deferred"].includes(session.answerRevealMode)) {
         invalid();
       }
     };
@@ -400,6 +401,7 @@ var require_handler = __commonJS({
       answers: session.answers,
       status: session.status,
       startedAt: session.started_at,
+      ...session.active_duration_ms === void 0 ? {} : { activeDurationMs: session.active_duration_ms },
       updatedAt: session.updated_at,
       ...session.submitted_at === void 0 ? {} : { submittedAt: session.submitted_at },
       ...session.progress_recorded === void 0 ? {} : { progressRecorded: session.progress_recorded },
@@ -413,6 +415,7 @@ var require_handler = __commonJS({
       answers: session.answers,
       status: session.status,
       started_at: session.startedAt,
+      ...session.activeDurationMs === void 0 ? {} : { active_duration_ms: session.activeDurationMs },
       updated_at: session.updatedAt,
       ...session.submittedAt === void 0 ? {} : { submitted_at: session.submittedAt },
       ...session.progressRecorded === void 0 ? {} : { progress_recorded: session.progressRecorded },

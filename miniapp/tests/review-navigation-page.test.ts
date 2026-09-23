@@ -155,7 +155,19 @@ describe('submitted review navigation state machine', () => {
       runtime,
       stack,
     } = await loadReviewNavigationPages();
-    const session = runtime.startPracticeFromQuestions(
+    const { appServices } = await import('../miniprogram/services/app-services');
+    vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+      isMember: true,
+      startsAt: null,
+      expiresAt: null,
+      freeUsed: 0,
+      freeRemaining: 3,
+      freeLimit: 3,
+      freeDate: '2026-09-23',
+      serverTime: '2026-09-23T00:00:00.000Z',
+      paymentAvailable: false,
+    });
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-loop-1' }), makeQuestion({ id: 'Q-loop-2' })],
       'sequential',
     );

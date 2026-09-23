@@ -8,6 +8,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   vi.doUnmock('../miniprogram/services/app-services');
+  vi.doUnmock('../miniprogram/services/practice-runtime');
 });
 
 describe('application account lifecycle wiring', () => {
@@ -71,5 +72,41 @@ describe('application account lifecycle wiring', () => {
     expect(source).toContain('auth.retryBackground()');
     expect(source).toContain('wx.onNetworkStatusChange');
     expect(source).toContain('if (status.isConnected)');
+  });
+
+  it('pauses practice on background and resumes only through runtime visibility state', async () => {
+    vi.resetModules();
+    const pauseActivePractice = vi.fn();
+    const resumeVisiblePractice = vi.fn();
+    vi.doMock('../miniprogram/services/app-services', () => ({
+      appServices: {
+        progress: {
+          getPreferences: () => ({ selectedCertificateKey: '4-02-06-01:5' }),
+          consumeRecoveryNotice: () => null,
+        },
+        theme: { get: () => 'light' },
+        auth: { initialize: vi.fn(() => Promise.resolve()), retryBackground: vi.fn() },
+      },
+    }));
+    vi.doMock('../miniprogram/services/practice-runtime', () => ({
+      pauseActivePractice,
+      resumeVisiblePractice,
+    }));
+    vi.stubGlobal('wx', {
+      cloud: { init: vi.fn() },
+      onNetworkStatusChange: vi.fn(),
+    });
+    let app: (IAppOption & { onLaunch(): void; onShow(): void; onHide(): void }) | undefined;
+    vi.stubGlobal('App', (definition: typeof app) => {
+      app = definition;
+    });
+
+    await import('../miniprogram/app');
+    if (!app) throw new Error('App was not registered');
+    app.onShow();
+    app.onHide();
+
+    expect(resumeVisiblePractice).toHaveBeenCalledOnce();
+    expect(pauseActivePractice).toHaveBeenCalledOnce();
   });
 });

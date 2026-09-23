@@ -10,7 +10,7 @@
   padding: 20rpx 22rpx;
   border-radius: 22rpx;
   background: var(--color-primary-soft);
-  color: var(--color-primary);
+  color: var(--color-text);
   font-size: 23rpx;
   line-height: 1.55;
 }

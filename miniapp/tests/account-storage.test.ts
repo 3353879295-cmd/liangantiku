@@ -6,7 +6,9 @@ import {
   GUEST_PROGRESS_KEY,
   LEGACY_STORAGE_KEY,
   ProgressRepository,
+  createAccountCacheEnvelope,
 } from '../miniprogram/storage/progress-repository';
+import { SyncOutbox } from '../miniprogram/storage/sync-outbox';
 
 class MemoryStorageAdapter {
   private readonly values = new Map<string, unknown>();
@@ -25,6 +27,84 @@ class MemoryStorageAdapter {
 }
 
 describe('account-scoped progress storage', () => {
+  const account = (letter: string, answered = 0) => {
+    const data = createEmptyProgress();
+    data.summary.answered = answered;
+    const cache = createAccountCacheEnvelope(data);
+    cache.avatarUploadPathPrefix = `account-avatars/${letter.repeat(64)}`;
+    return cache;
+  };
+
+  it('archives cached history, offline commands and sequential practice independently per account', () => {
+    const storage = new MemoryStorageAdapter();
+    const repository = new ProgressRepository(storage);
+    const outbox = new SyncOutbox(storage);
+    repository.saveAccountCache(account('a', 7));
+    outbox.enqueue({
+      action: 'setFavorite',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      questionId: 'Q1',
+      favorite: true,
+    });
+    const session = {
+      id: 'saved-a',
+      mode: 'sequential' as const,
+      questionIds: ['Q1'],
+      currentIndex: 0,
+      answers: {},
+      status: 'active' as const,
+      startedAt: 1,
+      updatedAt: 2,
+      progressRecorded: false,
+      answerRevealMode: 'immediate' as const,
+    };
+    repository.saveSequentialSession('account', '4-02-06-01:5', session);
+    repository.switchAccount(account('b', 2), outbox);
+    expect(repository.load('account').data.summary.answered).toBe(2);
+    expect(repository.loadSequentialSession('account', '4-02-06-01:5')).toBeNull();
+    expect(outbox.size).toBe(0);
+    repository.switchAccount(account('a'), outbox);
+    expect(repository.load('account').data.summary.answered).toBe(7);
+    expect(repository.loadSequentialSession('account', '4-02-06-01:5')).toEqual(session);
+    expect(outbox.list()).toMatchObject([{ questionId: 'Q1', state: 'pending' }]);
+  });
+
+  it('completes an interrupted cache/queue switch before any restored command can be sent', () => {
+    class InterruptedStorage extends MemoryStorageAdapter {
+      failOnce = false;
+      override set<T>(key: string, value: T): void {
+        if (key === ACCOUNT_CACHE_KEY && this.failOnce) {
+          this.failOnce = false;
+          throw new Error('interrupted');
+        }
+        super.set(key, value);
+      }
+    }
+    const storage = new InterruptedStorage();
+    const repository = new ProgressRepository(storage);
+    const outbox = new SyncOutbox(storage);
+    repository.saveAccountCache(account('a', 7));
+    outbox.enqueue({
+      action: 'setFavorite',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      questionId: 'Q1',
+      favorite: true,
+    });
+    storage.failOnce = true;
+    expect(() => repository.switchAccount(account('b', 2), outbox)).toThrow('interrupted');
+    const restarted = new SyncOutbox(storage);
+    repository.recoverAccountSwitch(restarted);
+    expect(repository.loadAccountCache()?.avatarUploadPathPrefix).toBe(
+      account('b').avatarUploadPathPrefix,
+    );
+    expect(restarted.size).toBe(0);
+    repository.switchAccount(account('a'), restarted);
+    expect(repository.load('account').data.summary.answered).toBe(7);
+    expect(restarted.list()).toMatchObject([{ questionId: 'Q1' }]);
+  });
+
   it('migrates the legacy progress only into an empty guest profile', () => {
     const storage = new MemoryStorageAdapter();
     const legacy = createEmptyProgress();

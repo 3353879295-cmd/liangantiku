@@ -39,6 +39,7 @@ export interface LegacyPersistedPracticeSession {
 
 export interface PersistedPracticeSession extends LegacyPersistedPracticeSession {
   answerRevealMode: AnswerRevealMode;
+  activeDurationMs?: number;
 }
 
 export interface ProgressPreferencesV2 {
@@ -267,7 +268,13 @@ const isLegacyPersistedSession = (value: unknown): value is LegacyPersistedPract
 
 export const isPersistedSession = (value: unknown): value is PersistedPracticeSession => {
   const answerRevealMode = isRecord(value) ? value.answerRevealMode : undefined;
-  return isLegacyPersistedSession(value) && isAnswerRevealMode(answerRevealMode);
+  return (
+    isLegacyPersistedSession(value) &&
+    isAnswerRevealMode(answerRevealMode) &&
+    (!isRecord(value) ||
+      value.activeDurationMs === undefined ||
+      isNonNegativeNumber(value.activeDurationMs))
+  );
 };
 
 const hasValidLearningData = (

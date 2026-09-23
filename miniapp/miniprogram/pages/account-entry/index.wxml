@@ -6,7 +6,7 @@
   </view>
   <block wx:else>
     <view class="account-entry__title">登录粮安题库</view>
-    <text class="account-entry__note">登录后可跨设备同步学习记录、错题、收藏和设置。</text>
+    <text class="account-entry__note">使用同一微信登录，会自动恢复学习记录、错题、收藏和设置。</text>
     <text wx:if="{{message}}" class="account-entry__error">{{message}}</text>
     <button wx:if="{{phase === 'error'}}" class="account-entry__primary" bind:tap="onRetry">
       重新登录
@@ -17,7 +17,7 @@
       bind:tap="onLogin"
       disabled="{{busy}}"
     >
-      登录并同步
+      微信登录
     </button>
     <button
       wx:if="{{phase !== 'error'}}"

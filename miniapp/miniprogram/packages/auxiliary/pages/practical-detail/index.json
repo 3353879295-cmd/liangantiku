@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "技能要点",
   "usingComponents": {
+    "membership-prompt": "/components/membership-prompt/index",
     "app-topbar": "/components/app-topbar/index",
     "empty-state": "/components/empty-state/index"
   }

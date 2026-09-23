@@ -37,6 +37,14 @@
       >{{!questionCount ? '待补充' : hasSequentialResume ? '继续刷题' : completedCount >= questionCount ? '已刷完' : '全部刷题'}}</button>
     </view>
 
+    <view class="catalog-filter">
+      <view>
+        <view class="catalog-filter__title">{{showingAll ? '完整教材目录' : '可练习章节'}}</view>
+        <text class="catalog-filter__note">已收录 {{availableChapterCount}} 章{{unavailableChapterCount ? ' · ' + unavailableChapterCount + ' 章暂无题目' : ''}}</text>
+      </view>
+      <button class="catalog-filter__button" bindtap="onToggleCatalog">{{showingAll ? '只看可练' : '完整目录'}}</button>
+    </view>
+
     <view wx:if="{{parts.length}}" class="catalog">
       <view wx:for="{{parts}}" wx:key="id" class="catalog-part">
         <view class="catalog-part__heading">
@@ -58,7 +66,7 @@
               <view class="chapter-card__topline">
                 <view class="chapter-card__title">{{chapter.title}}</view>
                 <view class="chapter-card__availability">
-                  {{chapter.canStart ? '可练习' : '待补充'}}
+                  {{chapter.canStart ? chapter.statusText : '暂无题目'}}
                 </view>
               </view>
               <view class="chapter-card__counts">
@@ -80,10 +88,11 @@
     </view>
 
     <view wx:else class="catalog-empty">
-      <view class="catalog-empty__title">当前等级目录待补充</view>
+      <view class="catalog-empty__title">暂时没有可练习章节</view>
       <text class="catalog-empty__body">
-        {{occupationTitle}} {{levelName}}的教材目录正在整理，请稍后再来。
+        {{showingAll ? occupationTitle + ' ' + levelName + '的教材目录正在整理，请稍后再来。' : '完整目录仍可查看章节编号和内容覆盖情况。'}}
       </text>
+      <button wx:if="{{!showingAll}}" class="catalog-filter__button catalog-empty__button" bindtap="onToggleCatalog">查看完整目录</button>
     </view>
   </block>
 </view>

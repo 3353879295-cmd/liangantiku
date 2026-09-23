@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "题目列表",
   "usingComponents": {
+    "membership-prompt": "/components/membership-prompt/index",
     "app-topbar": "/components/app-topbar/index",
     "analysis-panel": "/components/analysis-panel/index",
     "empty-state": "/components/empty-state/index",

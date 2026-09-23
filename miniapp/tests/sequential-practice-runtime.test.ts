@@ -27,6 +27,17 @@ const setup = async (
   const { ProgressRepository } = await import('../miniprogram/storage/progress-repository');
   appServices.progress = new ProgressService(new ProgressRepository(memoryStorage()), scope);
   vi.spyOn(appServices.questions, 'list').mockResolvedValue(questions);
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  });
   const runtime = await import('../miniprogram/services/practice-runtime');
   return { appServices, runtime, questions };
 };
@@ -107,7 +118,7 @@ describe('sequential practice runtime', () => {
       mode: 'sequential' as const,
     };
     const sequential = await runtime.startPractice(input);
-    runtime.startPracticeFromQuestions([questions[0]!], 'mock');
+    await runtime.startPracticeFromQuestions([questions[0]!], 'mock');
 
     const restored = await runtime.startPractice(input);
 
@@ -183,7 +194,7 @@ describe('sequential practice runtime', () => {
       level: 5,
       mode: 'sequential',
     });
-    const replacement = runtime.startPracticeFromQuestions([questions[0]!], 'mock');
+    const replacement = await runtime.startPracticeFromQuestions([questions[0]!], 'mock');
     resolveQuestions?.(questions);
 
     await expect(slow).resolves.toBeNull();
@@ -324,8 +335,10 @@ describe('sequential practice runtime', () => {
     };
 
     const stale = runtime.startPractice(input);
+    await vi.waitFor(() => expect(firstBankRequests).toBe(1));
     await runtime.startPractice({ occupation: '4-08-05-01', level: 5, mode: 'sequential' });
     const current = runtime.startPractice(input);
+    await vi.waitFor(() => expect(firstBankRequests).toBe(2));
     resolveFirst?.(questions);
     const reused = runtime.startPractice(input);
     resolveSecond?.([makeQuestion({ id: 'FRESH-Q1' })]);

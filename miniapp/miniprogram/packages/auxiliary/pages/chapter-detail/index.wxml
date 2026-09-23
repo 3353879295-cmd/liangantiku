@@ -33,7 +33,13 @@
       <text class="section-heading__progress">正确率 {{chapter.accuracyText}}</text>
     </view>
 
-    <view class="section-list">
+    <view wx:if="{{!chapter.canStart}}" class="empty-chapter-notice">
+      <view class="empty-chapter-notice__title">本章暂无题目</view>
+      <text class="empty-chapter-notice__body">请返回可练习章节，选择已收录题目的内容开始练习。</text>
+      <button class="empty-chapter-notice__button" bindtap="onBackToAvailableCatalog">返回可练习章节</button>
+    </view>
+
+    <view wx:else class="section-list">
       <view
         wx:for="{{chapter.sections}}"
         wx:for-item="section"

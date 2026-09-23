@@ -77,9 +77,21 @@ const loadAnswerSheetPage = async () => {
   });
 
   const page = (await import('../miniprogram/pages/answer-sheet/index')) as AnswerSheetPageModule;
+  const { appServices } = await import('../miniprogram/services/app-services');
   const runtime = await import('../miniprogram/services/practice-runtime');
   const practiceSession = await import('../miniprogram/services/practice-session');
   if (!definition) throw new Error('answer-sheet Page was not registered');
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  });
 
   const registered = definition;
   const context: AnswerSheetPageContext = {
@@ -302,7 +314,7 @@ describe('answer-sheet submission', () => {
 describe('answer-sheet question selection', () => {
   it('saves an active selection before returning to the in-progress practice page', async () => {
     const { context, definition, navigateBack, navigateTo, runtime } = await loadAnswerSheetPage();
-    const session = runtime.startPracticeFromQuestions(
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-active-1' }), makeQuestion({ id: 'Q-active-2' })],
       'sequential',
     );
@@ -323,7 +335,7 @@ describe('answer-sheet question selection', () => {
   it('saves a submitted selection before opening its read-only practice review', async () => {
     const { context, definition, navigateBack, navigateTo, redirectTo, runtime } =
       await loadAnswerSheetPage();
-    const session = runtime.startPracticeFromQuestions(
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-review-1' }), makeQuestion({ id: 'Q-review-2' })],
       'sequential',
     );
@@ -351,7 +363,7 @@ describe('answer-sheet question selection', () => {
 
   it('ignores repeated submitted selections until navigation completes', async () => {
     const { context, definition, redirectTo, runtime } = await loadAnswerSheetPage();
-    const session = runtime.startPracticeFromQuestions(
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-repeat-1' }), makeQuestion({ id: 'Q-repeat-2' })],
       'sequential',
     );
@@ -376,7 +388,7 @@ describe('answer-sheet question selection', () => {
   it('releases a selection with no navigation callback through its timeout fallback', async () => {
     vi.useFakeTimers();
     const { context, definition, redirectTo, runtime, showToast } = await loadAnswerSheetPage();
-    const session = runtime.startPracticeFromQuestions(
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-SELECT-TIMEOUT-1' }), makeQuestion({ id: 'Q-SELECT-TIMEOUT-2' })],
       'sequential',
     );
@@ -394,7 +406,7 @@ describe('answer-sheet question selection', () => {
 
   it('unlocks submitted selection from the failure callback before complete for retry', async () => {
     const { context, definition, redirectTo, runtime } = await loadAnswerSheetPage();
-    const session = runtime.startPracticeFromQuestions(
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-failure-1' }), makeQuestion({ id: 'Q-failure-2' })],
       'sequential',
     );
@@ -419,7 +431,7 @@ describe('answer-sheet question selection', () => {
   ])('ignores a $label cell index without saving or navigating', async ({ index }) => {
     const { context, definition, navigateBack, navigateTo, redirectTo, runtime, setStorageSync } =
       await loadAnswerSheetPage();
-    const session = runtime.startPracticeFromQuestions(
+    const session = await runtime.startPracticeFromQuestions(
       [makeQuestion({ id: 'Q-guard-1' }), makeQuestion({ id: 'Q-guard-2' })],
       'sequential',
     );
@@ -454,7 +466,10 @@ describe('answer-sheet question selection', () => {
     const correct = makeQuestion({ id: 'Q-status-correct', answer: ['A'] });
     const wrong = makeQuestion({ id: 'Q-status-wrong', answer: ['B'] });
     const unanswered = makeQuestion({ id: 'Q-status-unanswered' });
-    const session = runtime.startPracticeFromQuestions([correct, wrong, unanswered], 'sequential');
+    const session = await runtime.startPracticeFromQuestions(
+      [correct, wrong, unanswered],
+      'sequential',
+    );
     if (!session) throw new Error('practice session was not created');
     const withCorrect = practiceSession.answerQuestion(session, correct.id, ['A'], 1100);
     const withWrong = practiceSession.answerQuestion(withCorrect, wrong.id, ['A'], 1200);

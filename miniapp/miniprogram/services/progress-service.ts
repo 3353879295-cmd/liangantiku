@@ -388,6 +388,7 @@ export class ProgressService {
   }
 
   updatePreferences(preferences: Partial<ProgressPreferences>): void {
+    const current = this.data.preferences;
     const next = { ...this.data.preferences, ...preferences };
     if (!Number.isInteger(next.dailyGoal) || next.dailyGoal <= 0) {
       throw new Error('daily goal must be a positive integer');
@@ -402,21 +403,27 @@ export class ProgressService {
       answerTheme,
       answerRevealMode,
     } = next;
-    const changedProfile =
-      Object.hasOwn(preferences, 'nickname') || Object.hasOwn(preferences, 'avatarUrl');
-    const changedPreferences =
-      Object.hasOwn(preferences, 'selectedCertificateKey') ||
-      Object.hasOwn(preferences, 'dailyGoal') ||
-      Object.hasOwn(preferences, 'answerTheme') ||
-      Object.hasOwn(preferences, 'answerRevealMode');
-    if (changedProfile) this.notifyAccount({ action: 'updateProfile', nickname, avatarUrl });
-    if (changedPreferences) {
+    const profileFields = (['nickname', 'avatarUrl'] as const).filter(
+      (field) => Object.hasOwn(preferences, field) && preferences[field] !== current[field],
+    );
+    const preferenceFields = (
+      ['selectedCertificateKey', 'dailyGoal', 'answerTheme', 'answerRevealMode'] as const
+    ).filter((field) => Object.hasOwn(preferences, field) && preferences[field] !== current[field]);
+    if (profileFields.length)
+      this.notifyAccount({
+        action: 'updateProfile',
+        nickname,
+        avatarUrl,
+        changedFields: profileFields,
+      });
+    if (preferenceFields.length) {
       this.notifyAccount({
         action: 'updatePreferences',
         selectedCertificateKey,
         dailyGoal,
         answerTheme,
         answerRevealMode,
+        changedFields: preferenceFields,
       });
     }
   }

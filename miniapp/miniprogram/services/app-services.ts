@@ -4,7 +4,7 @@ import { AccountSyncClient } from '../repositories/account-sync-client';
 import { ProgressRepository } from '../storage/progress-repository';
 import { WechatStorageAdapter } from '../storage/storage-adapter';
 import { SyncOutbox } from '../storage/sync-outbox';
-import { ACCOUNT_CLEAR_PENDING_KEY, AuthService, readAuthPreference } from './auth-service';
+import { AuthService, hasPendingLearningClear, readAuthPreference } from './auth-service';
 import { CloudSyncService } from './cloud-sync-service';
 import { ProgressService } from './progress-service';
 import { ThemeService } from './theme-service';
@@ -12,22 +12,28 @@ import { WechatAvatarService } from './wechat-avatar-service';
 import { MembershipService } from './membership-service';
 
 const storage = new WechatStorageAdapter();
+const authPreference = readAuthPreference(storage);
 const progressRepository = new ProgressRepository(storage);
-const progress = new ProgressService(
-  progressRepository,
-  readAuthPreference(storage) === 'account' ? 'account' : 'guest',
-);
+const progress = new ProgressService(progressRepository, 'guest');
 const syncOutbox = new SyncOutbox(storage);
 const accountSyncClient = new AccountSyncClient();
 const wechatAvatar = new WechatAvatarService(undefined, undefined, storage);
 const cloudSync = new CloudSyncService(accountSyncClient, progressRepository, syncOutbox, {
   getScope: () => progress.getScope(),
-  isClearPending: () => storage.get<unknown>(ACCOUNT_CLEAR_PENDING_KEY) === true,
+  isClearPending: () =>
+    hasPendingLearningClear(
+      storage,
+      progressRepository.loadAccountCache()?.avatarUploadPathPrefix ?? null,
+    ),
+  onAccountVerified: () => {
+    progress.switchScope('account');
+    auth.refreshFromCache();
+  },
 });
 progress.setAccountMutationListener((command) => {
   if (!cloudSync.enqueue(command)) return;
   void cloudSync.process().then(() => {
-    if (progress.getScope() === 'account') progress.refreshAccountSnapshot();
+    auth.refreshFromCache();
   });
 });
 const auth = new AuthService(
@@ -39,6 +45,7 @@ const auth = new AuthService(
   accountSyncClient,
   undefined,
   wechatAvatar,
+  authPreference,
 );
 
 export const appServices = {

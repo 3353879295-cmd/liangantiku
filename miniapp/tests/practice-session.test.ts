@@ -6,8 +6,10 @@ import {
   createPracticeSession,
   getAnswerSheet,
   navigateToQuestion,
+  pausePracticeSession,
   prunePersistedPracticeSession,
   rehydratePracticeSession,
+  resumePracticeSession,
   serializePracticeSession,
   submitSession,
 } from '../miniprogram/services/practice-session';
@@ -136,7 +138,10 @@ describe('practice session', () => {
 
   it('hides mock feedback until submission', () => {
     const question = makeQuestion();
-    const session = createPracticeSession([question], { mode: 'mock', now: 1000 });
+    const session = resumePracticeSession(
+      createPracticeSession([question], { mode: 'mock', now: 1000 }),
+      1000,
+    );
 
     const answered = answerQuestion(session, question.id, ['A'], 1500);
     const revealBeforeSubmit = answered.status === 'submitted';
@@ -263,7 +268,10 @@ describe('practice session', () => {
     ];
     const answered = answerQuestion(
       answerQuestion(
-        createPracticeSession(questions, { mode: 'sequential', now: 1000 }),
+        resumePracticeSession(
+          createPracticeSession(questions, { mode: 'sequential', now: 1000 }),
+          1000,
+        ),
         'correct',
         ['A'],
         1200,
@@ -329,6 +337,21 @@ describe('practice session', () => {
 
   it('rejects an empty paper', () => {
     expect(() => createPracticeSession([], { mode: 'random', now: 1000 })).toThrow(/empty/);
+  });
+
+  it('counts only resumed foreground segments and never restores a running segment', () => {
+    const question = makeQuestion();
+    const created = createPracticeSession([question], { mode: 'mock', now: 1000 });
+    const firstSegment = resumePracticeSession(created, 1100);
+    const paused = pausePracticeSession(firstSegment, 1600);
+    const restored = rehydratePracticeSession(serializePracticeSession(paused), [question]);
+    const submitted = submitSession(resumePracticeSession(restored, 10_000), 10_250);
+
+    expect(created.activeSince).toBeUndefined();
+    expect(paused.activeDurationMs).toBe(500);
+    expect(serializePracticeSession(firstSegment)).not.toHaveProperty('activeSince');
+    expect(restored.activeSince).toBeUndefined();
+    expect(submitted.report).toMatchObject({ durationMs: 750, examDurationMs: 9250 });
   });
 
   it('serializes and restores a submitted report without losing its recorded flag', () => {

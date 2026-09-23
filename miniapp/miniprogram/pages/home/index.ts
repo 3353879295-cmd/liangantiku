@@ -2,9 +2,10 @@ import { CERTIFICATES } from '../../data/certificates';
 import { HOME_ACTIONS, presentHomeCertificate } from '../../presenters/home-presenter';
 import type { HomeAction } from '../../presenters/home-presenter';
 import { appServices, localDateKey } from '../../services/app-services';
-import { MembershipError } from '../../repositories/membership-client';
+import { isMembershipAccessError } from '../../repositories/membership-client';
 import { presentMembership } from '../../presenters/membership-presenter';
 import { getPendingRandomStart } from '../../services/random-practice-access';
+import { WechatStorageAdapter } from '../../storage/storage-adapter';
 import type { CertificateKey } from '../../types/domain';
 
 interface HomeActionCard extends HomeAction {
@@ -28,9 +29,19 @@ const actionDetails: Record<HomeAction['id'], { icon: string; note: string }> = 
 
 const actions: HomeActionCard[] = HOME_ACTIONS.map((action) => ({
   ...action,
+  title: action.id === 'random' ? '随机练习 10 题' : action.title,
   ...actionDetails[action.id],
   emphasized: action.id === 'random',
-}));
+})).sort((left, right) => {
+  const priority: Record<HomeAction['id'], number> = {
+    random: 0,
+    chapter: 1,
+    wrong: 2,
+    favorite: 3,
+    mock: 4,
+  };
+  return priority[left.id] - priority[right.id];
+});
 
 const initialCertificate = presentHomeCertificate(CERTIFICATES, defaultCertificateKey(), 0);
 const visiblePages = new WeakSet<object>();
@@ -39,6 +50,73 @@ const pendingHomeEntries = new WeakSet<object>();
 const certificateRequestVersions = new WeakMap<object, number>();
 const membershipRequestVersions = new WeakMap<object, number>();
 const entryVersions = new WeakMap<object, number>();
+const authSubscriptions = new WeakMap<object, () => void>();
+const certificateSelectionStorage = new WechatStorageAdapter();
+const certificateSelectionKey = (scope: string) =>
+  `grain-practice:home-certificate-selected:${scope}`;
+
+const refreshHome = (
+  page: {
+    data: { randomStarting: boolean; selectedKey: CertificateKey };
+    setData(update: Record<string, unknown>): void;
+    loadCertificate(key: CertificateKey): Promise<void>;
+    loadMembership(): Promise<void>;
+  },
+  reloadRemote = false,
+) => {
+  if (page.data.randomStarting) page.setData({ randomStarting: false });
+  const today = localDateKey();
+  const preferences = appServices.progress.getPreferences();
+  const session = appServices.progress.restoreSession();
+  const pending = getPendingRandomStart();
+  const hasActiveSession = session?.status === 'active';
+  const hasUnrecordedResult = session?.status === 'submitted' && !session.progressRecorded;
+  const hasResume = hasActiveSession || Boolean(pending);
+  const app = getApp<IAppOption>();
+  app.globalData.selectedCertificateKey = preferences.selectedCertificateKey;
+  const completedQuestionIds = appServices.progress.listCompletedQuestionIds?.() ?? [];
+  const scope = appServices.progress.getScope?.() ?? 'guest';
+  const hasSelectedBefore =
+    certificateSelectionStorage.get<boolean>(certificateSelectionKey(scope)) === true ||
+    preferences.selectedCertificateKey !== defaultCertificateKey() ||
+    hasResume ||
+    hasUnrecordedResult ||
+    completedQuestionIds.length > 0;
+  const certificateChanged = page.data.selectedKey !== preferences.selectedCertificateKey;
+  page.setData({
+    selectedKey: preferences.selectedCertificateKey,
+    ...(certificateChanged
+      ? {
+          certificate: presentHomeCertificate(CERTIFICATES, preferences.selectedCertificateKey, 0),
+          loading: true,
+          loadError: false,
+        }
+      : {}),
+    nickname: preferences.nickname,
+    avatarUrl: preferences.avatarUrl,
+    preparationDays: appServices.progress.getPreparationDays(today),
+    hasResume,
+    hasResult: Boolean(hasUnrecordedResult),
+    resumeText: hasActiveSession
+      ? `继续第 ${session.currentIndex + 1} 题 · 共 ${session.questionIds.length} 题`
+      : hasUnrecordedResult
+        ? '查看上次练习结果'
+        : pending
+          ? '恢复上次随机练习'
+          : '选择题库，开始今天的第一次练习',
+    resumeActionText: hasUnrecordedResult ? '查看结果' : hasResume ? '继续' : '去学习',
+    selectorExpanded: !hasSelectedBefore,
+  });
+  if (reloadRemote || certificateChanged) {
+    void page.loadCertificate(preferences.selectedCertificateKey);
+  }
+  if (reloadRemote) void page.loadMembership();
+};
+
+const unsubscribe = (page: object) => {
+  authSubscriptions.get(page)?.();
+  authSubscriptions.delete(page);
+};
 
 const navigate = (url: string) =>
   new Promise<void>((resolve, reject) => {
@@ -68,6 +146,7 @@ Page({
     certificates: CERTIFICATES,
     selectedKey: defaultCertificateKey(),
     certificate: initialCertificate,
+    selectorExpanded: true,
     nickname: '仓廪小麦',
     avatarUrl: '',
     preparationDays: 1,
@@ -85,7 +164,6 @@ Page({
 
   onShow() {
     visiblePages.add(this);
-    if (this.data.randomStarting) this.setData({ randomStarting: false });
     this.getTabBar()?.setData({ value: '/pages/home/index' });
 
     const app = getApp<IAppOption>();
@@ -99,44 +177,29 @@ Page({
       });
     }
 
-    const today = localDateKey();
-    const preferences = appServices.progress.getPreferences();
-    const session = appServices.progress.restoreSession();
-    const pending = getPendingRandomStart();
-    const hasActiveSession = session?.status === 'active';
-    const hasUnrecordedResult = session?.status === 'submitted' && !session.progressRecorded;
-    const hasResume = hasActiveSession || Boolean(pending);
-    app.globalData.selectedCertificateKey = preferences.selectedCertificateKey;
-    this.setData({
-      nickname: preferences.nickname,
-      avatarUrl: preferences.avatarUrl,
-      preparationDays: appServices.progress.getPreparationDays(today),
-      hasResume,
-      hasResult: Boolean(hasUnrecordedResult),
-      resumeText: hasActiveSession
-        ? `继续第 ${session.currentIndex + 1} 题 · 共 ${session.questionIds.length} 题`
-        : hasUnrecordedResult
-          ? '查看上次练习结果'
-          : pending
-            ? '恢复上次随机练习'
-            : '选择题库，开始今天的第一次练习',
-      resumeActionText: hasUnrecordedResult ? '查看结果' : hasResume ? '继续' : '去学习',
-    });
-    void this.loadCertificate(preferences.selectedCertificateKey);
-    void this.loadMembership();
+    if (!authSubscriptions.has(this)) {
+      authSubscriptions.set(
+        this,
+        appServices.auth.subscribe(() => {
+          if (visiblePages.has(this)) refreshHome(this);
+        }),
+      );
+    }
+    refreshHome(this, true);
 
     if (appServices.auth.getState().status === 'checking' && !pendingRecoveryRefreshes.has(this)) {
       pendingRecoveryRefreshes.add(this);
       void appServices.auth.initialize().finally(() => {
         pendingRecoveryRefreshes.delete(this);
         if (!visiblePages.has(this) || appServices.auth.getState().status === 'checking') return;
-        void this.onShow();
+        refreshHome(this, true);
       });
     }
   },
 
   onHide() {
     visiblePages.delete(this);
+    unsubscribe(this);
     certificateRequestVersions.set(this, (certificateRequestVersions.get(this) ?? 0) + 1);
     membershipRequestVersions.set(this, (membershipRequestVersions.get(this) ?? 0) + 1);
     entryVersions.set(this, (entryVersions.get(this) ?? 0) + 1);
@@ -144,6 +207,7 @@ Page({
 
   onUnload() {
     visiblePages.delete(this);
+    unsubscribe(this);
     certificateRequestVersions.set(this, (certificateRequestVersions.get(this) ?? 0) + 1);
     membershipRequestVersions.set(this, (membershipRequestVersions.get(this) ?? 0) + 1);
     entryVersions.set(this, (entryVersions.get(this) ?? 0) + 1);
@@ -200,6 +264,16 @@ Page({
     void this.loadCertificate(key);
   },
 
+  onConfirmCertificateSelection() {
+    const scope = appServices.progress.getScope?.() ?? 'guest';
+    certificateSelectionStorage.set(certificateSelectionKey(scope), true);
+    this.setData({ selectorExpanded: false });
+  },
+
+  onOpenCertificateSelector() {
+    this.setData({ selectorExpanded: true });
+  },
+
   onRetryLoad() {
     void this.loadCertificate(this.data.selectedKey);
   },
@@ -209,12 +283,19 @@ Page({
     pendingHomeEntries.add(this);
     const version = entryVersions.get(this) ?? 0;
     try {
-      if (this.data.hasResume) {
-        await navigate('/pages/practice/index?resume=1');
-        return;
-      }
       if (this.data.hasResult) {
         await navigate('/pages/report/index');
+        return;
+      }
+      if (
+        !this.data.hasResume ||
+        (appServices.progress.restoreSession()?.mode !== 'random' && !getPendingRandomStart())
+      ) {
+        await appServices.membership.checkPermission('fullPractice');
+        if (!visiblePages.has(this) || (entryVersions.get(this) ?? 0) !== version) return;
+      }
+      if (this.data.hasResume) {
+        await navigate('/pages/practice/index?resume=1');
         return;
       }
       await this.openStartRoute('/pages/library/index');
@@ -255,7 +336,7 @@ Page({
           this.setData({ freePracticeText: presentMembership(membership).freePracticeText });
         } catch (error) {
           if (!visiblePages.has(this) || (entryVersions.get(this) ?? 0) !== version) return;
-          if (error instanceof MembershipError && error.code === 'DAILY_LIMIT_REACHED') {
+          if (isMembershipAccessError(error)) {
             this.setData({ showMembershipPrompt: true });
             return;
           }
@@ -264,6 +345,9 @@ Page({
         } finally {
           if (visiblePages.has(this)) this.setData({ randomStarting: false });
         }
+      } else {
+        await appServices.membership.checkPermission('fullPractice');
+        if (!visiblePages.has(this)) return;
       }
       if ((entryVersions.get(this) ?? 0) !== version) return;
       await this.openStartRoute(route);
@@ -308,6 +392,10 @@ Page({
   },
 
   showNavigationError(error: unknown) {
+    if (isMembershipAccessError(error)) {
+      this.setData({ showMembershipPrompt: true });
+      return;
+    }
     void wx.showToast({
       title: error instanceof Error ? error.message : '页面跳转失败，请重试',
       icon: 'none',

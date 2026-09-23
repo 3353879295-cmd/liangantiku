@@ -31,10 +31,23 @@ const load = async (
     notice: null,
   };
   const initialize = vi.fn(() => Promise.resolve({ ...authState }));
+  let notify: () => void = () => undefined;
+  const subscribe = vi.fn((listener: () => void) => {
+    notify = listener;
+    return () => {
+      if (notify === listener) notify = () => undefined;
+    };
+  });
   vi.doMock('../miniprogram/services/app-services', () => ({
     appServices: {
       membership: { getStatus },
-      auth: { getState: () => ({ ...authState }), initialize, retryBackground, clearLearningData },
+      auth: {
+        getState: () => ({ ...authState }),
+        initialize,
+        retryBackground,
+        clearLearningData,
+        subscribe,
+      },
       cloudSync: {
         getState: () => ({ status: syncStatus, pendingCount: 2 }),
         getLastSyncedAt: () => '2026-09-02T10:20:00Z',
@@ -91,6 +104,8 @@ const load = async (
     getStatus,
     showModal,
     showToast,
+    notify: () => notify(),
+    subscribe,
   };
 };
 
@@ -175,8 +190,8 @@ describe('profile account state', () => {
       'utf8',
     );
     expect(markup).toContain('当前为游客');
-    expect(markup).toContain('记录仅保存在本机，登录后以云端数据为准');
-    expect(markup).toContain('登录并同步');
+    expect(markup).toContain('登录后会自动恢复此前记录，日常学习也会自动保存');
+    expect(markup).toContain('微信登录');
     expect(markup).toContain('bind:tap="onLoginAndSync"');
     expect(navigateTo).not.toHaveBeenCalled();
     page.onLoginAndSync.call(context);
@@ -185,11 +200,11 @@ describe('profile account state', () => {
   });
 
   it.each([
-    ['idle', '已同步'],
-    ['syncing', '同步中'],
-    ['pending', '待同步（2 项）'],
-    ['failed', '同步失败'],
-    ['conflict', '同步已暂停'],
+    ['idle', '已自动保存'],
+    ['syncing', '正在保存'],
+    ['pending', '正在保存'],
+    ['failed', '已保存在本机，联网后自动保存'],
+    ['conflict', '正在保存'],
   ] as const)('presents %s state in Chinese', async (status, text) => {
     const { context, page, navigateTo } = await load('authenticated', status);
     page.onShow.call(context);
@@ -255,12 +270,12 @@ describe('profile account state', () => {
 
     expect(context.data.accountStatus).toBe('offline');
     expect(context.data.syncText).toBe('账号暂离线');
-    expect(context.data.accountDetail).toBe('正在使用本机账号缓存，可主动登录重试。');
+    expect(context.data.accountDetail).toBe('记录仍保留，联网后自动恢复。');
     const markup = readFileSync(
       resolve(import.meta.dirname, '../miniprogram/pages/profile/index.wxml'),
       'utf8',
     );
-    expect(markup).toContain('登录并重试');
+    expect(markup).toContain('微信登录');
   });
 
   it('refreshes a visible profile after account recovery finishes', async () => {
@@ -297,5 +312,23 @@ describe('profile account state', () => {
     await Promise.resolve();
 
     expect(context.data.accountStatus).toBe('recovering');
+  });
+
+  it('refreshes a visible profile when background recovery notifies it', async () => {
+    const { authState, context, notify, page } = await load('checking', 'idle');
+    page.onShow.call(context);
+    authState.status = 'authenticated';
+    notify();
+    expect(context.data.accountStatus).toBe('authenticated');
+  });
+
+  it('unsubscribes a hidden profile before background recovery notifies it', async () => {
+    const { authState, context, notify, page } = await load('checking', 'idle');
+    page.onShow.call(context);
+    page.onHide.call(context);
+    const update = vi.spyOn(context, 'setData');
+    authState.status = 'authenticated';
+    notify();
+    expect(update).not.toHaveBeenCalled();
   });
 });

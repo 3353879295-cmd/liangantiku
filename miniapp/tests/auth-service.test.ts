@@ -4,6 +4,7 @@ import {
   ACCOUNT_CLEAR_PENDING_KEY,
   AuthService,
   AUTH_PREFERENCE_KEY,
+  hasPendingLearningClear,
 } from '../miniprogram/services/auth-service';
 import {
   CloudSyncService,
@@ -61,13 +62,138 @@ const createAuth = (preference: 'undecided' | 'guest' | 'account' = 'undecided')
   return {
     storage,
     progress,
+    repository,
     outbox,
     call,
+    sync,
     auth: new AuthService(storage, progress, repository, outbox, sync, client as AccountSyncClient),
   };
 };
 
 describe('AuthService', () => {
+  it('does not expose the previous account projection before identity recovery succeeds', async () => {
+    const { auth, repository, progress, call } = createAuth('account');
+    const previous = snapshot();
+    previous.progress.summary.answered = 99;
+    repository.saveAccountCache({ cacheVersion: 1, ...previous });
+    progress.switchScope('account');
+    call.mockRejectedValueOnce(new Error('offline'));
+    const loading = auth.initialize();
+    expect(progress.getScope()).toBe('guest');
+    expect(progress.getDashboard('2026-09-19').answered).toBe(0);
+    await loading;
+    expect(progress.getScope()).toBe('guest');
+    expect(repository.loadAccountCache()?.progress.summary.answered).toBe(99);
+  });
+
+  it('binds a legacy unfinished clear to its original account and never clears another WeChat account', async () => {
+    const { storage, repository, progress, outbox, sync, call } = createAuth('account');
+    repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
+    storage.set(ACCOUNT_CLEAR_PENDING_KEY, true);
+    const auth = new AuthService(storage, progress, repository, outbox, sync, {
+      call,
+    } as unknown as AccountSyncClient);
+    const other = snapshot();
+    other.avatarUploadPathPrefix = `account-avatars/${'b'.repeat(64)}`;
+    other.progress.summary.answered = 23;
+    call.mockResolvedValue(other);
+    await auth.initialize();
+    expect(call).toHaveBeenCalledOnce();
+    expect(call).toHaveBeenCalledWith({ action: 'bootstrap', schemaVersion: 1 });
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toEqual([snapshot().avatarUploadPathPrefix]);
+    expect(auth.isLearningClearPending()).toBe(false);
+    expect(progress.getDashboard('2026-09-19').answered).toBe(23);
+  });
+
+  it('restores the same account history after logout and login while preserving guest data', async () => {
+    const { auth, progress, repository, call } = createAuth('guest');
+    progress.recordAnswer({ questionId: 'guest', correct: true, durationMs: 1, at: '2026-09-19' });
+    const cloud = snapshot();
+    cloud.progress.summary.answered = 37;
+    cloud.progress.favorites.Q1 = 123;
+    call.mockResolvedValue(cloud);
+    await expect(auth.login()).resolves.toBe(true);
+    await expect(auth.logout()).resolves.toEqual({ needsDecision: false });
+    expect(repository.loadAccountCache()?.progress.summary.answered).toBe(37);
+    expect(progress.getDashboard('2026-09-19').answered).toBe(1);
+    call.mockRejectedValueOnce(new Error('offline'));
+    await expect(auth.login()).resolves.toBe(false);
+    expect(repository.loadAccountCache()?.progress.summary.answered).toBe(37);
+    await expect(auth.login()).resolves.toBe(true);
+    expect(progress.getDashboard('2026-09-19').answered).toBe(37);
+    expect(progress.isFavorite('Q1')).toBe(true);
+  });
+
+  it('automatically recovers a failed startup when network reconnects', async () => {
+    const { auth, call, progress } = createAuth('account');
+    call.mockRejectedValueOnce(new Error('offline'));
+    await auth.initialize();
+    expect(auth.getState().status).toBe('error');
+    const cloud = snapshot();
+    cloud.progress.summary.answered = 24;
+    call.mockResolvedValue(cloud);
+    await auth.retryBackground();
+    expect(auth.getState().status).toBe('authenticated');
+    expect(progress.getDashboard('2026-09-19').answered).toBe(24);
+  });
+
+  it('refreshes other-device history and notifies visible subscribers without a queued upload', async () => {
+    const { auth, call, progress } = createAuth('account');
+    await auth.initialize();
+    const listener = vi.fn();
+    const unsubscribe = auth.subscribe(listener);
+    const cloud = snapshot();
+    cloud.progress.summary.answered = 12;
+    call.mockResolvedValue(cloud);
+    await auth.retryBackground();
+    expect(progress.getDashboard('2026-09-19').answered).toBe(12);
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
+    await auth.retryBackground();
+    expect(listener).toHaveBeenCalledOnce();
+  });
+
+  it('does not re-enter the account when background recovery finishes after logout', async () => {
+    const { auth, call, progress, repository } = createAuth('account');
+    await auth.initialize();
+    let finish!: (value: AccountSyncSnapshot) => void;
+    call.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const retry = auth.retryBackground();
+    await auth.logout();
+    const cloud = snapshot();
+    cloud.progress.summary.answered = 999;
+    finish(cloud);
+    await retry;
+    expect(auth.getState().status).toBe('guest');
+    expect(progress.getScope()).toBe('guest');
+    expect(repository.loadAccountCache()?.progress.summary.answered).toBe(0);
+  });
+
+  it('reads the stored preference when no initial preference is supplied', () => {
+    const storage = new MemoryStorage();
+    storage.set(AUTH_PREFERENCE_KEY, 'account');
+    const repository = new ProgressRepository(storage);
+    const progress = new ProgressService(repository, 'account');
+    const outbox = new SyncOutbox(storage);
+    const client = {
+      call: vi.fn(() => Promise.resolve(snapshot())),
+    } as unknown as AccountSyncClient;
+    const sync = new CloudSyncService(client, repository, outbox, {
+      getScope: () => progress.getScope(),
+    });
+    const get = vi.spyOn(storage, 'get');
+
+    const auth = new AuthService(storage, progress, repository, outbox, sync, client);
+
+    expect(auth.getState().preference).toBe('account');
+    expect(get).toHaveBeenCalledWith(AUTH_PREFERENCE_KEY);
+  });
+
   it('treats account-preference login as lossless recovery and authenticated login as a no-op', async () => {
     const storage = new MemoryStorage();
     storage.set(AUTH_PREFERENCE_KEY, 'account');
@@ -267,14 +393,18 @@ describe('AuthService', () => {
     const client = { call } as unknown as AccountSyncClient;
     const sync = new CloudSyncService(client, repository, outbox, {
       getScope: () => progress.getScope(),
-      isClearPending: () => storage.get(ACCOUNT_CLEAR_PENDING_KEY) === true,
+      isClearPending: () =>
+        hasPendingLearningClear(
+          storage,
+          repository.loadAccountCache()?.avatarUploadPathPrefix ?? null,
+        ),
     });
     const auth = new AuthService(storage, progress, repository, outbox, sync, client);
     progress.setAccountMutationListener((command) => {
       void sync.enqueue(command);
     });
     await expect(auth.clearLearningData()).resolves.toBe(false);
-    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBe(true);
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toEqual([snapshot().avatarUploadPathPrefix]);
     progress.toggleFavorite('Q1', 1);
     expect(outbox.size).toBe(0);
 
@@ -285,10 +415,10 @@ describe('AuthService', () => {
     expect(call).toHaveBeenCalledWith({ action: 'clearLearningData', schemaVersion: 1 });
   });
 
-  it('allows a user to discard local recovery and exit while retaining an unfinished cloud clear marker', async () => {
+  it('retains unfinished cloud clear state until the clear can resume', async () => {
     const storage = new MemoryStorage();
     storage.set(AUTH_PREFERENCE_KEY, 'account');
-    storage.set(ACCOUNT_CLEAR_PENDING_KEY, true);
+    storage.set(ACCOUNT_CLEAR_PENDING_KEY, [snapshot().avatarUploadPathPrefix]);
     const repository = new ProgressRepository(storage);
     repository.saveAccountCache({ cacheVersion: 1, ...snapshot() });
     const progress = new ProgressService(repository, 'account');
@@ -302,17 +432,17 @@ describe('AuthService', () => {
     const auth = new AuthService(storage, progress, repository, outbox, sync, client);
     // Simulate the already-authenticated account page where clearing was interrupted.
     await auth.retry();
-    storage.set(ACCOUNT_CLEAR_PENDING_KEY, true);
+    storage.set(ACCOUNT_CLEAR_PENDING_KEY, [snapshot().avatarUploadPathPrefix]);
     await expect(auth.logout()).resolves.toEqual({ needsDecision: true });
-    await expect(auth.logout(true)).resolves.toEqual({ needsDecision: false });
-    expect(repository.loadAccountCache()).toBeNull();
-    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('guest');
-    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBe(true);
-    await expect(auth.login()).resolves.toBe(true);
+    expect(repository.loadAccountCache()).not.toBeNull();
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
+    expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toEqual([snapshot().avatarUploadPathPrefix]);
+    await auth.retryBackground();
     expect(storage.get(ACCOUNT_CLEAR_PENDING_KEY)).toBeNull();
+    await expect(auth.logout()).resolves.toEqual({ needsDecision: false });
   });
 
-  it('requires an explicit decision before discarding pending logout data', async () => {
+  it('logs out without discarding cached history or pending uploads', async () => {
     const storage = new MemoryStorage();
     storage.set(AUTH_PREFERENCE_KEY, 'account');
     const guest = createEmptyProgress();
@@ -342,17 +472,16 @@ describe('AuthService', () => {
       avatarUrl: '',
     });
 
-    await expect(auth.logout()).resolves.toEqual({ needsDecision: true });
-    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
+    await expect(auth.logout()).resolves.toEqual({ needsDecision: false });
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('guest');
     expect(repository.loadAccountCache()).not.toBeNull();
     expect(outbox.size).toBe(1);
 
-    await expect(auth.logout(true)).resolves.toEqual({ needsDecision: false });
-    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('guest');
-    expect(repository.loadAccountCache()).toBeNull();
-    expect(outbox.size).toBe(0);
     expect(progress.getScope()).toBe('guest');
     expect(progress.getDashboard('2026-09-02').answered).toBe(2);
+    await expect(auth.login()).resolves.toBe(true);
+    expect(outbox.size).toBe(1);
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
   });
 
   it('logs in from guest using only the cloud snapshot and preserves the guest archive', async () => {
@@ -556,7 +685,7 @@ describe('AuthService', () => {
     expect(repository.loadAccountCache()).toBeNull();
   });
 
-  it('keeps an account cache when pending-free logout cannot clean an orphan avatar registry', async () => {
+  it('does not make logout depend on orphan avatar cleanup', async () => {
     const storage = new MemoryStorage();
     storage.set(AUTH_PREFERENCE_KEY, 'account');
     const repository = new ProgressRepository(storage);
@@ -574,11 +703,10 @@ describe('AuthService', () => {
     await auth.initialize();
     avatars.reconcile.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined);
 
-    await expect(auth.logout()).resolves.toEqual({ needsDecision: true });
-    expect(repository.loadAccountCache()).not.toBeNull();
-    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('account');
     await expect(auth.logout()).resolves.toEqual({ needsDecision: false });
-    expect(repository.loadAccountCache()).toBeNull();
+    expect(repository.loadAccountCache()).not.toBeNull();
+    expect(storage.get(AUTH_PREFERENCE_KEY)).toBe('guest');
+    expect(avatars.reconcile).toHaveBeenCalledTimes(1);
   });
 
   it.each(['initialize', 'login', 'retry'] as const)(

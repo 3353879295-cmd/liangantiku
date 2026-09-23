@@ -9,6 +9,7 @@ interface HomePageData {
   loadError: boolean;
   hasResume: boolean;
   hasResult: boolean;
+  selectorExpanded: boolean;
 }
 
 interface HomePageContext {
@@ -28,6 +29,11 @@ interface HomePageDefinition {
   onResume(this: HomePageContext): Promise<void>;
   openStartRoute(this: HomePageContext, route: string): Promise<void>;
   showNavigationError(this: HomePageContext, error: unknown): void;
+  onCertificateChange(
+    this: HomePageContext,
+    event: WechatMiniprogram.CustomEvent<{ key: CertificateKey }>,
+  ): void;
+  onConfirmCertificateSelection(this: HomePageContext): void;
 }
 
 const loadHomePage = async () => {
@@ -77,6 +83,51 @@ afterEach(() => {
 });
 
 describe('home page certificate loading', () => {
+  it('keeps first-time selection expanded until the user confirms it', async () => {
+    const { appServices, context, definition, values } = await loadHomePage();
+    vi.spyOn(appServices.questions, 'count').mockResolvedValue(1);
+    vi.stubGlobal('getApp', () => ({ globalData: {} }));
+    Object.assign(context, {
+      getTabBar: () => undefined,
+      loadCertificate(key: CertificateKey) {
+        return definition.loadCertificate.call(this as unknown as HomePageContext, key);
+      },
+      loadMembership: () => Promise.resolve(),
+      onShow() {
+        definition.onShow.call(this as unknown as HomePageContext);
+      },
+    });
+    definition.onShow.call(context);
+    expect(context.data.selectorExpanded).toBe(true);
+
+    definition.onCertificateChange.call(context, {
+      detail: { key: '4-08-05-01:5' },
+    } as unknown as WechatMiniprogram.CustomEvent<{ key: CertificateKey }>);
+    expect(context.data.selectorExpanded).toBe(true);
+
+    definition.onConfirmCertificateSelection.call(context);
+    expect(context.data.selectorExpanded).toBe(false);
+    expect(values.get('grain-practice:home-certificate-selected:guest')).toBe(true);
+  });
+
+  it('collapses the selector for a returning user with a saved local selection', async () => {
+    const { context, definition, values } = await loadHomePage();
+    values.set('grain-practice:home-certificate-selected:guest', true);
+    vi.stubGlobal('getApp', () => ({ globalData: {} }));
+    Object.assign(context, {
+      getTabBar: () => undefined,
+      loadCertificate(key: CertificateKey) {
+        return definition.loadCertificate.call(this as unknown as HomePageContext, key);
+      },
+      loadMembership: () => Promise.resolve(),
+      onShow() {
+        definition.onShow.call(this as unknown as HomePageContext);
+      },
+    });
+    definition.onShow.call(context);
+    expect(context.data.selectorExpanded).toBe(false);
+  });
+
   it('loads the selected certificate question count', async () => {
     const { appServices, context, definition } = await loadHomePage();
     vi.spyOn(appServices.questions, 'count').mockResolvedValue(1);
@@ -141,6 +192,13 @@ describe('home page certificate loading', () => {
       avatarUrl: '',
       selectedCertificateKey: '4-02-06-01:5' as CertificateKey,
     };
+    let notify: () => void = () => undefined;
+    const subscribe = vi.fn((listener: () => void) => {
+      notify = listener;
+      return () => {
+        if (notify === listener) notify = () => undefined;
+      };
+    });
     const initialize = vi.fn(
       () =>
         new Promise((resolve) => {
@@ -153,7 +211,7 @@ describe('home page certificate loading', () => {
     );
     vi.doMock('../miniprogram/services/app-services', () => ({
       appServices: {
-        auth: { getState: () => ({ ...authState }), initialize },
+        auth: { getState: () => ({ ...authState }), initialize, subscribe },
         progress: {
           getPreferences: () => ({ ...preferences }),
           getPreparationDays: () => 1,
@@ -211,6 +269,15 @@ describe('home page certificate loading', () => {
 
     expect(context.data.selectedKey).toBe('4-02-06-01:4');
     expect(context.data.hasResume).toBe(true);
+
+    preferences.selectedCertificateKey = '4-02-06-01:5';
+    notify();
+    expect(context.data.selectedKey).toBe('4-02-06-01:5');
+    registered.onHide.call(context);
+    const updates = vi.spyOn(context, 'setData');
+    preferences.selectedCertificateKey = '4-02-06-01:4';
+    notify();
+    expect(updates).not.toHaveBeenCalled();
   });
 });
 
@@ -220,6 +287,19 @@ describe('home page navigation', () => {
     context.data.hasResult = true;
     navigateTo.mockImplementation((options) => options.success?.());
     await definition.onResume.call(context);
+    expect(navigateTo).toHaveBeenCalledWith(
+      expect.objectContaining({ url: '/pages/report/index' }),
+    );
+  });
+
+  it('opens an unrecorded result before a pending random practice recovery', async () => {
+    const { context, definition, navigateTo } = await loadHomePage();
+    context.data.hasResult = true;
+    context.data.hasResume = true;
+    navigateTo.mockImplementation((options) => options.success?.());
+
+    await definition.onResume.call(context);
+
     expect(navigateTo).toHaveBeenCalledWith(
       expect.objectContaining({ url: '/pages/report/index' }),
     );

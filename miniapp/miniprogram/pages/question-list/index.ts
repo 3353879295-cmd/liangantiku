@@ -6,8 +6,10 @@ import {
 } from '../../presenters/catalog-presenter';
 import { presentQuestionList } from '../../presenters/question-list-presenter';
 import { appServices } from '../../services/app-services';
+import { isMembershipAccessError } from '../../repositories/membership-client';
 import {
   getActivePractice,
+  getPracticeStartCancellation,
   restorePractice,
   startPracticeFromQuestions,
 } from '../../services/practice-runtime';
@@ -33,6 +35,7 @@ interface PageState {
   destroyed: boolean;
   startingPractice: boolean;
   practiceSignature: string | undefined;
+  cancelStart?: () => void;
 }
 const pageStates = new WeakMap<object, PageState>();
 const getPageState = (page: object): PageState => {
@@ -60,6 +63,8 @@ Page({
     loading: true,
     loaded: false,
     loadError: false,
+    memberRequired: false,
+    memberPromptVisible: false,
     loadingMore: false,
     hasMore: false,
     totalCount: 0,
@@ -111,6 +116,7 @@ Page({
   onUnload() {
     const state = getPageState(this);
     state.destroyed = true;
+    state.cancelStart?.();
     state.version += 1;
   },
   syncTheme() {
@@ -136,9 +142,11 @@ Page({
     if (state.pending) return state.pending;
     const requestVersion = ++state.version;
     const kind = this.data.kind as QuestionListKind;
-    this.setData({ loading: true, loadError: false });
+    this.setData({ loading: true, loadError: false, memberRequired: false });
     const pending = (async () => {
       try {
+        if (kind !== 'session') await appServices.membership.checkPermission('fullPractice');
+        if (state.destroyed || state.version !== requestVersion) return;
         let ids: string[] = [];
         let wrongRecords: WrongQuestionRecord[] = [];
         let selectedAnswers: Record<string, string[]> = {};
@@ -165,9 +173,24 @@ Page({
         state.selectedAnswers = selectedAnswers;
         this.setData({ loaded: true, loading: false, loadError: false, expandedId: '' });
         this.applyView();
-      } catch {
-        if (!state.destroyed && state.version === requestVersion)
-          this.setData({ loading: false, loaded: true, loadError: true });
+      } catch (error) {
+        if (!state.destroyed && state.version === requestVersion) {
+          state.ids = [];
+          state.questions = [];
+          state.fullView = emptyView;
+          const memberRequired = isMembershipAccessError(error);
+          this.setData({
+            loading: false,
+            loaded: true,
+            loadError: !memberRequired,
+            memberRequired,
+            memberPromptVisible: memberRequired,
+            view: emptyView,
+            totalCount: 0,
+            displayedCount: 0,
+            hasMore: false,
+          });
+        }
       }
     })();
     state.pending = pending;
@@ -249,7 +272,7 @@ Page({
     void wx.showToast({ title: '已标记为掌握', icon: 'none' });
     void this.loadSource();
   },
-  onStartPractice() {
+  async onStartPractice() {
     const state = getPageState(this);
     if (state.startingPractice || !state.fullView.items.length) return;
     state.startingPractice = true;
@@ -257,17 +280,19 @@ Page({
     const mode = this.data.kind === 'favorite' ? 'favorite' : 'wrong';
     const signature = `${mode}:${state.fullView.items.map((item) => item.id).join(',')}`;
     try {
-      if (
-        state.practiceSignature !== signature &&
-        !startPracticeFromQuestions(
+      if (state.practiceSignature !== signature) {
+        const pending = startPracticeFromQuestions(
           state.fullView.items.map((item) => item.question),
           mode,
-        )
-      ) {
-        state.startingPractice = false;
-        this.setData({ startingPractice: false });
-        return;
-      }
+        );
+        state.cancelStart = getPracticeStartCancellation();
+        if (!(await pending)) {
+          state.startingPractice = false;
+          if (!state.destroyed) this.setData({ startingPractice: false });
+          return;
+        }
+      } else await appServices.membership.checkPermission('fullPractice');
+      if (state.destroyed) return;
       state.practiceSignature = signature;
       let navigationSettled = false;
       const unlockAfterNavigationFailure = () => {
@@ -284,10 +309,23 @@ Page({
         fail: unlockAfterNavigationFailure,
       });
       void Promise.resolve(navigation).catch(unlockAfterNavigationFailure);
-    } catch {
+    } catch (error) {
       state.startingPractice = false;
-      this.setData({ startingPractice: false });
+      if (state.destroyed) return;
+      this.setData({
+        startingPractice: false,
+        memberPromptVisible: isMembershipAccessError(error),
+      });
+      if (!isMembershipAccessError(error))
+        void wx.showToast({ title: '暂时无法开始，请重试', icon: 'none' });
     }
+  },
+  onCloseMemberPrompt() {
+    this.setData({ memberPromptVisible: false });
+  },
+  onOpenMember() {
+    this.setData({ memberPromptVisible: false });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/member/index' });
   },
   onReload() {
     void this.loadSource();

@@ -5,9 +5,20 @@
     fallback-tab="home"
   />
 
-  <view wx:if="{{loading}}" class="mock-loading matte-card">
+  <view wx:if="{{state === 'loading'}}" class="mock-loading matte-card">
     <t-icon name="loading" size="36rpx" />
     <text>正在准备考试说明</text>
+  </view>
+
+  <view wx:elif="{{state === 'error'}}" class="mock-state mock-state--error matte-card">
+    <view class="mock-state__title">考试说明加载失败</view>
+    <text>{{loadError || '题库暂时无法读取，请重试。'}}</text>
+    <button class="mock-retry" bindtap="onRetryLoad">重新加载</button>
+  </view>
+
+  <view wx:elif="{{state === 'empty'}}" class="mock-state matte-card">
+    <view class="mock-state__title">当前没有可用题目</view>
+    <text>{{statusText}}</text>
   </view>
 
   <block wx:else>

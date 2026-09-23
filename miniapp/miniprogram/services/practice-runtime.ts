@@ -1,8 +1,10 @@
 import { buildPaper } from './paper-builder';
 import {
   createPracticeSession,
+  pausePracticeSession,
   prunePersistedPracticeSession,
   rehydratePracticeSession,
+  resumePracticeSession,
   serializePracticeSession,
   submitSession,
 } from './practice-session';
@@ -41,9 +43,17 @@ export interface StartPracticeInput {
 let activeSession: PracticeSession | null = null;
 let activeSessionScope: ProgressScope | null = null;
 let activeSessionPersisted: PersistedPracticeSession | null = null;
+let practicePageVisible = false;
+let appForeground = true;
 const sessionScopes = new Map<string, ProgressScope>();
 let startGeneration = 0;
+let startAccountPrefix: string | null = null;
 let randomStart: { generation: number; promise: Promise<PracticeSession | null> } | null = null;
+let fullPracticeStart: {
+  generation: number;
+  key: string;
+  promise: Promise<PracticeSession | null>;
+} | null = null;
 const sequentialStarts = new Map<
   string,
   { generation: number; promise: Promise<PracticeSession | null> }
@@ -62,6 +72,7 @@ const samePersistedSession = (
     left.currentIndex !== right.currentIndex ||
     left.status !== right.status ||
     left.startedAt !== right.startedAt ||
+    left.activeDurationMs !== right.activeDurationMs ||
     left.updatedAt !== right.updatedAt ||
     left.submittedAt !== right.submittedAt ||
     (left.progressRecorded ?? false) !== (right.progressRecorded ?? false) ||
@@ -102,13 +113,19 @@ const clearStaleActiveSession = (): void => {
 
 const isCurrentScope = (scope: ProgressScope): boolean => appServices.progress.getScope() === scope;
 
+const accountPrefix = (scope: ProgressScope): string | null =>
+  scope === 'account' ? appServices.cloudSync.getAvatarUploadPathPrefix() : null;
+
 const beginStart = (): number => {
   startGeneration += 1;
+  startAccountPrefix = accountPrefix(appServices.progress.getScope());
   return startGeneration;
 };
 
 const isCurrentStart = (scope: ProgressScope, generation: number): boolean =>
-  isCurrentScope(scope) && generation === startGeneration;
+  isCurrentScope(scope) &&
+  generation === startGeneration &&
+  startAccountPrefix === accountPrefix(scope);
 
 const certificateKeyFor = (occupation: OccupationCode, level: CertificateLevel): CertificateKey =>
   `${occupation}:${level}`;
@@ -182,6 +199,29 @@ const withRandomStart = (generation: number, work: () => Promise<PracticeSession
   });
   randomStart = { generation, promise: started };
   return started;
+};
+
+const withFullPracticeStart = (
+  generation: number,
+  key: string,
+  work: () => Promise<PracticeSession | null>,
+): Promise<PracticeSession | null> => {
+  if (fullPracticeStart?.generation === generation && fullPracticeStart.key === key) {
+    return fullPracticeStart.promise;
+  }
+  const started = work().finally(() => {
+    if (fullPracticeStart?.promise === started) fullPracticeStart = null;
+  });
+  fullPracticeStart = { generation, key, promise: started };
+  return started;
+};
+
+const authorizeFullPractice = async (
+  scope: ProgressScope,
+  generation: number,
+): Promise<boolean> => {
+  await appServices.membership.checkPermission('fullPractice');
+  return isCurrentStart(scope, generation);
 };
 
 const saveAuthorizedRandomStart = (
@@ -362,13 +402,27 @@ export const startPractice = (input: StartPracticeInput): Promise<PracticeSessio
   if (input.mode === 'random' && randomStart?.generation === startGeneration) {
     return randomStart.promise;
   }
+  const fullPracticeKey = JSON.stringify(input);
+  if (
+    input.mode !== 'random' &&
+    fullPracticeStart?.generation === startGeneration &&
+    fullPracticeStart.key === fullPracticeKey
+  ) {
+    return fullPracticeStart.promise;
+  }
   const generation = beginStart();
   if (input.mode === 'random')
     return withRandomStart(generation, () => preparePractice(input, generation));
-  if (input.mode === 'sequential') {
-    return withSequentialStart(input, generation, () => startSequentialPractice(input, generation));
-  }
-  return preparePractice(input, generation);
+  const scope = appServices.progress.getScope();
+  return withFullPracticeStart(generation, fullPracticeKey, async () => {
+    if (!(await authorizeFullPractice(scope, generation))) return null;
+    if (input.mode === 'sequential') {
+      return withSequentialStart(input, generation, () =>
+        startSequentialPractice(input, generation),
+      );
+    }
+    return preparePractice(input, generation);
+  });
 };
 
 /** Capture cancellation for the start that was just requested by this page. */
@@ -403,24 +457,42 @@ export const startRandomPracticeFromQuestions = (
 export const startPracticeFromQuestions = (
   questions: readonly Question[],
   mode: PracticeMode,
-): PracticeSession | null => {
+  limit = 20,
+): Promise<PracticeSession | null> => {
   if (mode === 'random') throw new Error('随机练习必须通过云端授权后开始。');
-  if (!questions.length) return null;
-  beginStart();
-  const preference = appServices.progress.getPreferences().answerRevealMode;
-  activeSession = createPracticeSession(questions.slice(0, 20), {
-    mode,
-    answerRevealMode: resolveAnswerRevealMode(mode, preference),
-    now: Date.now(),
+  if (!questions.length) return Promise.resolve(null);
+  const fullPracticeKey = `questions:${mode}:${limit}:${questions.map(({ id }) => id).join(',')}`;
+  if (
+    fullPracticeStart?.generation === startGeneration &&
+    fullPracticeStart.key === fullPracticeKey
+  ) {
+    return fullPracticeStart.promise;
+  }
+  const generation = beginStart();
+  const scope = appServices.progress.getScope();
+  return withFullPracticeStart(generation, fullPracticeKey, async () => {
+    if (!(await authorizeFullPractice(scope, generation))) return null;
+    const preference = appServices.progress.getPreferences().answerRevealMode;
+    const session = createPracticeSession(questions.slice(0, Math.max(1, limit)), {
+      mode,
+      answerRevealMode: resolveAnswerRevealMode(mode, preference),
+      now: Date.now(),
+    });
+    if (!isCurrentStart(scope, generation)) return null;
+    return saveStartedPractice(session);
   });
-  return saveStartedPractice(activeSession);
 };
 
 export const restorePractice = async (resumePending = false): Promise<PracticeSession | null> => {
   const generation = beginStart();
   clearStaleActiveSession();
-  if (activeSession && (!resumePending || activeSession.status === 'active')) return activeSession;
   const scope = appServices.progress.getScope();
+  if (activeSession && (!resumePending || activeSession.status === 'active')) {
+    if (activeSession.status !== 'active' || activeSession.mode === 'random') return activeSession;
+    if (!(await authorizeFullPractice(scope, generation))) return null;
+    clearStaleActiveSession();
+    return activeSession;
+  }
   const persisted = appServices.progress.restoreSession();
   const pending = getPendingRandomStart();
   if (
@@ -463,12 +535,19 @@ export const restorePractice = async (resumePending = false): Promise<PracticeSe
     }
     if (!isCurrentRestoredSession(scope, persisted, generation)) return null;
   }
+  if (persisted.mode !== 'random' && persisted.status === 'active') {
+    if (!(await authorizeFullPractice(scope, generation))) return null;
+    if (!isCurrentRestoredSession(scope, persisted, generation)) return null;
+  }
   if (!isCurrentRestoredSession(scope, persisted, generation)) return null;
   activeSession = rehydratePracticeSession(repaired, questions);
   activeSessionScope = scope;
   activeSessionPersisted = persisted;
   sessionScopes.set(activeSession.id, scope);
-  if (repaired.questionIds.length !== persisted.questionIds.length) {
+  if (
+    repaired.questionIds.length !== persisted.questionIds.length ||
+    persisted.activeDurationMs === undefined
+  ) {
     appServices.progress.saveSession(serializePracticeSession(activeSession));
     activeSessionPersisted = appServices.progress.restoreSession();
   }
@@ -480,11 +559,40 @@ export const getActivePractice = (): PracticeSession | null => {
   return activeSession;
 };
 
-export const saveActivePractice = (session: PracticeSession): void => {
+export const setPracticePageVisible = (visible: boolean, now = Date.now()): void => {
+  clearStaleActiveSession();
+  practicePageVisible = visible;
+  if (!activeSession || activeSession.status !== 'active') return;
+  activeSession =
+    visible && appForeground
+      ? resumePracticeSession(activeSession, now)
+      : pausePracticeSession(activeSession, now);
+  if (!visible) saveStartedPractice(activeSession);
+};
+
+export const pauseActivePractice = (now = Date.now()): void => {
+  clearStaleActiveSession();
+  appForeground = false;
+  if (!activeSession || activeSession.status !== 'active') return;
+  activeSession = pausePracticeSession(activeSession, now);
+  saveStartedPractice(activeSession);
+};
+
+export const resumeVisiblePractice = (now = Date.now()): void => {
+  clearStaleActiveSession();
+  appForeground = true;
+  if (!practicePageVisible || !activeSession || activeSession.status !== 'active') return;
+  activeSession = resumePracticeSession(activeSession, now);
+};
+
+export const saveActivePractice = (session: PracticeSession, now = Date.now()): void => {
   const sessionScope = sessionScopes.get(session.id);
   clearStaleActiveSession();
   if (sessionScope !== undefined && sessionScope !== appServices.progress.getScope()) return;
-  saveStartedPractice(session);
+  const paused = pausePracticeSession(session, now);
+  saveStartedPractice(
+    practicePageVisible && appForeground ? resumePracticeSession(paused, now) : paused,
+  );
 };
 
 export const submitActivePractice = (now = Date.now()): PracticeSession | null => {

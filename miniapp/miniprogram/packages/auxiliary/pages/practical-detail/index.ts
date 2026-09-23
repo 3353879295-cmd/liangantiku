@@ -1,6 +1,10 @@
 import { getPracticalSkill } from '../../../../data/practical-skills';
 import { appServices } from '../../../../services/app-services';
-import { startPracticeFromQuestions } from '../../../../services/practice-runtime';
+import {
+  getPracticeStartCancellation,
+  startPracticeFromQuestions,
+} from '../../../../services/practice-runtime';
+import { isMembershipAccessError } from '../../../../repositories/membership-client';
 import type { PracticalSkill } from '../../../../data/practical-skills';
 import type { Question } from '../../../../types/domain';
 
@@ -9,6 +13,7 @@ const pendingRelatedPracticeNavigations = new WeakSet<object>();
 const retainedRelatedPractices = new WeakSet<object>();
 const retainedRelatedPracticeSignatures = new WeakMap<object, string>();
 const visibleDetails = new WeakSet<object>();
+const startCancellations = new WeakMap<object, () => void>();
 
 const getQuestionSignature = (questions: readonly Question[]) => JSON.stringify(questions);
 
@@ -51,6 +56,7 @@ Page({
     relatedLoadError: false,
     relatedLoading: false,
     startingRelatedPractice: false,
+    memberPromptVisible: false,
   },
 
   async onLoad(options: Record<string, string | undefined>) {
@@ -68,6 +74,8 @@ Page({
   },
 
   onUnload() {
+    startCancellations.get(this)?.();
+    startCancellations.delete(this);
     visibleDetails.delete(this);
     pendingRelatedLoads.delete(this);
     pendingRelatedPracticeNavigations.delete(this);
@@ -121,7 +129,7 @@ Page({
     await this.loadRelatedQuestions();
   },
 
-  onStartRelatedPractice() {
+  async onStartRelatedPractice() {
     if (
       !this.data.relatedReady ||
       this.data.relatedLoadError ||
@@ -131,22 +139,37 @@ Page({
       return;
     }
     if (pendingRelatedPracticeNavigations.has(this)) return;
+    pendingRelatedPracticeNavigations.add(this);
+    this.setData({ startingRelatedPractice: true });
     const signature = getQuestionSignature(this.data.relatedQuestions);
     if (retainedRelatedPracticeSignatures.get(this) !== signature) {
       retainedRelatedPractices.delete(this);
       retainedRelatedPracticeSignatures.delete(this);
     }
-    if (!retainedRelatedPractices.has(this)) {
-      const session = startPracticeFromQuestions(this.data.relatedQuestions, 'chapter');
-      if (!session) {
-        void wx.showToast({ title: '暂时无法开始，请重试', icon: 'none' });
-        return;
+    try {
+      if (!retainedRelatedPractices.has(this)) {
+        const pending = startPracticeFromQuestions(this.data.relatedQuestions, 'chapter');
+        startCancellations.set(this, getPracticeStartCancellation());
+        const session = await pending;
+        if (!visibleDetails.has(this)) return;
+        if (!session) throw new Error('暂时无法开始，请重试');
+        retainedRelatedPractices.add(this);
+        retainedRelatedPracticeSignatures.set(this, signature);
+      } else {
+        await appServices.membership.checkPermission('fullPractice');
       }
-      retainedRelatedPractices.add(this);
-      retainedRelatedPracticeSignatures.set(this, signature);
+    } catch (error) {
+      pendingRelatedPracticeNavigations.delete(this);
+      if (!visibleDetails.has(this)) return;
+      this.setData({
+        startingRelatedPractice: false,
+        memberPromptVisible: isMembershipAccessError(error),
+      });
+      if (!isMembershipAccessError(error))
+        void wx.showToast({ title: '暂时无法开始，请重试', icon: 'none' });
+      return;
     }
-    pendingRelatedPracticeNavigations.add(this);
-    this.setData({ startingRelatedPractice: true });
+    if (!visibleDetails.has(this)) return;
     const callbacks = createRelatedPracticeNavigationCallbacks(this);
     try {
       const result = wx.navigateTo({ url: '/pages/practice/index?resume=1', ...callbacks });
@@ -157,5 +180,12 @@ Page({
     } catch {
       callbacks.fail();
     }
+  },
+  onCloseMemberPrompt() {
+    this.setData({ memberPromptVisible: false });
+  },
+  onOpenMember() {
+    this.setData({ memberPromptVisible: false });
+    void wx.navigateTo({ url: '/packages/auxiliary/pages/member/index' });
   },
 });

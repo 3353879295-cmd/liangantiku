@@ -21,18 +21,27 @@
     <view class="resume-card__action">{{resumeActionText}}</view>
   </view>
 
-  <view class="section-heading">
+  <view wx:if="{{selectorExpanded}}" class="section-heading">
     <view class="section-title">选择题库</view>
     <text class="section-note">先职业，再等级</text>
   </view>
+  <view wx:if="{{!selectorExpanded}}" class="current-certificate" bind:tap="onOpenCertificateSelector">
+    <view>
+      <text class="current-certificate__label">当前题库</text>
+      <view class="current-certificate__title">{{certificate.bankTitle}}</view>
+    </view>
+    <view class="current-certificate__action">切换 <t-icon name="chevron-right" size="28rpx" /></view>
+  </view>
   <certificate-selector
+    wx:else
     certificates="{{certificates}}"
     selected-key="{{selectedKey}}"
     bind:change="onCertificateChange"
   />
+  <button wx:if="{{selectorExpanded}}" class="confirm-certificate" bindtap="onConfirmCertificateSelection">使用当前题库</button>
 
-  <view class="section-heading">
-    <view class="section-title">开始学习</view>
+  <view class="section-heading section-heading--learning">
+    <view class="section-title">开始练习</view>
     <text class="section-note">{{loading ? '正在加载题库' : loadError ? '题库读取失败' : certificate.questionCountText}}</text>
   </view>
   <button wx:if="{{loadError}}" class="load-retry" bindtap="onRetryLoad">题库暂时无法读取，点击重试</button>
@@ -54,4 +63,4 @@
   </view>
 
 </view>
-<membership-prompt visible="{{showMembershipPrompt}}" bind:close="onCloseMembershipPrompt" bind:confirm="onConfirmMembershipPrompt" />
+<membership-prompt id="membership-prompt" visible="{{showMembershipPrompt}}" bind:close="onCloseMembershipPrompt" bind:confirm="onConfirmMembershipPrompt" />

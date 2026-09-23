@@ -27,9 +27,7 @@ export interface AccountSyncSnapshot {
   progress: AccountProgressSnapshot;
 }
 
-/** The only value stored under grain-practice:account-cache. */
 export interface AccountCacheEnvelope extends AccountSyncSnapshot {
-  /** Kept explicit so future cache formats can evolve independently from the cloud schema. */
   cacheVersion: 1;
 }
 
@@ -112,7 +110,7 @@ type OmitCommandMetadata<T> = T extends { expectedRevision: number }
 
 export type AccountSyncCommandInput = OmitCommandMetadata<
   Exclude<AccountSyncRequest, { action: 'bootstrap' | 'deleteAccount' | 'clearLearningData' }>
->;
+> & { changedFields?: readonly (keyof AccountProfileSnapshot)[] };
 
 export type SyncRevisionDomain = 'profile' | 'progress';
 
@@ -121,6 +119,8 @@ export type SyncCommand = Extract<AccountSyncRequest, { action: SyncCommandActio
   createdAt: number;
   /** A command is immutable after it has started being sent. */
   state: 'pending' | 'sending';
+  /** Client-only three-way merge metadata. It is never sent to the cloud function. */
+  changedFields?: readonly (keyof AccountProfileSnapshot)[];
 };
 
 export interface AccountOutboxState {

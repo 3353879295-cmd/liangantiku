@@ -1,6 +1,7 @@
 import type { PracticeReport } from '../services/practice-session';
 
 export interface WeakModuleViewModel {
+  chapterId: string;
   name: string;
   accuracy: number;
   accuracyText: string;
@@ -41,6 +42,7 @@ export const presentReport = (
     .map(([chapterId, module]) => {
       const accuracy = percentage(module.correct, module.total);
       return {
+        chapterId,
         name: resolveChapterTitle(chapterId),
         accuracy,
         accuracyText: `${accuracy}%`,

@@ -47,7 +47,19 @@ const setup = async (bankSize: number) => {
     makeQuestion({ id: `sequence-${index}` }),
   );
   vi.spyOn(appServices.questions, 'list').mockResolvedValue(questions);
-  const session = runtime.startPracticeFromQuestions(questions, 'sequential')!;
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  });
+  const session = await runtime.startPracticeFromQuestions(questions, 'sequential');
+  if (!session) throw new Error('practice session was not created');
   let answered = session;
   for (const question of session.questions) {
     answered = sessionService.answerQuestion(answered, question.id, question.answer, Date.now());
@@ -114,10 +126,13 @@ describe('sequential group pages', () => {
         setData(update: Record<string, unknown>): void;
         syncTheme(): void;
         renderSession(session: PracticeSession): void;
+        loadPractice(options: Record<string, string>): Promise<void>;
       }
       let page!: {
         data: Record<string, unknown>;
-        onLoad(this: Context, options: Record<string, string>): Promise<void>;
+        onLoad(this: Context, options: Record<string, string>): void;
+        onReady(this: Context): Promise<void> | undefined;
+        loadPractice(this: Context, options: Record<string, string>): Promise<void>;
         onUnload(this: Context): void;
       };
       vi.stubGlobal('Page', (definition: typeof page) => {
@@ -131,13 +146,17 @@ describe('sequential group pages', () => {
         setData,
         syncTheme: vi.fn(),
         renderSession,
+        loadPractice(options) {
+          return page.loadPractice.call(this, options);
+        },
       };
-      const pending = page.onLoad.call(context, {
+      page.onLoad.call(context, {
         occupation: '4-02-06-01',
         level: '5',
         mode: stage === 'chapter' ? 'chapter' : 'sequential',
         ...(stage === 'resume' ? { resume: '1' } : {}),
       });
+      const pending = page.onReady.call(context);
       await vi.waitFor(() =>
         expect(
           stage === 'metadata' ? count : stage === 'resume' ? byIds : list,

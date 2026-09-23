@@ -1,5 +1,5 @@
 <view class="app-tab-bar__placeholder"></view>
-<view class="app-tab-bar">
+<view wx:if="{{!membershipPromptVisible}}" class="app-tab-bar">
   <view class="app-tab-bar__items">
     <view
       wx:for="{{tabs}}"

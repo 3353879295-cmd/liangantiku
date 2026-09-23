@@ -54,12 +54,18 @@ interface PracticePageContext {
   navigateRelative: PracticePageDefinition['navigateRelative'];
   syncTheme(): void;
   refreshMembership(): Promise<void>;
+  loadPractice: PracticePageDefinition['loadPractice'];
 }
 
 interface PracticePageDefinition {
   data: PracticePageData;
   renderSession(this: PracticePageContext, session: PracticeSession, draft?: string[]): void;
-  onLoad(this: PracticePageContext, options: Record<string, string | undefined>): Promise<void>;
+  onLoad(this: PracticePageContext, options: Record<string, string | undefined>): void;
+  onReady(this: PracticePageContext): Promise<void> | undefined;
+  loadPractice(
+    this: PracticePageContext,
+    options: Record<string, string | undefined>,
+  ): Promise<void>;
   onSelectOption(
     this: PracticePageContext,
     event: WechatMiniprogram.CustomEvent<{ key: string }>,
@@ -135,9 +141,20 @@ const loadPracticePage = async (
   const { ProgressRepository, RECOVERY_BACKUP_KEY } =
     await import('../miniprogram/storage/progress-repository');
   if (!definition) throw new Error('practice Page was not registered');
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue({
+    isMember: true,
+    startsAt: null,
+    expiresAt: null,
+    freeUsed: 0,
+    freeRemaining: 3,
+    freeLimit: 3,
+    freeDate: '2026-09-23',
+    serverTime: '2026-09-23T00:00:00.000Z',
+    paymentAvailable: false,
+  });
 
   appServices.progress.updatePreferences({ answerRevealMode });
-  const session = runtime.startPracticeFromQuestions(questions, 'sequential');
+  const session = await runtime.startPracticeFromQuestions(questions, 'sequential');
   if (!session) throw new Error('practice session was not created');
 
   const registered = definition;
@@ -154,6 +171,9 @@ const loadPracticePage = async (
     },
     syncTheme() {},
     refreshMembership: () => Promise.resolve(),
+    loadPractice(options) {
+      return registered.loadPractice.call(this, options);
+    },
   };
   registered.renderSession.call(context, session);
   const select = (key: string) =>
@@ -189,7 +209,8 @@ describe('practice page deferred selections', () => {
       makeQuestion({ id: 'Q-resume' }),
     ]);
     const restore = vi.spyOn(runtime, 'restorePractice');
-    await definition.onLoad.call(context, { resume: '1' });
+    definition.onLoad.call(context, { resume: '1' });
+    await definition.onReady.call(context);
     expect(restore).toHaveBeenCalledWith(true);
   });
 
@@ -318,13 +339,14 @@ describe('practice page after resuming and synchronizing', () => {
       const repository = new ProgressRepository(new MemoryStorageAdapter());
       appServices.progress = new ProgressService(repository, 'account');
       appServices.progress.updatePreferences({ answerRevealMode: mode });
-      runtime.startPracticeFromQuestions(questions, 'sequential');
+      await runtime.startPracticeFromQuestions(questions, 'sequential');
       const saved = appServices.progress.restoreSession();
       appServices.progress.saveSession(null);
       expect(runtime.getActivePractice()).toBeNull();
       appServices.progress.saveSession(saved);
       vi.spyOn(appServices.questions, 'getByIds').mockResolvedValue(questions);
-      await definition.onLoad.call(context, { resume: '1' });
+      definition.onLoad.call(context, { resume: '1' });
+      await definition.onReady.call(context);
 
       const server = createHandler({ store: createSessionSyncStore(), hash: () => 'a'.repeat(64) });
       const serverContext = { APPID: 'wx-test', OPENID: 'test-user' };

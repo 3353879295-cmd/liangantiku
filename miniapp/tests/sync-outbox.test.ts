@@ -171,4 +171,90 @@ describe('SyncOutbox', () => {
     outbox.clear();
     expect(outbox.isBlocked).toBe(false);
   });
+
+  it('merges only locally changed profile fields and unions coalesced metadata', () => {
+    const outbox = new SyncOutbox(
+      new MemoryStorage(),
+      () => 1,
+      () => 'id',
+    );
+    outbox.enqueue({
+      action: 'updatePreferences',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      selectedCertificateKey: '4-02-06-01:5',
+      dailyGoal: 30,
+      answerTheme: 'light',
+      answerRevealMode: 'immediate',
+      changedFields: ['dailyGoal'],
+    });
+    outbox.enqueue({
+      action: 'updatePreferences',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      selectedCertificateKey: '4-02-06-01:5',
+      dailyGoal: 30,
+      answerTheme: 'night',
+      answerRevealMode: 'immediate',
+      changedFields: ['answerTheme'],
+    });
+    const cloud = {
+      nickname: '云端',
+      avatarUrl: '',
+      selectedCertificateKey: '4-08-05-01:4' as const,
+      dailyGoal: 20,
+      answerTheme: 'light' as const,
+      answerRevealMode: 'deferred' as const,
+    };
+    outbox.mergeProfileChanges(cloud, {
+      ...cloud,
+      selectedCertificateKey: '4-02-06-01:5',
+      dailyGoal: 20,
+      answerTheme: 'light',
+      answerRevealMode: 'immediate',
+    });
+    expect(outbox.list()[0]).toMatchObject({
+      dailyGoal: 30,
+      answerTheme: 'night',
+      selectedCertificateKey: '4-08-05-01:4',
+      answerRevealMode: 'deferred',
+      changedFields: ['dailyGoal', 'answerTheme'],
+    });
+  });
+
+  it('infers legacy profile changes and leaves sending payload immutable', () => {
+    const outbox = new SyncOutbox(
+      new MemoryStorage(),
+      () => 1,
+      () => 'id',
+    );
+    outbox.enqueue({
+      action: 'updateProfile',
+      schemaVersion: 1,
+      expectedRevision: 0,
+      nickname: '本机',
+      avatarUrl: '',
+    });
+    const sending = outbox.takeNext();
+    expect(sending).not.toBeNull();
+    outbox.mergeProfileChanges(
+      {
+        nickname: '云端',
+        avatarUrl: 'cloud.png',
+        selectedCertificateKey: '4-02-06-01:5',
+        dailyGoal: 20,
+        answerTheme: 'night',
+        answerRevealMode: 'deferred',
+      },
+      {
+        nickname: '旧名',
+        avatarUrl: '',
+        selectedCertificateKey: '4-02-06-01:5',
+        dailyGoal: 20,
+        answerTheme: 'light',
+        answerRevealMode: 'immediate',
+      },
+    );
+    expect(outbox.list()[0]).toEqual(sending);
+  });
 });

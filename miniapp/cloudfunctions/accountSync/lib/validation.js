@@ -120,6 +120,7 @@ const validateSession = (event) => {
     'submittedAt',
     'progressRecorded',
     'answerRevealMode',
+    'activeDurationMs',
   ]);
   if (
     !isRecord(session) ||
@@ -154,6 +155,8 @@ const validateSession = (event) => {
     (session.submittedAt !== undefined &&
       (!Number.isFinite(session.submittedAt) || session.submittedAt < 0)) ||
     (session.progressRecorded !== undefined && typeof session.progressRecorded !== 'boolean') ||
+    (session.activeDurationMs !== undefined &&
+      (!Number.isFinite(session.activeDurationMs) || session.activeDurationMs < 0)) ||
     (session.status === 'submitted' && session.submittedAt === undefined) ||
     !['immediate', 'deferred'].includes(session.answerRevealMode)
   ) {

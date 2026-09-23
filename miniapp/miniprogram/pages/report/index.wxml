@@ -39,24 +39,34 @@
     <view class="report-section">
       <view class="report-section__title">薄弱章节</view>
       <view class="module-results">
-        <view wx:for="{{view.weakModules}}" wx:key="name" class="module-result">
+        <view wx:for="{{view.weakModules}}" wx:key="chapterId" class="module-result">
           <view>
             <view class="module-result__name">{{item.name}}</view>
             <text class="module-result__summary">{{item.summary}}</text>
           </view>
-          <text class="module-result__accuracy">{{item.accuracyText}}</text>
+          <view class="module-result__actions">
+            <text class="module-result__accuracy">{{item.accuracyText}}</text>
+            <button class="module-result__practice" disabled="{{retrying || pendingPractice}}" data-chapter-id="{{item.chapterId}}" bindtap="onPracticeChapter">练习本章</button>
+          </view>
         </view>
       </view>
     </view>
 
-    <button wx:if="{{sessionMode === 'sequential' && sequentialRemaining}}" class="primary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onContinueSequential">继续下一组 · 剩余 {{sequentialRemaining}} 题</button>
-    <button class="{{sessionMode === 'sequential' && sequentialRemaining ? 'secondary-button' : 'primary-button'}}" bindtap="onOpenAnswerSheet">查看答题卡</button>
-    <button
-      class="secondary-button {{hasWrong ? '' : 'secondary-button--disabled'}}"
-      disabled="{{!hasWrong}}"
-      bindtap="onReviewWrong"
-    >{{hasWrong ? '查看本次错题解析' : '本组没有错题'}}</button>
-    <button wx:if="{{sessionMode !== 'sequential'}}" class="secondary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onRetry">再练一次</button>
+    <view wx:if="{{pendingPractice}}" class="report-state">
+      <text>练习已准备好，请继续进入。</text>
+      <button class="report-retry" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onResumePendingPractice">继续进入已准备的练习</button>
+    </view>
+    <block wx:else>
+      <button wx:if="{{sessionMode === 'sequential' && sequentialRemaining}}" class="primary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onContinueSequential">继续下一组 · 剩余 {{sequentialRemaining}} 题</button>
+      <button class="{{sessionMode === 'sequential' && sequentialRemaining ? 'secondary-button' : 'primary-button'}}" bindtap="onOpenAnswerSheet">查看答题卡</button>
+      <button
+        class="secondary-button {{hasWrong ? '' : 'secondary-button--disabled'}}"
+        disabled="{{!hasWrong}}"
+        bindtap="onReviewWrong"
+      >{{hasWrong ? '查看本次错题解析' : '本组没有错题'}}</button>
+      <button wx:if="{{hasWrong}}" class="secondary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onRetryWrong">重练本次错题</button>
+      <button wx:if="{{sessionMode !== 'sequential'}}" class="secondary-button" loading="{{retrying}}" disabled="{{retrying}}" bindtap="onRetry">再练一次</button>
+    </block>
     <view class="home-link" bind:tap="onBackHome">返回首页</view>
   </view>
 

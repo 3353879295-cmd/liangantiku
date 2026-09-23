@@ -16,21 +16,24 @@
 
   <view wx:if="{{accountStatus === 'guest'}}" class="account-status-card">
     <view class="account-status-card__title">当前为游客</view>
-    <text>记录仅保存在本机，登录后以云端数据为准</text>
-    <button class="account-status-card__button" bind:tap="onLoginAndSync">登录并同步</button>
+    <text>登录后会自动恢复此前记录，日常学习也会自动保存</text>
+    <button class="account-status-card__button" bind:tap="onLoginAndSync">微信登录</button>
   </view>
   <view wx:else class="account-status-card">
     <view class="account-status-card__title">{{syncText}}</view>
     <text>{{accountDetail || lastSyncedAt}}</text>
+    <block wx:if="{{accountStatus === 'authenticated'}}">
+      <text wx:if="{{syncNotice}}">{{syncNotice}}</text>
+    </block>
     <button
       wx:if="{{accountStatus === 'offline' || accountStatus === 'recovering'}}"
       class="account-status-card__button"
       bind:tap="onLoginAndSync"
     >
-      登录并重试
+      微信登录
     </button>
     <button wx:elif="{{syncFailed}}" class="account-status-card__button" loading="{{syncing}}" disabled="{{syncing}}" bind:tap="onRetrySync">
-      重试同步
+      立即重试
     </button>
   </view>
 

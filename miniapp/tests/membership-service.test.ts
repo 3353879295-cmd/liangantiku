@@ -48,6 +48,8 @@ const deferred = <T>() => {
   });
   return { promise, resolve, reject };
 };
+const permissionService = (response: unknown) =>
+  new MembershipService({ call: vi.fn().mockResolvedValue(response) } as never);
 const gateway = (final: 'PENDING' | 'PAID' = 'PAID') => ({
   call: vi.fn((r: { action: string; orderId?: string }) =>
     r.action === 'createOrder'
@@ -64,6 +66,31 @@ const gateway = (final: 'PENDING' | 'PAID' = 'PAID') => ({
                   : free,
             },
   ),
+});
+
+describe('MembershipService permission response validation', () => {
+  it.each([
+    ['bare status', free, 'fullPractice'],
+    ['non-boolean allowed', { allowed: 'yes', membership: free }, 'fullPractice'],
+    ['free full-practice grant', { allowed: true, membership: free }, 'fullPractice'],
+    [
+      'exhausted random grant',
+      { allowed: true, membership: { ...free, freeRemaining: 0 } },
+      'randomPractice',
+    ],
+  ] as const)('fails closed for %s', async (_label, response, feature) => {
+    await expect(permissionService(response).checkPermission(feature)).rejects.toMatchObject({
+      code: 'MEMBERSHIP_UNAVAILABLE',
+    });
+  });
+
+  it('accepts a consistent member full-practice grant', async () => {
+    await expect(
+      permissionService({ allowed: true, membership: { ...free, isMember: true } }).checkPermission(
+        'fullPractice',
+      ),
+    ).resolves.toMatchObject({ isMember: true });
+  });
 });
 
 describe('MembershipService payment transaction', () => {

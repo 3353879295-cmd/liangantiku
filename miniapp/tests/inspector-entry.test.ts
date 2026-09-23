@@ -2,6 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CERTIFICATES } from '../miniprogram/data/certificates';
 import { makeQuestion } from './factories';
+import type { MembershipStatus } from '../miniprogram/types/membership';
+
+const memberStatus: MembershipStatus = {
+  isMember: true,
+  startsAt: '2026-09-01T00:00:00.000Z',
+  expiresAt: '2026-10-01T00:00:00.000Z',
+  freeUsed: 3,
+  freeRemaining: 0,
+  freeLimit: 3,
+  freeDate: '2026-09-23',
+  serverTime: '2026-09-23T00:00:00.000Z',
+  paymentAvailable: false,
+};
 
 const loadParsePracticeRoute = async () => {
   vi.resetModules();
@@ -44,6 +57,7 @@ const loadQuestionListPage = async () => {
   });
   await import('../miniprogram/pages/question-list/index');
   const { appServices } = await import('../miniprogram/services/app-services');
+  vi.spyOn(appServices.membership, 'checkPermission').mockResolvedValue(memberStatus);
   if (!definition) throw new Error('question-list Page was not registered');
 
   const registered = definition;

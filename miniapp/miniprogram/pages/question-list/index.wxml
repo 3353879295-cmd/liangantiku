@@ -28,6 +28,13 @@
     bind:action="onReload"
   />
 
+  <empty-state
+    wx:elif="{{memberRequired}}"
+    title="开通会员，解锁完整练习"
+    description="免费用户每天可进行 3 次随机练习，其他练习方式需开通会员。"
+    action-text="开通会员"
+    bind:action="onOpenMember"
+  />
   <block wx:else>
     <view wx:if="{{kind !== 'session'}}" class="scope-card">
       <view>
@@ -161,7 +168,7 @@
     </view>
 
     <empty-state
-      wx:else
+      wx:if="{{!view.items.length}}"
       kind="empty"
       title="{{view.emptyTitle}}"
       description="{{view.emptyDescription}}"
@@ -177,3 +184,4 @@
     </view>
   </block>
 </view>
+<membership-prompt visible="{{memberPromptVisible}}" bind:close="onCloseMemberPrompt" bind:confirm="onOpenMember" />

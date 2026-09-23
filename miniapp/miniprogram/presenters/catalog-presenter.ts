@@ -23,6 +23,7 @@ export interface CatalogChapterViewModel {
   progressText: string;
   accuracyText: string;
   wrongText: string;
+  statusText: string;
   canStart: boolean;
   sections: CatalogSectionViewModel[];
 }
@@ -75,6 +76,12 @@ const sectionStatusText = (questionCount: number, completed: number): string => 
   if (completed === 0) return '未开始';
   if (completed >= questionCount) return '已完成';
   return `已完成 ${completed}/${questionCount}`;
+};
+
+const chapterStatusText = (questionCount: number, attempts: number): string => {
+  if (questionCount === 0) return '暂无题目';
+  if (attempts === 0) return '未练习';
+  return '已练习';
 };
 
 const findCatalogChapter = (catalog: RuntimeKnowledgeCatalog, chapterId: string) =>
@@ -167,9 +174,16 @@ export const presentCatalogParts = (input: PresentCatalogPartsInput): CatalogPar
           metaText: questionCount === 0 ? '待补充' : `${questionCount} 题`,
           sectionCountText: `${chapter.sections.length} 小节`,
           questionCountText: questionCount ? `${questionCount} 题` : '题目待补充',
-          progressText: `${percentage(progress.completed, questionCount)}%`,
-          accuracyText: `${percentage(progress.correctAttempts, progress.attempts)}%`,
-          wrongText: `${progress.wrongQuestions}`,
+          progressText:
+            questionCount === 0 ? '—' : `${percentage(progress.completed, questionCount)}%`,
+          accuracyText:
+            questionCount === 0
+              ? '—'
+              : progress.attempts === 0
+                ? '未练习'
+                : `${percentage(progress.correctAttempts, progress.attempts)}%`,
+          wrongText: questionCount === 0 ? '—' : `${progress.wrongQuestions}`,
+          statusText: chapterStatusText(questionCount, progress.attempts),
           canStart: questionCount > 0,
           sections: chapter.sections.map((section) => {
             const sectionQuestionIds = questions

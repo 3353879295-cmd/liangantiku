@@ -17,6 +17,8 @@ export interface PracticeReport {
   durationMs: number;
   wrongQuestionIds: string[];
   chapters: Record<string, ModuleReport>;
+  /** Wall-clock exam duration for mock exams; learning statistics use durationMs. */
+  examDurationMs?: number;
 }
 
 export interface PracticeSession {
@@ -30,6 +32,10 @@ export interface PracticeSession {
   feedback: Partial<Record<string, GradeResult>>;
   status: SessionStatus;
   startedAt: number;
+  /** Persisted effective foreground practice time. */
+  activeDurationMs: number;
+  /** In-memory only foreground segment start; deliberately never serialized. */
+  activeSince?: number;
   updatedAt: number;
   submittedAt?: number;
   report?: PracticeReport;
@@ -78,8 +84,24 @@ export const createPracticeSession = (
     feedback: {},
     status: 'active',
     startedAt: options.now,
+    activeDurationMs: 0,
     updatedAt: options.now,
     progressRecorded: false,
+  };
+};
+
+export const resumePracticeSession = (session: PracticeSession, now: number): PracticeSession => {
+  if (session.status === 'submitted' || session.activeSince !== undefined) return session;
+  return { ...session, activeSince: now, updatedAt: now };
+};
+
+export const pausePracticeSession = (session: PracticeSession, now: number): PracticeSession => {
+  if (session.status === 'submitted' || session.activeSince === undefined) return session;
+  const { activeSince, ...pausedSession } = session;
+  return {
+    ...pausedSession,
+    activeDurationMs: session.activeDurationMs + Math.max(0, now - activeSince),
+    updatedAt: now,
   };
 };
 
@@ -149,6 +171,7 @@ export const getAnswerSheet = (
 
 export const submitSession = (session: PracticeSession, now: number): PracticeSession => {
   requireActive(session);
+  const paused = pausePracticeSession(session, now);
   const feedback: Record<string, GradeResult> = {};
   const chapters: Record<string, ModuleReport> = {};
   const wrongQuestionIds: string[] = [];
@@ -174,13 +197,14 @@ export const submitSession = (session: PracticeSession, now: number): PracticeSe
     total: gradedQuestions.length,
     correct,
     wrong: gradedQuestions.length - correct,
-    durationMs: Math.max(0, now - session.startedAt),
+    durationMs: paused.activeDurationMs,
     wrongQuestionIds,
     chapters,
   };
+  if (paused.mode === 'mock') report.examDurationMs = Math.max(0, now - paused.startedAt);
 
   return {
-    ...session,
+    ...paused,
     feedback,
     status: 'submitted',
     updatedAt: now,
@@ -201,6 +225,7 @@ export const serializePracticeSession = (session: PracticeSession): PersistedPra
     ),
     status: session.status,
     startedAt: session.startedAt,
+    activeDurationMs: session.activeDurationMs,
     updatedAt: session.updatedAt,
     progressRecorded: session.progressRecorded,
   };
@@ -257,6 +282,12 @@ export const rehydratePracticeSession = (
     feedback: {},
     status: 'active',
     startedAt: persisted.startedAt,
+    // Older active sessions have no trustworthy foreground duration. Do not infer it from startedAt.
+    activeDurationMs:
+      persisted.activeDurationMs ??
+      (persisted.status === 'submitted'
+        ? Math.max(0, (persisted.submittedAt ?? persisted.updatedAt) - persisted.startedAt)
+        : 0),
     updatedAt: persisted.updatedAt,
     progressRecorded: persisted.progressRecorded ?? false,
   };
